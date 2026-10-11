@@ -1,0 +1,44 @@
+# Flowtop code owners. Placeholder handles: replace @dev-a..@dev-d with real GitHub handles.
+# Later rules override earlier ones, so shared paths are listed last.
+
+# Dev A: Platform and Commerce
+/backend/src/auth/          @dev-a
+/backend/src/users/         @dev-a
+/backend/src/media/         @dev-a
+/backend/src/settings/      @dev-a
+/backend/src/audit/         @dev-a
+/backend/src/common/        @dev-a
+/backend/src/cart/          @dev-a
+/backend/src/orders/        @dev-a
+/backend/src/payments/      @dev-a
+/backend/src/email/         @dev-a
+/backend/src/submissions/   @dev-a
+/backend/prisma/            @dev-a
+/infra/                     @dev-a
+/.github/                   @dev-a
+
+# Dev B: Catalogue and Content
+/backend/src/products/       @dev-b
+/backend/src/variants/       @dev-b
+/backend/src/specifications/ @dev-b
+/backend/src/categories/     @dev-b
+/backend/src/collections/    @dev-b
+/backend/src/placements/     @dev-b
+/backend/src/pages/          @dev-b
+/backend/src/sections/       @dev-b
+/backend/src/navigation/     @dev-b
+/backend/src/journal/        @dev-b
+/backend/src/analytics/      @dev-b
+/backend/src/search/         @dev-b
+
+# Dev C: Public Website
+/frontend/                  @dev-c
+/packages/ui/               @dev-c
+
+# Dev D: Admin CMS
+/admin/                     @dev-d
+
+# Shared by all four
+AGENTS.md                   @dev-a @dev-b @dev-c @dev-d
+/docs/                      @dev-a @dev-b @dev-c @dev-d
+/shared/                    @dev-a @dev-b @dev-c @dev-d
