@@ -1,5 +1,11 @@
 # Flowtop code owners. Placeholder handles: replace @dev-a..@dev-d with real GitHub handles.
-# Later rules override earlier ones, so shared paths are listed last.
+# Later rules override earlier ones (last match wins).
+
+# Catch-all
+*                           @dev-a @dev-b @dev-c @dev-d
+
+# Backend fallback
+/backend/                   @dev-a
 
 # Dev A: Platform and Commerce
 /backend/src/auth/          @dev-a
@@ -39,6 +45,11 @@
 /admin/                     @dev-d
 
 # Shared by all four
-AGENTS.md                   @dev-a @dev-b @dev-c @dev-d
 /docs/                      @dev-a @dev-b @dev-c @dev-d
 /shared/                    @dev-a @dev-b @dev-c @dev-d
+
+# Agent guides: each folder's AGENTS.md belongs to that folder's owner
+/backend/AGENTS.md          @dev-a @dev-b
+/frontend/AGENTS.md         @dev-c
+/admin/AGENTS.md            @dev-d
+/AGENTS.md                  @dev-a @dev-b @dev-c @dev-d
