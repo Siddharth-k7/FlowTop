@@ -20,7 +20,9 @@ description = "Password set to a literal value in a config file"
 path = '''(?i)(\.(ya?ml|toml|ini|cfg|conf|properties|json)$|(^|/)\.env[^/]*$|(^|/)docker-compose[^/]*$)'''
 # The key must start a line or follow whitespace, a quote or a comma; a key nested inside an
 # environment reference with a default is therefore not read as an assignment.
-regex = '''(?i)(?:^|[\s"',])[a-z0-9_]*(?:password|passwd|pwd)["']?\s*[:=]\s*["']?([^\s"'`$<{#][^\s"'`#]{2,})'''
+# Spaces and tabs only around the separator, never a line break: an empty `KEY=` must not
+# pick up the next line as its value.
+regex = '''(?i)(?:^|[\s"',])[a-z0-9_]*(?:password|passwd|pwd)["']?[ \t]*[:=][ \t]*["']?([^\s"'`$<{#][^\s"'`#]{2,})'''
 secretGroup = 1
 keywords = ["password", "passwd", "pwd"]
 
