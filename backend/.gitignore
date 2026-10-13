@@ -1,2 +1,5 @@
 # Prisma client, regenerated on install by the postinstall script
 src/generated/
+
+# Password reset and other emails written locally in development
+.dev-emails/

@@ -1,5 +1,5 @@
 import { plainToInstance, Transform } from 'class-transformer';
-import { IsEnum, IsInt, IsUrl, Matches, Max, Min, validateSync } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsUrl, Matches, Max, Min, validateSync } from 'class-validator';
 
 export enum NodeEnv {
   DEVELOPMENT = 'development',
@@ -24,6 +24,23 @@ export class Env {
   )
   @IsUrl({ require_tld: false, require_protocol: true }, { each: true })
   CORS_ORIGINS!: string[];
+
+  /** Base URL of the admin app. Password reset links point here. */
+  @IsUrl({ require_tld: false, require_protocol: true })
+  ADMIN_URL!: string;
+
+  /** 32 random bytes, base64. Encrypts MFA secrets at rest. Generate with: openssl rand -base64 32 */
+  @Matches(/^[A-Za-z0-9+/]{43}=$/, {
+    message: 'MFA_ENCRYPTION_KEY must be 32 random bytes, base64 encoded (openssl rand -base64 32)',
+  })
+  MFA_ENCRYPTION_KEY!: string;
+
+  /** Reverse proxies in front of the API. Without this, every client behind a load balancer shares one IP for rate limiting. */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  TRUST_PROXY_HOPS: number = 0;
 }
 
 /**

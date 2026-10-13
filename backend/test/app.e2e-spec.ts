@@ -1,9 +1,9 @@
-import { Body, Controller, INestApplication, Module, Post } from '@nestjs/common';
+import { Body, Controller, Module, Post } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { Type } from 'class-transformer';
 import { IsInt, IsString, Matches, Min, ValidateNested } from 'class-validator';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { ErrorBody } from '../src/common/errors/error-code';
@@ -40,7 +40,7 @@ class ProbeController {
 class ProbeAppModule {}
 
 describe('App (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: NestExpressApplication;
   const healthRepository = { pingDatabase: jest.fn<Promise<void>, []>() };
 
   beforeAll(async () => {
@@ -49,7 +49,7 @@ describe('App (e2e)', () => {
       .useValue(healthRepository)
       .compile();
 
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();
   });

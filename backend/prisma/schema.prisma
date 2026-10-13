@@ -120,7 +120,9 @@ enum SubmissionStatus {
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   name         String
+  /// Stored lowercase. Lookups normalise the input the same way.
   email        String   @unique
+  /// argon2id. Never plaintext, never a fast hash.
   passwordHash String   @map("password_hash")
   mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
   /// Encrypted at rest by the auth module, never stored in plain text.
@@ -130,12 +132,70 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  roles           UserRole[]
-  uploadedMedia   MediaAsset[] @relation("MediaUploadedBy")
-  updatedSettings Setting[]    @relation("SettingUpdatedBy")
-  auditEvents     AuditEvent[]
+  roles               UserRole[]
+  sessions            Session[]
+  mfaChallenges       MfaChallenge[]
+  passwordResetTokens PasswordResetToken[]
+  uploadedMedia       MediaAsset[]         @relation("MediaUploadedBy")
+  updatedSettings     Setting[]            @relation("SettingUpdatedBy")
+  auditEvents         AuditEvent[]
 
   @@map("user")
+}
+
+// ─── Platform: auth ────────────────────────────────────────────────────────
+// Every token below is a random secret handed to the client once. Only its
+// SHA-256 hash is stored, so a database leak does not leak usable tokens.
+
+/// An admin session. The raw token lives only in the httpOnly session cookie.
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+/// The second login step for an MFA user: the mfaToken returned by POST /auth/login. Short lived, single use.
+model MfaChallenge {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  tokenHash      String    @unique @map("token_hash")
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  /// Set when the challenge is used or burned by too many wrong codes. Never cleared.
+  consumedAt     DateTime? @map("consumed_at") @db.Timestamptz(6)
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mfa_challenge")
+}
+
+/// Single use, expires 30 minutes after issue.
+model PasswordResetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  /// Set when used, or when a newer token for the same user replaces it.
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_token")
 }
 
 model Role {

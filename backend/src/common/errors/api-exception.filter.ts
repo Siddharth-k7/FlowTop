@@ -2,6 +2,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logge
 import type { Response } from 'express';
 import { ApiException } from './api.exception';
 import { ErrorBody, ErrorCode, ErrorFields } from './error-code';
+import { RateLimitedException } from './rate-limited.exception';
 
 const GENERIC_SERVER_MESSAGE = 'Something went wrong on our side. Please try again.';
 
@@ -17,6 +18,7 @@ const CODE_BY_STATUS: Partial<Record<number, ErrorCode>> = {
 export interface ErrorResponse {
   status: number;
   body: ErrorBody;
+  headers?: Record<string, string>;
 }
 
 /**
@@ -28,17 +30,28 @@ export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const { status, body } = toErrorResponse(exception);
+    const { status, body, headers } = toErrorResponse(exception);
 
     if (status >= 500) {
       this.logger.error(exception instanceof Error ? exception.stack : String(exception));
     }
 
-    host.switchToHttp().getResponse<Response>().status(status).json(body);
+    const response = host.switchToHttp().getResponse<Response>();
+    if (headers) {
+      response.set(headers);
+    }
+    response.status(status).json(body);
   }
 }
 
 export function toErrorResponse(exception: unknown): ErrorResponse {
+  if (exception instanceof RateLimitedException) {
+    return {
+      ...envelope(exception.getStatus(), exception.code, exception.message),
+      headers: { 'Retry-After': String(exception.retryAfterSeconds) },
+    };
+  }
+
   if (exception instanceof ApiException) {
     return envelope(exception.getStatus(), exception.code, exception.message, exception.fields);
   }

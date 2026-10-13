@@ -16,5 +16,6 @@
   "testEnvironment": "node",
   "moduleNameMapper": {
     "^(\\.{1,2}/.*)\\.js$": "$1"
-  }
+  },
+  "globalSetup": "<rootDir>/test/global-setup.ts"
 }

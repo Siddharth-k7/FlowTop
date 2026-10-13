@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { ApiException } from './api.exception';
 import { toErrorResponse } from './api-exception.filter';
+import { RateLimitedException } from './rate-limited.exception';
 
 function prismaError(code: string, meta?: Record<string, unknown>): Error {
   const error = new Error('Raw Prisma message with SQL and internals');
@@ -27,6 +28,14 @@ describe('toErrorResponse', () => {
     expect(toErrorResponse(new HttpException('Slow down', HttpStatus.TOO_MANY_REQUESTS)).body.error.code).toBe(
       'RATE_LIMITED',
     );
+  });
+
+  it('adds a Retry-After header to a rate limit', () => {
+    const result = toErrorResponse(new RateLimitedException(42));
+
+    expect(result.status).toBe(429);
+    expect(result.body.error.code).toBe('RATE_LIMITED');
+    expect(result.headers).toEqual({ 'Retry-After': '42' });
   });
 
   it('keeps the real status for a 4xx the contract does not name', () => {
