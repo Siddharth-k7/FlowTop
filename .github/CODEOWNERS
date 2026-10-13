@@ -36,6 +36,7 @@
 /backend/src/journal/        @dev-b
 /backend/src/analytics/      @dev-b
 /backend/src/search/         @dev-b
+/backend/src/_base/          @dev-b
 
 # Dev C: Public Website
 /frontend/                  @dev-c

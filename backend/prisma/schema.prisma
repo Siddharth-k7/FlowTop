@@ -82,6 +82,17 @@ enum NavigationMenu {
   @@map("navigation_menu")
 }
 
+/// What a navigation item points at. The href is built at render time, never stored.
+enum NavigationLinkType {
+  page
+  category
+  collection
+  product
+  external
+
+  @@map("navigation_link_type")
+}
+
 enum PaymentStatus {
   pending
   paid
@@ -571,14 +582,19 @@ model ArticleProduct {
 
 /// Self-referencing, one level. Replaced wholesale by PUT /admin/navigation.
 model NavigationItem {
-  id        String         @id @default(uuid()) @db.Uuid
-  menu      NavigationMenu
-  label     String
-  href      String
-  parentId  String?        @map("parent_id") @db.Uuid
-  position  Int            @default(0)
-  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           String             @id @default(uuid()) @db.Uuid
+  menu         NavigationMenu
+  label        String
+  linkType     NavigationLinkType @map("link_type")
+  /// A page, category, collection or product uuid for internal types; a URL for external.
+  /// Storing the target instead of an href is what lets the API validate internal links and
+  /// warn when a destination is unpublished (NAV-02). Shape enforced by a CHECK constraint.
+  destination  String
+  openInNewTab Boolean            @default(false) @map("open_in_new_tab")
+  parentId     String?            @map("parent_id") @db.Uuid
+  position     Int                @default(0)
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   parent   NavigationItem?  @relation("NavigationTree", fields: [parentId], references: [id], onDelete: Cascade)
   children NavigationItem[] @relation("NavigationTree")
