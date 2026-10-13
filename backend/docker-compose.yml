@@ -1,20 +1,22 @@
 # Local development database only. Staging and production use managed Postgres (see infra/).
 #
 #   docker compose up -d
-#   DATABASE_URL=postgresql://flowtop:flowtop@localhost:5433/flowtop
+#
+# Settings come from backend/.env (Docker Compose reads it automatically); see .env.example.
+# With nothing set, the password falls back to "localdev". That is fine only because
+# the port is bound to 127.0.0.1, so nothing outside this machine can reach it.
 #
 # Host port 5433, not 5432, so it does not collide with another local Postgres.
-# Override with FLOWTOP_DB_PORT if 5433 is taken too.
 
 services:
   postgres:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: flowtop
-      POSTGRES_PASSWORD: flowtop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
       POSTGRES_DB: flowtop
     ports:
-      - '${FLOWTOP_DB_PORT:-5433}:5432'
+      - '127.0.0.1:${FLOWTOP_DB_PORT:-5433}:5432'
     volumes:
       - flowtop-postgres:/var/lib/postgresql/data
     healthcheck:

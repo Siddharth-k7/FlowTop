@@ -1,0 +1,24 @@
+#!/bin/sh
+# Blocks a commit that would add a secret, using gitleaks and the rules in .gitleaks.toml.
+#
+# Turn it on once per clone, from the repo root:
+#   git config core.hooksPath .githooks
+#
+# If it flags a test value or placeholder, change the value so it is not secret-shaped
+# (generate it at runtime). Do not bypass with --no-verify: CI runs GitGuardian anyway.
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed, so this commit cannot be scanned for secrets." >&2
+  echo "  Windows: winget install Gitleaks.Gitleaks" >&2
+  echo "  macOS:   brew install gitleaks" >&2
+  echo "  Linux:   https://github.com/gitleaks/gitleaks#installing" >&2
+  echo "Install it, open a new terminal, and commit again." >&2
+  exit 1
+fi
+
+if ! gitleaks git --pre-commit --staged --redact --no-banner --verbose .; then
+  echo "" >&2
+  echo "pre-commit: commit blocked, a possible secret is staged (details above, value redacted)." >&2
+  echo "If it is real, remove it and rotate it. If it is a test value, generate it at runtime instead." >&2
+  exit 1
+fi

@@ -1,0 +1,12 @@
+# Reviewed findings in git history that are NOT real secrets. Each line is a gitleaks
+# fingerprint (commit:file:rule:line), so only that exact occurrence is ignored.
+# Reviewed 2026-10-13: local docker/test placeholders, replaced in the working tree.
+# Never add a real secret here: rotate it instead.
+46eec2beeb1ac1709c1380d6bc5cef076cbe3614:backend/docker-compose.yml:flowtop-connection-string-credentials:4
+46eec2beeb1ac1709c1380d6bc5cef076cbe3614:backend/docker-compose.yml:flowtop-password-literal-in-config:14
+46eec2beeb1ac1709c1380d6bc5cef076cbe3614:backend/src/config/env.validation.spec.ts:flowtop-connection-string-credentials:6
+46eec2beeb1ac1709c1380d6bc5cef076cbe3614:backend/test/setup-env.ts:flowtop-connection-string-credentials:5
+e57a1f9a79273d57cdaee692251c20887df84db6:backend/.env.example:flowtop-connection-string-credentials:11
+e57a1f9a79273d57cdaee692251c20887df84db6:backend/src/config/env.validation.spec.ts:generic-api-key:9
+e57a1f9a79273d57cdaee692251c20887df84db6:backend/test/setup-env.ts:generic-api-key:10
+e57a1f9a79273d57cdaee692251c20887df84db6:backend/test/test-env.ts:flowtop-connection-string-credentials:6

@@ -1,12 +1,16 @@
+import { randomBytes, randomUUID } from 'node:crypto';
 import { NodeEnv, validateEnv } from './env.validation';
+
+// Secret-shaped values are generated per run, so none lives in source.
+const fakeSecret = `fake-${randomUUID()}`;
 
 const validEnv = {
   NODE_ENV: 'development',
   PORT: '4000',
-  DATABASE_URL: 'postgresql://flowtop:s3cret-value@localhost:5432/flowtop',
+  DATABASE_URL: `postgresql://test-user:${fakeSecret}@localhost:5432/flowtop`,
   CORS_ORIGINS: 'http://localhost:3000, http://localhost:3001',
   ADMIN_URL: 'http://localhost:3001',
-  MFA_ENCRYPTION_KEY: 'q2Jx5dGmZ0b3bHk1cXp6c2Z1b2Z3d2V0c2x0eW5rd2s=',
+  MFA_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
 };
 
 describe('validateEnv', () => {
@@ -47,8 +51,9 @@ describe('validateEnv', () => {
   });
 
   it('never includes a variable value in the error message', () => {
-    expect(() => validateEnv({ ...validEnv, PORT: 's3cret-value' })).toThrow(
-      expect.objectContaining({ message: expect.not.stringContaining('s3cret-value') as unknown }) as Error,
-    );
+    const run = () => validateEnv({ ...validEnv, PORT: fakeSecret, DATABASE_URL: `mysql://u:${fakeSecret}@h/db` });
+
+    expect(run).toThrow(/PORT/);
+    expect(run).toThrow(expect.objectContaining({ message: expect.not.stringContaining(fakeSecret) as unknown }) as Error);
   });
 });

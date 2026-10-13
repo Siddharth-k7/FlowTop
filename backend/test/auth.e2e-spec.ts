@@ -1,6 +1,6 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import request, { Response } from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
@@ -16,7 +16,10 @@ import { PrismaService } from '../src/common/prisma/prisma.service';
 import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
 import { resetDatabase } from './database';
 
-const PASSWORD = 'correct horse battery staple';
+// Generated per run, so no password-shaped literal lives in source.
+const PASSWORD = `test-only-${randomUUID()}`;
+const NEW_PASSWORD = `test-only-${randomUUID()}`;
+const OTHER_PASSWORD = `test-only-${randomUUID()}`;
 const LOGIN = '/api/v1/auth/login';
 const MFA = '/api/v1/auth/mfa';
 const ME = '/api/v1/auth/me';
@@ -364,11 +367,11 @@ describe('Auth (e2e)', () => {
       const oldSession = await signIn();
       await requestReset('priya@flowtop.in');
 
-      await http().post(RESET_CONFIRM).send({ token: tokenFromEmail(), password: 'a brand new passphrase' }).expect(204);
+      await http().post(RESET_CONFIRM).send({ token: tokenFromEmail(), password: NEW_PASSWORD }).expect(204);
 
       await http().get(ME).set('Cookie', oldSession).expect(401);
       await http().post(LOGIN).send({ email: 'priya@flowtop.in', password: PASSWORD }).expect(401);
-      await signIn('priya@flowtop.in', 'a brand new passphrase');
+      await signIn('priya@flowtop.in', NEW_PASSWORD);
     });
 
     it('rejects an expired reset token', async () => {
@@ -378,7 +381,7 @@ describe('Auth (e2e)', () => {
 
       const res = await http()
         .post(RESET_CONFIRM)
-        .send({ token: tokenFromEmail(), password: 'a brand new passphrase' })
+        .send({ token: tokenFromEmail(), password: NEW_PASSWORD })
         .expect(422);
 
       expect((res.body as ErrorBody).error.fields).toEqual({ token: AUTH_MESSAGES.resetTokenInvalid });
@@ -389,10 +392,10 @@ describe('Auth (e2e)', () => {
       await createUser();
       await requestReset('priya@flowtop.in');
       const token = tokenFromEmail();
-      await http().post(RESET_CONFIRM).send({ token, password: 'a brand new passphrase' }).expect(204);
+      await http().post(RESET_CONFIRM).send({ token, password: NEW_PASSWORD }).expect(204);
 
-      await http().post(RESET_CONFIRM).send({ token, password: 'attacker passphrase 1' }).expect(422);
-      await signIn('priya@flowtop.in', 'a brand new passphrase');
+      await http().post(RESET_CONFIRM).send({ token, password: OTHER_PASSWORD }).expect(422);
+      await signIn('priya@flowtop.in', NEW_PASSWORD);
     });
 
     it('retires an earlier token when a new one is requested', async () => {
@@ -400,8 +403,8 @@ describe('Auth (e2e)', () => {
       await requestReset('priya@flowtop.in');
       await requestReset('priya@flowtop.in');
 
-      await http().post(RESET_CONFIRM).send({ token: tokenFromEmail(0), password: 'a brand new passphrase' }).expect(422);
-      await http().post(RESET_CONFIRM).send({ token: tokenFromEmail(1), password: 'a brand new passphrase' }).expect(204);
+      await http().post(RESET_CONFIRM).send({ token: tokenFromEmail(0), password: NEW_PASSWORD }).expect(422);
+      await http().post(RESET_CONFIRM).send({ token: tokenFromEmail(1), password: NEW_PASSWORD }).expect(204);
     });
 
     it('rejects a password shorter than 12 characters', async () => {

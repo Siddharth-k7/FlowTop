@@ -1,0 +1,47 @@
+# Secret scanning rules for gitleaks, used by the pre-commit hook in .githooks/.
+# Gitleaks loads this file automatically when it scans the repo.
+
+title = "Flowtop gitleaks config"
+
+# Start from the full built-in rule set (API keys, tokens, private keys, high-entropy strings).
+[extend]
+useDefault = true
+
+# The built-in generic rule ignores low-entropy values, so it misses a weak
+# literal password like `POSTGRES_PASSWORD: flowtop`. GitGuardian does not.
+# Limited to config-style files: in TypeScript, `password: dto.password` is code.
+[[rules]]
+id = "flowtop-password-literal-in-config"
+description = "Password set to a literal value in a config file"
+path = '''(?i)(\.(ya?ml|toml|ini|cfg|conf|properties|json)$|(^|/)\.env[^/]*$|(^|/)docker-compose[^/]*$)'''
+# The key must start a line or follow whitespace, a quote or a comma, so `${POSTGRES_PASSWORD:-x}` is not read as a key.
+regex = '''(?i)(?:^|[\s"',])[a-z0-9_]*(?:password|passwd|pwd)["']?\s*[:=]\s*["']?([^\s"'`$<{#][^\s"'`#]{2,})'''
+secretGroup = 1
+keywords = ["password", "passwd", "pwd"]
+
+  [[rules.allowlists]]
+  description = "Obvious placeholders"
+  regexTarget = "secret"
+  regexes = ['''(?i)^(password|changeme|example|placeholder|null|none|true|false)$''']
+
+# Credentials inside a connection string, in any file.
+[[rules]]
+id = "flowtop-connection-string-credentials"
+description = "Password inside a database or broker connection string"
+regex = '''(?i)\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss|amqps?)://[^:/\s"'`@]+:([^@\s"'`]+)@'''
+secretGroup = 1
+keywords = ["://"]
+
+  [[rules.allowlists]]
+  description = "Placeholders and values interpolated at runtime"
+  regexTarget = "secret"
+  regexes = ['''^(?i)(password|<[^>]+>|\$\{[^}]+\}|\*+)$''']
+
+[[allowlists]]
+description = "Generated and vendored files"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)src/generated/''',
+  '''(^|/)dist/''',
+]
