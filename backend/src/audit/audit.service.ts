@@ -16,7 +16,7 @@ export class AuditService {
    * audit row commits or rolls back with it. Never log a change that did not happen.
    *
    *   await this.prisma.$transaction(async (tx) => {
-   *     await tx.product.update(...);
+   *     await this.repository.publish(id, tx); // repository methods take the tx client
    *     await this.audit.record({ ... }, tx);
    *   });
    *

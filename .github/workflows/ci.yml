@@ -12,6 +12,23 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# One job per app. Each runs .github/actions/node-app (install, typecheck, lint,
+# unit tests, build); any failing step fails the job and so the PR.
+#
+# To add frontend or admin once it has code, copy this block under `jobs:`:
+#
+#   frontend:
+#     name: Frontend
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 15
+#     steps:
+#       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+#         with:
+#           persist-credentials: false
+#       - uses: ./.github/actions/node-app
+#         with:
+#           app: frontend
+
 jobs:
   # Catches secrets from any clone, including one without the local pre-commit hook.
   # Uses the same rules and reviewed exceptions as the hook: .gitleaks.toml and .gitleaksignore.
@@ -43,3 +60,41 @@ jobs:
 
       - name: Scan every commit
         run: gitleaks git --redact --no-banner --verbose .
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      # A throwaway Postgres for the e2e tests, reachable only from this job and destroyed with it.
+      # It uses trust auth, so there is no password to set, store or leak.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: flowtop
+          POSTGRES_DB: flowtop
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U flowtop -d flowtop"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install, typecheck, lint, unit tests, build
+        uses: ./.github/actions/node-app
+        with:
+          app: backend
+
+      - name: E2E tests (real Postgres)
+        working-directory: backend
+        env:
+          # The e2e setup creates this database and applies every migration to it.
+          TEST_DATABASE_URL: postgresql://flowtop@localhost:5432/flowtop_test
+        run: npm run test:e2e

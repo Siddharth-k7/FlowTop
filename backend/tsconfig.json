@@ -5,7 +5,8 @@
     "target": "ES2023",
     "types": [
       "node",
-      "jest"
+      "jest",
+      "multer"
     ],
     "strict": true,
     "noImplicitOverride": true,
