@@ -581,6 +581,51 @@ Dev C fills the placeholders and URL-encodes the result.
 
 ---
 
+## Audit log (Dev A)
+
+```
+GET    /admin/audit?actorId=&action=&entityType=&entityId=&from=&to=&page=&perPage=
+```
+
+Requires `audit:read`, which only `super_admin` holds. Everyone else gets 403.
+
+**Read only, and append only.** There is no endpoint that creates, edits or deletes an audit row. Rows are written as a side effect of the actions they record, and the database itself refuses any update or delete.
+
+**Filters,** all optional, all combinable:
+
+| Param | Value |
+|---|---|
+| `actorId` | A user's uuid |
+| `action` | `create` `update` `delete` `publish` `unpublish` `archive` `reorder` `status_change` `role_change` `settings_change` `invite` `deactivate` `export` |
+| `entityType` | Lowercase table name: `product`, `page`, `user`, `media_asset` |
+| `entityId` | The record's id, or its key for keyed entities such as settings |
+| `from` | Start of the range, **inclusive** |
+| `to` | End of the range, **exclusive** |
+
+`from` and `to` are full ISO 8601 timestamps **with a time zone**: `2026-10-14T00:00:00+05:30` or `2026-10-13T18:30:00Z`. A bare date such as `2026-10-14` is a 422, and so is `to` not after `from`. Inclusive `from` with exclusive `to` means consecutive ranges never count a row twice.
+
+Paginated with the standard list envelope, **newest first.**
+
+**AuditEvent:**
+
+```json
+{
+  "id": "uuid",
+  "action": "publish",
+  "entityType": "product",
+  "entityId": "uuid",
+  "metadata": { "from": "draft" },
+  "createdAt": "2026-10-14T04:30:00.000Z",
+  "actor": { "id": "uuid", "name": "Ravi Kumar", "email": "ravi@flowtop.in" }
+}
+```
+
+`actor` is `null` for system actions, such as a verified payment webhook. `metadata` is free-form JSON describing the change, and never holds a secret.
+
+> **Dev D: date pickers must send full timestamps with the time zone.** The API refuses a bare date, because "midnight on 14 October" is a different instant in Asia/Kolkata and in UTC, and guessing would silently show the wrong day's rows. For "everything on 14 October" in India, send `from=2026-10-14T00:00:00+05:30` and `to=2026-10-15T00:00:00+05:30`. URL-encode the `+` as `%2B`, or it arrives as a space.
+
+---
+
 ## Analytics (Dev B)
 
 ```
