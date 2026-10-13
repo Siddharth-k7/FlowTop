@@ -1,0 +1,27 @@
+# Local development database only. Staging and production use managed Postgres (see infra/).
+#
+#   docker compose up -d
+#
+# Settings come from backend/.env, which Docker Compose reads automatically; see .env.example.
+# There are no fallback values: if a variable is missing, compose stops and names it.
+# The port is bound to 127.0.0.1, so nothing outside this machine can reach the database.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: flowtop
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: flowtop
+    ports:
+      - '127.0.0.1:${FLOWTOP_DB_PORT:?FLOWTOP_DB_PORT must be set in .env}:5432'
+    volumes:
+      - flowtop-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U flowtop -d flowtop']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  flowtop-postgres:

@@ -1,0 +1,47 @@
+# Secret scanning rules for gitleaks, used by the pre-commit hook in .githooks/ and by CI.
+# Gitleaks loads this file automatically when it scans the repo.
+#
+# This file deliberately contains no example secrets, not even in comments: other scanners
+# (GitGuardian) read it too. Placeholders are recognised by shape, never by listing words.
+
+title = "Flowtop gitleaks config"
+
+# Start from the full built-in rule set (API keys, tokens, private keys, high-entropy strings).
+[extend]
+useDefault = true
+
+# The built-in generic rule skips low-entropy values, so a short dictionary-word password
+# assigned in a config file would get through. This rule catches any literal value there.
+# It skips values that start with $ (an environment reference), < (a placeholder) or { .
+# Limited to config-style files, because in source code the right-hand side is usually an identifier.
+[[rules]]
+id = "flowtop-password-literal-in-config"
+description = "Password set to a literal value in a config file"
+path = '''(?i)(\.(ya?ml|toml|ini|cfg|conf|properties|json)$|(^|/)\.env[^/]*$|(^|/)docker-compose[^/]*$)'''
+# The key must start a line or follow whitespace, a quote or a comma; a key nested inside an
+# environment reference with a default is therefore not read as an assignment.
+regex = '''(?i)(?:^|[\s"',])[a-z0-9_]*(?:password|passwd|pwd)["']?\s*[:=]\s*["']?([^\s"'`$<{#][^\s"'`#]{2,})'''
+secretGroup = 1
+keywords = ["password", "passwd", "pwd"]
+
+# Credentials inside a connection string, in any file.
+[[rules]]
+id = "flowtop-connection-string-credentials"
+description = "Password inside a database or broker connection string"
+regex = '''(?i)\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss|amqps?)://[^:/\s"'`@]+:([^@\s"'`]+)@'''
+secretGroup = 1
+keywords = ["://"]
+
+  [[rules.allowlists]]
+  description = "Placeholders by shape: <...>, an interpolated ${...}, or a run of asterisks"
+  regexTarget = "secret"
+  regexes = ['''^(<[^>]+>|\$\{[^}]+\}|\*+)$''']
+
+[[allowlists]]
+description = "Generated and vendored files"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)src/generated/''',
+  '''(^|/)dist/''',
+]
