@@ -3,3 +3,6 @@ src/generated/
 
 # Password reset and other emails written locally in development
 .dev-emails/
+
+# Uploaded files from the local media storage driver
+.media/

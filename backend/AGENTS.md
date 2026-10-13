@@ -29,7 +29,7 @@ Controllers do not contain logic. Services do not contain Prisma calls. Keep the
 
 ## What Dev B imports from Dev A
 
-Four things, all ready. Paths are from inside `src/<module>/`. Nothing needs adding to your module's `imports`: `AuthModule` and `AuditModule` are global.
+Five things, all ready. Paths are from inside `src/<module>/`. Nothing needs adding to your module's `imports`: `AuthModule` and `AuditModule` are global.
 
 ### 1. Route protection: `../auth`
 
@@ -74,13 +74,19 @@ await this.audit.record({ actorId: user.id, action: 'publish', entityType: 'prod
 ```
 
 - Call it for every publish, unpublish, archive, delete and reorder. `action` takes the verbs in `AUDIT_ACTIONS`; `metadata` is optional JSON describing the change, never a secret.
-- When the change runs in a transaction, pass `tx` so the audit row commits or rolls back with it:
+- When the change runs in a transaction, pass `tx` so the audit row commits or rolls back with it. The service owns the transaction; the repository method takes the `tx` client, so Prisma still stays in the repository:
 
   ```ts
+  // products.service.ts
   await this.prisma.$transaction(async (tx) => {
-    await tx.product.update({ where: { id }, data: { status: 'published' } });
+    await this.repository.publish(id, tx);
     await this.audit.record({ actorId, action: 'publish', entityType: 'product', entityId: id }, tx);
   });
+
+  // products.repository.ts
+  async publish(id: string, tx: Prisma.TransactionClient = this.prisma): Promise<void> {
+    await tx.product.update({ where: { id }, data: { status: 'published', publishedAt: new Date() } });
+  }
   ```
 
 - It throws if the row cannot be written. Let it: an unaudited publish should fail, not succeed quietly.
@@ -109,6 +115,29 @@ return paginate(rows.map(toProductCard), total, query);
 - Defaults to `page=1`, `perPage=25`. More than 100 per page is a 422, so no list can be asked for 10,000 rows.
 - Import `Paginated` and `AuthUser` with `import type` when they appear in a decorated method's signature. With `isolatedModules` on, a plain import of a type there fails the typecheck.
 
+### 5. Record-level access: `../auth`
+
+The route permission says a user may read orders. This says *which* orders. Use it whenever a record is fetched by an id that came from the request.
+
+```ts
+import { requireRecordAccess } from '../auth';
+import type { AuthUser } from '../auth';
+
+async get(viewer: AuthUser, id: string) {
+  const order = requireRecordAccess(viewer, await this.repository.findById(id), {
+    allWith: ['order:read'],                        // these permissions see every record
+    ownedBy: (user, record) => record.assignedTo === user.id, // everyone else: only their own or in scope
+  });
+  return toOrderResponse(order);
+}
+```
+
+- Returns the record when allowed. Otherwise throws **404**, the same response as a record that does not exist, so changing an id in the URL never reveals that someone else's record is there. Do not turn it into a 403.
+- Fails closed: a rule with neither `allWith` nor `ownedBy` allows nobody.
+- `canAccessRecord(viewer, record, rule)` gives the same decision as a boolean, for hiding fields.
+- **Lists must filter in the query**, not afterwards: put the same scope in the repository's `where`, so out-of-scope rows are never read and the `total` stays honest.
+- A route whose access depends on the record (for example "your own account") uses `@UseGuards(AuthGuard)` plus this check, with no `@RequirePermission`. That is the only exception to "every route carries PermissionGuard", and it must always have this check. See `GET /admin/users/:id` in `src/users/` for the reference implementation.
+
 ## Security rules
 
 These are tested in acceptance. None are optional.
@@ -120,7 +149,7 @@ These are tested in acceptance. None are optional.
 @RequirePermission('product:update')
 ```
 
-**Authorization is checked on the object, not just the action.** A user allowed to read orders is not allowed to read *every* order. Check ownership.
+**Authorization is checked on the object, not just the action.** A user allowed to read orders is not allowed to read *every* order. Check ownership with `requireRecordAccess` (see "Record-level access" above), never with a hand-rolled `if`.
 
 **Validate every input with a DTO.** No raw body access, no trusting a query parameter.
 

@@ -6,7 +6,7 @@ import { RateLimiter } from '../common/rate-limit/rate-limiter';
 import { Env } from '../config/env.validation';
 import { AUTH_MESSAGES, AUTH_RATE_LIMITS, PASSWORD_RESET_TTL_MS } from './auth.constants';
 import { PasswordHasher } from './password-hasher';
-import { PasswordResetMailer } from './password-reset.mailer';
+import { AuthMailer } from './auth.mailer';
 import { PasswordResetRepository } from './password-reset.repository';
 import { hashToken, newSecretToken } from './secret-token';
 
@@ -17,7 +17,7 @@ export class PasswordResetService {
   constructor(
     private readonly repository: PasswordResetRepository,
     private readonly hasher: PasswordHasher,
-    private readonly mailer: PasswordResetMailer,
+    private readonly mailer: AuthMailer,
     private readonly rateLimiter: RateLimiter,
     private readonly config: ConfigService<Env, true>,
   ) {}
