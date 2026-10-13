@@ -119,7 +119,7 @@ export class MediaService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.mediaAsset.delete({ where: { id } });
+      await this.repository.delete(id, tx);
       await this.audit.record(
         {
           actorId,

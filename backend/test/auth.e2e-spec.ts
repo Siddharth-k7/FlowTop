@@ -6,7 +6,7 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { AUTH_MESSAGES } from '../src/auth/auth.constants';
 import { PasswordHasher } from '../src/auth/password-hasher';
-import { PasswordResetMailer } from '../src/auth/password-reset.mailer';
+import { AuthMailer } from '../src/auth/auth.mailer';
 import { PasswordResetService } from '../src/auth/password-reset.service';
 import { hashToken } from '../src/auth/secret-token';
 import { base32Encode, generateTotp } from '../src/auth/totp';
@@ -38,11 +38,11 @@ interface LoginBody {
 describe('Auth (e2e)', () => {
   let app: NestExpressApplication;
   let prisma: PrismaService;
-  const mailer = { sendPasswordReset: jest.fn<Promise<void>, [string, string]>() };
+  const mailer = { sendPasswordReset: jest.fn<Promise<void>, [string, string]>(), sendInvite: jest.fn<Promise<void>, [string, string, string]>() };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(PasswordResetMailer)
+      .overrideProvider(AuthMailer)
       .useValue(mailer)
       .compile();
     app = moduleRef.createNestApplication<NestExpressApplication>();

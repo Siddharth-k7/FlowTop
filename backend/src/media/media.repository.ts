@@ -123,8 +123,9 @@ export class MediaRepository {
     ];
   }
 
-  async delete(id: string): Promise<void> {
-    await this.prisma.mediaAsset.delete({ where: { id } });
+  /** Pass the transaction client so the delete commits or rolls back with its audit row. */
+  async delete(id: string, tx: Prisma.TransactionClient = this.prisma): Promise<void> {
+    await tx.mediaAsset.delete({ where: { id } });
   }
 }
 
