@@ -11,7 +11,44 @@ const validEnv = {
   CORS_ORIGINS: 'http://localhost:3000, http://localhost:3001',
   ADMIN_URL: 'http://localhost:3001',
   MFA_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
+  MEDIA_STORAGE_DRIVER: 'local',
+  MEDIA_PUBLIC_BASE_URL: 'http://localhost:4000/api/v1/files/public',
+  MEDIA_LOCAL_DIR: '.media',
+  MEDIA_LOCAL_PRIVATE_BASE_URL: 'http://localhost:4000/api/v1/files/private',
+  MEDIA_URL_SIGNING_KEY: randomBytes(32).toString('base64'),
 };
+
+const s3Env = {
+  ...validEnv,
+  MEDIA_STORAGE_DRIVER: 's3',
+  MEDIA_PUBLIC_BASE_URL: 'https://cdn.example.com',
+  MEDIA_LOCAL_DIR: undefined,
+  MEDIA_LOCAL_PRIVATE_BASE_URL: undefined,
+  MEDIA_URL_SIGNING_KEY: undefined,
+  S3_REGION: 'ap-south-1',
+  S3_PUBLIC_BUCKET: 'flowtop-public',
+  S3_PRIVATE_BUCKET: 'flowtop-private',
+};
+
+describe('validateEnv: media storage', () => {
+  it('needs only the s3 settings with the s3 driver, and credentials are optional', () => {
+    expect(validateEnv(s3Env).S3_PRIVATE_BUCKET).toBe('flowtop-private');
+  });
+
+  it.each(['S3_REGION', 'S3_PUBLIC_BUCKET', 'S3_PRIVATE_BUCKET'])('s3 driver fails fast without %s', (key) => {
+    expect(() => validateEnv({ ...s3Env, [key]: undefined })).toThrow(new RegExp(key));
+  });
+
+  it('reads S3_FORCE_PATH_STYLE=false as false, not as a truthy string', () => {
+    expect(validateEnv({ ...s3Env, S3_FORCE_PATH_STYLE: 'false' }).S3_FORCE_PATH_STYLE).toBe(false);
+    expect(validateEnv({ ...s3Env, S3_FORCE_PATH_STYLE: 'true' }).S3_FORCE_PATH_STYLE).toBe(true);
+  });
+
+  it('refuses the local driver in production', () => {
+    expect(() => validateEnv({ ...validEnv, NODE_ENV: 'production' })).toThrow(/must be s3 in production/);
+    expect(validateEnv({ ...s3Env, NODE_ENV: 'production' }).NODE_ENV).toBe(NodeEnv.PRODUCTION);
+  });
+});
 
 describe('validateEnv', () => {
   it('accepts a complete environment and converts types', () => {

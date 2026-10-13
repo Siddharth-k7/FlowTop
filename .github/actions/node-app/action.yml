@@ -1,0 +1,49 @@
+name: Node app checks
+description: >-
+  Installs one app's dependencies, then runs its typecheck, lint, unit tests and build.
+  The app's package.json must define the scripts typecheck, lint, test and build.
+  Any failing step fails the job.
+
+inputs:
+  app:
+    description: The app's folder, relative to the repo root (backend, frontend, admin).
+    required: true
+  node-version:
+    description: Node.js major version. Match the app's "engines" field.
+    required: false
+    default: '24'
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+        cache-dependency-path: ${{ inputs.app }}/package-lock.json
+
+    - name: Install
+      shell: bash
+      working-directory: ${{ inputs.app }}
+      run: npm ci
+
+    - name: Typecheck
+      shell: bash
+      working-directory: ${{ inputs.app }}
+      run: npm run typecheck
+
+    - name: Lint
+      shell: bash
+      working-directory: ${{ inputs.app }}
+      run: npm run lint
+
+    - name: Unit tests
+      shell: bash
+      working-directory: ${{ inputs.app }}
+      run: npm test
+
+    - name: Build
+      shell: bash
+      working-directory: ${{ inputs.app }}
+      run: npm run build
