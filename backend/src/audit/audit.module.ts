@@ -1,10 +1,12 @@
 import { Global, Module } from '@nestjs/common';
+import { AuditController } from './audit.controller';
 import { AuditRepository } from './audit.repository';
 import { AuditService } from './audit.service';
 
 /** Global, so any service can inject AuditService without importing this module. */
 @Global()
 @Module({
+  controllers: [AuditController],
   providers: [AuditService, AuditRepository],
   exports: [AuditService],
 })
