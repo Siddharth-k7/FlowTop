@@ -5,6 +5,8 @@
 
 Base URL: `/api/v1`
 
+Health check, outside the base URL: `GET /health` returns 200 `{ data: { status: "ok", database: "up" } }`, or 503 `SERVICE_UNAVAILABLE` when the database is unreachable. No login.
+
 ---
 
 ## Conventions
@@ -21,6 +23,8 @@ Base URL: `/api/v1`
   "meta": { "page": 1, "perPage": 25, "total": 142, "totalPages": 6 }
 }
 ```
+
+Every list takes `?page=` (default 1) and `?perPage=` (default 25, maximum 100), whether or not its line below repeats them. `perPage` over 100 is a 422, not a silent cap.
 
 **Every single-item response is wrapped:**
 
@@ -66,16 +70,21 @@ A status not in this table keeps its real number and reports `BAD_REQUEST` (4xx)
 
 ```
 POST   /auth/login              { email, password }
-                                200 { data: { user, requiresMfa: false } }
-                                200 { data: { requiresMfa: true, mfaToken } }
-POST   /auth/mfa                { mfaToken, code }
-POST   /auth/logout
+                                200 { data: { user, requiresMfa: false } }   session cookie set
+                                200 { data: { requiresMfa: true, mfaToken } } no cookie yet
+POST   /auth/mfa                { mfaToken, code } or { mfaToken, recoveryCode }
+                                200 { data: { user, requiresMfa: false } }   session cookie set
+POST   /auth/logout             204, no body. Always 204, even without a session.
 GET    /auth/me                 200 { data: { user } }
 POST   /auth/password-reset     { email }
+                                202 { data: { message } } whether or not the account exists
 POST   /auth/password-reset/confirm  { token, password }
+                                204, no body. Every session of that user is signed out.
 ```
 
 Session is an httpOnly cookie. No token is ever returned in a body for the frontend to store.
+
+`POST /auth/mfa` takes exactly one of `code` (6 digits from the authenticator app) or `recoveryCode` (one of the codes shown at setup, format `ABCD-EFGH-JKMN-PQRS`; each works once). Both, or neither, is a 422. A wrong code, or an expired or used `mfaToken`, is 401: start again from `/auth/login`. Five wrong codes in 15 minutes lock MFA for that account (429, across every MFA endpoint).
 
 ```json
 User {
@@ -84,11 +93,66 @@ User {
   "email": "priya@flowtop.in",
   "role": "marketing_admin",
   "permissions": ["page:write", "section:write", "journal:write"],
-  "mfaEnabled": false
+  "mfaEnabled": false,
+  "mfaSetupRequired": false
 }
 ```
 
 `permissions` is for showing and hiding UI only. The server checks again on every call.
+
+`role` is `null` for an account that has no role assigned. Such a user has no permissions and can reach nothing behind a permission.
+
+`mfaSetupRequired` is true for a `super_admin` who has not set up MFA. They can sign in, but every route that needs a session answers 403 `MFA_SETUP_REQUIRED` except the two setup routes below. Show them the MFA setup screen and nothing else. (`GET /auth/me` is one of the routes that answers 403, so the admin app learns this from the login response or from that 403.)
+
+### Two-step sign-in (MFA)
+
+For the signed-in user's own account. Responses that carry secrets are sent with `Cache-Control: no-store`.
+
+```
+POST   /auth/mfa/setup          { password }
+                                200 { data: { secret, otpauthUri, expiresAt } }
+POST   /auth/mfa/verify         { code }
+                                200 { data: { recoveryCodes: ["ABCD-EFGH-JKMN-PQRS", ...] } }
+POST   /auth/mfa/disable        { password, code } or { password, recoveryCode }
+                                204, no body
+```
+
+- **setup** needs the current password: a session alone cannot enrol an authenticator. A wrong password is 422 with `fields.password`, and counts toward the lockout (5 failures in 15 minutes, then 429). 409 if MFA is already on. `otpauthUri` is rendered as a QR code; `secret` is for typing in by hand. The pending setup expires at `expiresAt`.
+- **verify** confirms the first code from the app and turns MFA on. The `recoveryCodes` are shown once and never returned again. Every other session of this user is signed out. 422 with `fields.code` for a wrong or expired code.
+- **disable** needs the password and a second factor, and signs out every other session of this user. 403 `FORBIDDEN` for a `super_admin`: their MFA cannot be turned off. 409 if MFA is not on.
+- **setup** and **verify** are the only routes open to a user with `mfaSetupRequired: true`.
+
+---
+
+## Admin users (Dev A)
+
+```
+GET    /admin/users?search=&page=&perPage=    user:read        200 list of UserSummary, sorted by name
+POST   /admin/users/invite    { name, email, role }      user:manage
+                                201 { data: { user: UserSummary, inviteSent } }
+GET    /admin/users/:id                       user:read_self   200 { data: UserSummary }
+POST   /admin/users/:id/role  { role }        user:manage      200 { data: UserSummary }
+POST   /admin/users/:id/deactivate            user:manage      200 { data: UserSummary }
+```
+
+```json
+UserSummary {
+  "id": "uuid",
+  "name": "Priya Nair",
+  "email": "priya@flowtop.in",
+  "role": "marketing_admin",
+  "isActive": true,
+  "mfaEnabled": false,
+  "createdAt": "2026-10-12T04:30:00Z"
+}
+```
+
+`role` is `null` when the account has no role. `role` in requests is one of `super_admin`, `marketing_admin`, `product_manager`.
+
+- There is no registration. Accounts exist only by invitation.
+- **invite** creates the account without a usable password and emails a link to `{ADMIN_URL}/accept-invite?token=...`, valid 72 hours. The admin app accepts it with `POST /auth/password-reset/confirm { token, password }`. `inviteSent: false` means the account exists but the email failed: say so, do not show a plain success. 409 with `fields.email` if the email is taken.
+- **GET /admin/users/:id**: every role holds `user:read_self`, which lets a user read their own account. Reading anyone else's needs `user:read` (super admin). Someone else's id without it is 404, the same as an id that does not exist.
+- **role** and **deactivate**: 403 on your own account (ask another super admin). 409 if it would leave no active super admin. Deactivating ends every session of that user immediately, and is idempotent.
 
 ---
 
@@ -444,12 +508,18 @@ Navigation is replaced wholesale, same reasoning as specifications.
 ## Media (Dev A)
 
 ```
-POST   /admin/media/upload          multipart. { bucket: "public"|"private" }
-GET    /admin/media?search=&type=&page=
-GET    /admin/media/:id
-PATCH  /admin/media/:id             { altText }
-DELETE /admin/media/:id             409 if still referenced
+POST   /admin/media/upload          multipart: file, bucket ("public"|"private"), altText (optional)
+                                    201 { data: MediaAsset }
+GET    /admin/media?search=&type=&page=&perPage=
+                                    type is "image" or "document". search matches filename or alt text.
+GET    /admin/media/:id             200 { data: MediaAsset }
+PATCH  /admin/media/:id             { altText }   200 { data: MediaAsset }
+DELETE /admin/media/:id             204. 409 if still referenced
 ```
+
+- One file per upload, at most 25 MB: larger is 413 `PAYLOAD_TOO_LARGE`, cut off while it streams. The type is checked from the file's bytes, not its name or `Content-Type`; an unsupported type is 422 with `fields.file`.
+- `altText` is at most 500 characters. It comes back as `alt`.
+- Permissions: upload and PATCH need `media:write`, the reads `media:read`, DELETE `media:delete`.
 
 **MediaAsset:**
 
@@ -470,7 +540,9 @@ DELETE /admin/media/:id             409 if still referenced
 }
 ```
 
-Private-bucket assets return a signed `url` that expires. Never a permanent public link.
+Private-bucket assets return a signed `url` that expires (15 minutes). Never a permanent public link.
+
+`width` and `height` are `null` for documents. **`variants` is `{}` until resized versions exist (task 2.1).** Until then, use `url` and treat each variant key as optional.
 
 ---
 
@@ -594,6 +666,41 @@ If `saved` is false, it is an error response, not a 200. Dev C never shows succe
 ```
 
 Dev C fills the placeholders and URL-encodes the result.
+
+**`whatsapp.number` can be `null`**: Flowtop has not set one yet. Hide every WhatsApp button while it is null; never fall back to a hard-coded number. The response is cached for up to 60 seconds.
+
+**Admin settings** (`GET /admin/settings` needs `settings:read`, `PUT` needs `settings:write`):
+
+```json
+GET /admin/settings  200
+{
+  "data": [
+    {
+      "key": "whatsapp.number",
+      "value": "+919876543210",
+      "description": "The WhatsApp number every button on the website opens. Empty hides WhatsApp.",
+      "public": true,
+      "updatedBy": { "id": "uuid", "name": "Priya Nair" },
+      "updatedAt": "2026-10-12T04:30:00Z"
+    }
+  ]
+}
+```
+
+A plain array of every setting, not paginated. `updatedBy` and `updatedAt` are `null` until someone changes the seed value. `PUT /admin/settings { key, value }` returns 200 `{ data: <the same item> }`. The keys and the shape of `value` for each:
+
+| Key | Value | Public |
+|---|---|---|
+| `email.senderName` | text, 1 to 100 characters | no |
+| `email.senderAddress` | an email address. `null` until first set; cannot be set back to `null` | no |
+| `email.recipients.orders` | array of email addresses. `[]` until first set; a PUT needs at least one | no |
+| `email.recipients.contact` | as above | no |
+| `email.recipients.dealer` | as above | no |
+| `whatsapp.number` | international format (`+` and 8 to 15 digits; spaces, dashes and brackets accepted on input and removed), or `null` | yes |
+| `whatsapp.generalTemplate` | text, 1 to 500 characters, no placeholders | yes |
+| `whatsapp.productTemplate` | text, 1 to 500 characters; placeholders `{productName}` `{sku}` `{finish}` `{url}` only | yes |
+
+An unknown key is 422 with `fields.key`; a value that breaks its key's rule is 422 with `fields.value`. No secret (API keys, passwords) is ever stored or returned as a setting.
 
 ---
 
