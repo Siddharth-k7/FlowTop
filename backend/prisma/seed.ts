@@ -1,5 +1,6 @@
 /**
  * Seeds what every environment needs: the permission list and the three v1 roles,
+ * plus any missing setting keys (existing settings are never overwritten),
  * taken from src/auth/permissions.ts, the single source of truth. Safe to run
  * again: it adds, updates and removes until the database matches the code.
  *
@@ -12,6 +13,8 @@ import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PasswordHasher } from '../src/auth/password-hasher';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { SETTING_SEEDS } from '../src/settings/setting-definitions';
+import { seedMissingSettings } from '../src/settings/settings.repository';
 import { syncPermissionsAndRoles } from './seed-permissions';
 
 async function main(): Promise<void> {
@@ -23,6 +26,8 @@ async function main(): Promise<void> {
 
   try {
     await syncPermissionsAndRoles(prisma, console.log);
+    const added = await seedMissingSettings(prisma, SETTING_SEEDS);
+    console.log(`  settings: ${added} missing key(s) added, existing values left unchanged`);
     await createAdminIfRequested(prisma);
   } finally {
     await prisma.$disconnect();

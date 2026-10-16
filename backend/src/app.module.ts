@@ -10,6 +10,7 @@ import { createValidationPipe } from './common/validation/validation.pipe';
 import { validateEnv } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
+import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
     HealthModule,
     AuthModule,
     MediaModule,
+    SettingsModule,
     UsersModule,
   ],
   providers: [
