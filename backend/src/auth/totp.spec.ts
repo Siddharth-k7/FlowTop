@@ -1,4 +1,4 @@
-import { base32Decode, base32Encode, generateTotp, hotp, verifyTotp } from './totp';
+import { base32Decode, base32Encode, generateTotp, hotp, matchTotpStep, totpProvisioningUri, verifyTotp } from './totp';
 
 // The shared secret from RFC 4226 and RFC 6238: ASCII "12345678901234567890".
 const RFC_KEY = Buffer.from('12345678901234567890');
@@ -42,6 +42,39 @@ describe('verifyTotp', () => {
     expect(verifyTotp(RFC_SECRET, '', now)).toBe(false);
     expect(verifyTotp(RFC_SECRET, '12345', now)).toBe(false);
     expect(verifyTotp(RFC_SECRET, '12345a', now)).toBe(false);
+  });
+});
+
+describe('matchTotpStep', () => {
+  const now = 1_760_000_000_000;
+  const step = Math.floor(now / 30_000);
+
+  it('reports which step a code belongs to, so it can be recorded and refused next time', () => {
+    expect(matchTotpStep(RFC_SECRET, generateTotp(RFC_SECRET, now), now)).toBe(step);
+    expect(matchTotpStep(RFC_SECRET, generateTotp(RFC_SECRET, now - 30_000), now)).toBe(step - 1);
+    expect(matchTotpStep(RFC_SECRET, generateTotp(RFC_SECRET, now + 30_000), now)).toBe(step + 1);
+  });
+
+  it('returns null for a wrong or malformed code', () => {
+    expect(matchTotpStep(RFC_SECRET, generateTotp(RFC_SECRET, now - 120_000), now)).toBeNull();
+    expect(matchTotpStep(RFC_SECRET, 'abcdef', now)).toBeNull();
+  });
+});
+
+describe('totpProvisioningUri', () => {
+  it('builds the otpauth URI authenticator apps scan, with issuer and account', () => {
+    const raw = totpProvisioningUri('JBSWY3DPEHPK3PXP', 'priya@flowtop.in', 'Flowtop');
+    const uri = new URL(raw);
+
+    expect(raw.startsWith('otpauth://totp/Flowtop%3Apriya%40flowtop.in?')).toBe(true);
+    expect(uri.host).toBe('totp');
+    expect(Object.fromEntries(uri.searchParams)).toEqual({
+      secret: 'JBSWY3DPEHPK3PXP',
+      issuer: 'Flowtop',
+      algorithm: 'SHA1',
+      digits: '6',
+      period: '30',
+    });
   });
 });
 

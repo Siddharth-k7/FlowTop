@@ -124,5 +124,6 @@ function toAuthUser(row: AuthUserRow): AuthUser {
     role: row.roles[0]?.role.name ?? null,
     permissions: [...permissions].sort(),
     mfaEnabled: row.mfaEnabled,
+    mfaSetupRequired: !row.mfaEnabled && row.roles.some(({ role }) => role.name === 'super_admin'),
   };
 }

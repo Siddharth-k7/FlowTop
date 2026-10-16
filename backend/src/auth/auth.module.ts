@@ -4,6 +4,9 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
+import { MfaController } from './mfa/mfa.controller';
+import { MfaRepository } from './mfa/mfa.repository';
+import { MfaService } from './mfa/mfa.service';
 import { PasswordHasher } from './password-hasher';
 import { AuthMailer, DevFileAuthMailer } from './auth.mailer';
 import { PasswordResetRepository } from './password-reset.repository';
@@ -17,10 +20,12 @@ import { SessionService } from './session.service';
  */
 @Global()
 @Module({
-  controllers: [AuthController],
+  controllers: [AuthController, MfaController],
   providers: [
     AuthService,
     AuthRepository,
+    MfaService,
+    MfaRepository,
     AuthGuard,
     PermissionGuard,
     SessionService,

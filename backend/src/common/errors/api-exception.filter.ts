@@ -7,12 +7,15 @@ import { RateLimitedException } from './rate-limited.exception';
 const GENERIC_SERVER_MESSAGE = 'Something went wrong on our side. Please try again.';
 
 const CODE_BY_STATUS: Partial<Record<number, ErrorCode>> = {
+  [HttpStatus.BAD_REQUEST]: 'BAD_REQUEST',
   [HttpStatus.UNAUTHORIZED]: 'UNAUTHENTICATED',
   [HttpStatus.FORBIDDEN]: 'FORBIDDEN',
   [HttpStatus.NOT_FOUND]: 'NOT_FOUND',
+  [HttpStatus.CONFLICT]: 'CONFLICT',
+  [HttpStatus.PAYLOAD_TOO_LARGE]: 'PAYLOAD_TOO_LARGE',
   [HttpStatus.UNPROCESSABLE_ENTITY]: 'VALIDATION_FAILED',
   [HttpStatus.TOO_MANY_REQUESTS]: 'RATE_LIMITED',
-  [HttpStatus.CONFLICT]: 'CONFLICT',
+  [HttpStatus.SERVICE_UNAVAILABLE]: 'SERVICE_UNAVAILABLE',
 };
 
 export interface ErrorResponse {
@@ -67,13 +70,13 @@ export function toErrorResponse(exception: unknown): ErrorResponse {
   );
 }
 
+/**
+ * Each code has exactly one status. A status the contract does not name keeps
+ * its real number and reports the nearest generic code: BAD_REQUEST for 4xx,
+ * SERVER_ERROR for 5xx. VALIDATION_FAILED is only ever a 422.
+ */
 function codeForStatus(status: number): ErrorCode {
-  if (status >= 500) {
-    return 'SERVER_ERROR';
-  }
-  // The contract has no code for other 4xx (malformed JSON, payload too large),
-  // so they keep their real status and report as a validation failure.
-  return CODE_BY_STATUS[status] ?? 'VALIDATION_FAILED';
+  return CODE_BY_STATUS[status] ?? (status >= 500 ? 'SERVER_ERROR' : 'BAD_REQUEST');
 }
 
 /**

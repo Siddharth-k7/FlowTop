@@ -9,10 +9,14 @@
 // - Soft delete is status = archived. FKs from orders are Restrict, so a referenced row cannot be hard deleted.
 
 generator client {
-  provider        = "prisma-client"
-  output          = "../src/generated/prisma"
-  moduleFormat    = "cjs"
-  previewFeatures = ["partialIndexes"]
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  // Pinned, not inferred from tsconfig.json: the Docker build generates the client
+  // before tsconfig.json is copied in, and an inferred ".ts" import broke the image.
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+  previewFeatures        = ["partialIndexes"]
 }
 
 datasource db {
@@ -129,23 +133,29 @@ enum SubmissionStatus {
 // ─── Platform: users, roles, permissions ───────────────────────────────────
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String
+  id                  String    @id @default(uuid()) @db.Uuid
+  name                String
   /// Stored lowercase. Lookups normalise the input the same way.
-  email        String   @unique
+  email               String    @unique
   /// argon2id. Never plaintext, never a fast hash.
-  passwordHash String   @map("password_hash")
-  mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
+  passwordHash        String    @map("password_hash")
+  mfaEnabled          Boolean   @default(false) @map("mfa_enabled")
   /// Encrypted at rest by the auth module, never stored in plain text.
-  mfaSecret    String?  @map("mfa_secret")
+  mfaSecret           String?   @map("mfa_secret")
+  /// A secret from POST /auth/mfa/setup that is not confirmed yet. Encrypted, like mfaSecret.
+  mfaPendingSecret    String?   @map("mfa_pending_secret")
+  mfaPendingExpiresAt DateTime? @map("mfa_pending_expires_at") @db.Timestamptz(6)
+  /// The last TOTP time step accepted, so a code cannot be used twice inside its 30-second window.
+  mfaLastUsedStep     Int?      @map("mfa_last_used_step")
   /// Deactivated users keep their history but cannot log in.
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isActive            Boolean   @default(true) @map("is_active")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   roles               UserRole[]
   sessions            Session[]
   mfaChallenges       MfaChallenge[]
+  mfaRecoveryCodes    MfaRecoveryCode[]
   passwordResetTokens PasswordResetToken[]
   uploadedMedia       MediaAsset[]         @relation("MediaUploadedBy")
   updatedSettings     Setting[]            @relation("SettingUpdatedBy")
@@ -190,6 +200,23 @@ model MfaChallenge {
 
   @@index([userId])
   @@map("mfa_challenge")
+}
+
+/// Eight single-use codes for when the authenticator app is lost. Shown once at
+/// enrolment; only a SHA-256 hash is kept. Each code carries about 78 bits of
+/// randomness, so the hash cannot be reversed by guessing.
+model MfaRecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @unique @map("code_hash")
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mfa_recovery_code")
 }
 
 /// Single use, expires 30 minutes after issue.
