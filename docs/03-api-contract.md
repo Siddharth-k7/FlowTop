@@ -40,7 +40,23 @@ Base URL: `/api/v1`
 }
 ```
 
-Codes: `UNAUTHENTICATED` 401, `FORBIDDEN` 403, `NOT_FOUND` 404, `VALIDATION_FAILED` 422, `RATE_LIMITED` 429, `CONFLICT` 409, `SERVER_ERROR` 500.
+Each code has exactly one status:
+
+| Code | Status | When |
+|---|---|---|
+| `BAD_REQUEST` | 400 | The request cannot be read: malformed JSON, a malformed id in the path, a broken multipart upload. |
+| `UNAUTHENTICATED` | 401 | No session, or it expired. |
+| `FORBIDDEN` | 403 | Signed in, but the role lacks the permission. |
+| `MFA_SETUP_REQUIRED` | 403 | A `super_admin` without MFA. Every route that needs a session answers this (including `GET /auth/me`) except `POST /auth/mfa/setup` and `POST /auth/mfa/verify`. Send them to MFA setup. |
+| `NOT_FOUND` | 404 | No such record, or one this user may not see (the two are indistinguishable). |
+| `CONFLICT` | 409 | A unique value is taken, or the record is still referenced. |
+| `PAYLOAD_TOO_LARGE` | 413 | The body is over the limit (uploads: 25 MB). |
+| `VALIDATION_FAILED` | 422 | The request was read, but a value is not acceptable. `fields` names each one. Only ever 422. |
+| `RATE_LIMITED` | 429 | Too many attempts. The `Retry-After` header gives the seconds to wait. |
+| `SERVER_ERROR` | 500 | Our fault. The message is generic; details are in the server log. |
+| `SERVICE_UNAVAILABLE` | 503 | A dependency is down, for example the database behind `GET /health`. Retry later. |
+
+A status not in this table keeps its real number and reports `BAD_REQUEST` (4xx) or `SERVER_ERROR` (5xx).
 
 **Admin endpoints are under `/admin`.** Public read endpoints are not. Everything under `/admin` requires a session and a permission.
 
