@@ -9,10 +9,14 @@
 // - Soft delete is status = archived. FKs from orders are Restrict, so a referenced row cannot be hard deleted.
 
 generator client {
-  provider        = "prisma-client"
-  output          = "../src/generated/prisma"
-  moduleFormat    = "cjs"
-  previewFeatures = ["partialIndexes"]
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "cjs"
+  // Pinned, not inferred from tsconfig.json: the Docker build generates the client
+  // before tsconfig.json is copied in, and an inferred ".ts" import broke the image.
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+  previewFeatures        = ["partialIndexes"]
 }
 
 datasource db {
