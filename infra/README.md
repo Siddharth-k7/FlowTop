@@ -118,6 +118,17 @@ The API never logs a secret. The staging rehearsal below checks this by searchin
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Render environment | Create a new R2 token, update both in Render, redeploy, then delete the old token |
 | Super admin password | Nobody's file: typed once into the seed | Use password reset |
 
+### Auditing the secret scan: a gitleaks quirk
+
+`.gitleaksignore` lists the reviewed placeholder findings in old commits, so the hook and CI pass. To see what the scan finds **without** those exceptions, do not rely on `--gitleaks-ignore-path`: gitleaks 8.30.1 still applies the repo's own `.gitleaksignore` when pointed at a different (even empty) file, and reports 0. Scan a fresh clone with the file deleted instead:
+
+```sh
+git clone --no-local . /tmp/flowtop-raw && rm /tmp/flowtop-raw/.gitleaksignore
+cd /tmp/flowtop-raw && gitleaks git . --no-banner
+```
+
+Every finding it lists must be either in `.gitleaksignore` (reviewed, not a secret) or rotated and reported. Known, not fixed: it only matters when auditing the exceptions themselves.
+
 ## Rehearse staging locally
 
 Before changing the image or the deploy, run the production image against a local Postgres and S3-compatible store:
