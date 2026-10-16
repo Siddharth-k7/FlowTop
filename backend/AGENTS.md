@@ -239,7 +239,7 @@ export class MediaUploadsService {
 - Fails closed: a rule with neither `allWith` nor `ownedBy` allows nobody.
 - `canAccessRecord(viewer, record, rule)` gives the same decision as a boolean, for hiding fields.
 - **Lists must filter in the query**, not afterwards: put the same scope in the repository's `where`, so out-of-scope rows are never read and the `total` stays honest.
-- Permission at the route, scope at the object: the route still carries `@RequirePermission`. `GET /admin/users/:id` in `src/users/` is the reference implementation.
+- Permission at the route, scope at the object: the route still carries `@RequirePermission`. `GET /admin/users/:id` in `src/users/` is the reference implementation: the route requires `user:read_self` (every role has it), then `requireRecordAccess` allows the viewer's own account, or any account with `user:read`.
 
 ## Security rules
 

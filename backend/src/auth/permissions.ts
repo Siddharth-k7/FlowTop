@@ -51,6 +51,7 @@ export const PERMISSION_DEFINITIONS = [
   { key: 'settings:read', description: 'View email, sender and WhatsApp settings' },
   { key: 'settings:write', description: 'Change settings and send a test email' },
   { key: 'user:read', description: 'View admin users' },
+  { key: 'user:read_self', description: 'View your own admin account' },
   { key: 'user:manage', description: 'Invite admins, change roles, deactivate' },
   { key: 'audit:read', description: 'View the audit log' },
   { key: 'analytics:read', description: 'View the dashboard figures' },
@@ -84,6 +85,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, readonly Permission[]> = {
     'category:read',
     'collection:read',
     'analytics:read',
+    'user:read_self',
   ],
   product_manager: [
     'product:read',
@@ -100,5 +102,6 @@ export const ROLE_PERMISSIONS: Record<RoleName, readonly Permission[]> = {
     'media:read',
     'media:write',
     'analytics:read',
+    'user:read_self',
   ],
 };

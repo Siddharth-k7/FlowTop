@@ -97,6 +97,15 @@ describe('Users (e2e)', () => {
 
       await http().get(`${USERS}/${ravi.id}`).expect(401);
     });
+
+    it('checks user:read_self at the route: without it, not even your own record', async () => {
+      const ravi = await account('product_manager', 'ravi');
+      await prisma.rolePermission.deleteMany({ where: { role: { name: 'product_manager' }, permission: { key: 'user:read_self' } } });
+
+      const res = await http().get(`${USERS}/${ravi.id}`).set('Cookie', ravi.cookie).expect(403);
+
+      expect((res.body as ErrorBody).error.code).toBe('FORBIDDEN');
+    });
   });
 
   describe('super_admin only', () => {
