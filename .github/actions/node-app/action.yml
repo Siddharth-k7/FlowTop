@@ -2,21 +2,39 @@ name: Node app checks
 description: >-
   Installs one app's dependencies, then runs its typecheck, lint, unit tests and build.
   The app's package.json must define the scripts typecheck, lint, test and build.
-  Any failing step fails the job.
+  Any failing step fails the job. An app with no package.json yet is skipped with a
+  notice, so its job can exist before its code does and switches on by itself.
 
 inputs:
   app:
-    description: The app's folder, relative to the repo root (backend, frontend, admin).
+    description: The app's folder, relative to the repo root (backend, frontend, admin, packages/ui).
     required: true
   node-version:
     description: Node.js major version. Match the app's "engines" field.
     required: false
     default: '24'
 
+outputs:
+  present:
+    description: '"true" when the app has a package.json and was checked.'
+    value: ${{ steps.app.outputs.present }}
+
 runs:
   using: composite
   steps:
+    - name: Check the app has code yet
+      id: app
+      shell: bash
+      run: |
+        if [ -f "${{ inputs.app }}/package.json" ]; then
+          echo "present=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "present=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=${{ inputs.app }} skipped::${{ inputs.app }}/package.json does not exist yet, so there is nothing to check. This job starts checking it automatically once it does."
+        fi
+
     - name: Set up Node.js
+      if: steps.app.outputs.present == 'true'
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: ${{ inputs.node-version }}
@@ -24,26 +42,31 @@ runs:
         cache-dependency-path: ${{ inputs.app }}/package-lock.json
 
     - name: Install
+      if: steps.app.outputs.present == 'true'
       shell: bash
       working-directory: ${{ inputs.app }}
       run: npm ci
 
     - name: Typecheck
+      if: steps.app.outputs.present == 'true'
       shell: bash
       working-directory: ${{ inputs.app }}
       run: npm run typecheck
 
     - name: Lint
+      if: steps.app.outputs.present == 'true'
       shell: bash
       working-directory: ${{ inputs.app }}
       run: npm run lint
 
     - name: Unit tests
+      if: steps.app.outputs.present == 'true'
       shell: bash
       working-directory: ${{ inputs.app }}
       run: npm test
 
     - name: Build
+      if: steps.app.outputs.present == 'true'
       shell: bash
       working-directory: ${{ inputs.app }}
       run: npm run build

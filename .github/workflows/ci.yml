@@ -12,22 +12,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# One job per app. Each runs .github/actions/node-app (install, typecheck, lint,
-# unit tests, build); any failing step fails the job and so the PR.
+# Every job must pass for a PR to merge (once they are required checks on main).
 #
-# To add frontend or admin once it has code, copy this block under `jobs:`:
-#
-#   frontend:
-#     name: Frontend
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 15
-#     steps:
-#       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-#         with:
-#           persist-credentials: false
-#       - uses: ./.github/actions/node-app
-#         with:
-#           app: frontend
+# - secret-scan:  no credential in any commit, and no .env file in the repo
+# - backend:      install, typecheck, lint, unit tests, build, e2e tests, migration check
+# - backend-image: the production Docker image still builds
+# - frontend, admin, ui: install, typecheck, lint, unit tests, build. Until an app
+#   has a package.json the job passes with a "skipped" notice, then switches on by itself.
 
 jobs:
   # Catches secrets from any clone, including one without the local pre-commit hook.
@@ -47,6 +38,18 @@ jobs:
           # Every commit, not just the tip: a secret added and then deleted in the same PR is still leaked.
           fetch-depth: 0
           persist-credentials: false
+
+      - name: No .env file committed
+        run: |
+          # .env.example (placeholders only) is the one allowed. Anything else named .env* is refused,
+          # even if forced past .gitignore with `git add -f`.
+          found=$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example$' || true)
+          if [ -n "$found" ]; then
+            echo "::error::.env files must never be committed. Remove them and rotate every value they held:"
+            echo "$found"
+            exit 1
+          fi
+          echo "No .env file in the repo."
 
       - name: Install gitleaks
         working-directory: ${{ runner.temp }}
@@ -81,6 +84,8 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://flowtop@localhost:5432/flowtop_test
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -94,7 +99,66 @@ jobs:
 
       - name: E2E tests (real Postgres)
         working-directory: backend
-        env:
-          # The e2e setup creates this database and applies every migration to it.
-          TEST_DATABASE_URL: postgresql://flowtop@localhost:5432/flowtop_test
+        # The e2e setup creates the test database and applies every migration to it, from empty.
         run: npm run test:e2e
+
+      - name: Migrations match the schema
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        # The database was just built from the migrations alone. If schema.prisma says anything
+        # different, someone changed the schema without generating a migration.
+        run: |
+          if ! npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code; then
+            echo "::error::schema.prisma and prisma/migrations are out of sync. Run 'npx prisma migrate dev --name <change>' and commit the migration."
+            exit 1
+          fi
+
+  backend-image:
+    name: Backend image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the production image Render deploys
+        run: docker build --tag flowtop-api:ci backend
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/node-app
+        with:
+          app: frontend
+
+  admin:
+    name: Admin
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/node-app
+        with:
+          app: admin
+
+  ui:
+    name: UI kit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/node-app
+        with:
+          app: packages/ui
