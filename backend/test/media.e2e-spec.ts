@@ -151,7 +151,7 @@ describe('Media (e2e)', () => {
     it('Phase 1 check 10: cuts off an upload over 25 MB while it is still streaming', async () => {
       const res = await upload(Buffer.concat([pdfFile(), Buffer.alloc(26 * MB)]), 'too-big.pdf', 'public').expect(413);
 
-      expect((res.body as ErrorBody).error.code).toBe('VALIDATION_FAILED');
+      expect((res.body as ErrorBody).error.code).toBe('PAYLOAD_TOO_LARGE');
       expect(await storedFiles()).toEqual([]);
     });
 
@@ -273,7 +273,9 @@ describe('Media (e2e)', () => {
 
     it('answers 404 for an unknown id and 400 for a malformed one', async () => {
       await http().get(`${MEDIA}/${randomUUID()}`).set('Cookie', cookies.marketing_admin ?? '').expect(404);
-      await http().get(`${MEDIA}/not-a-uuid`).set('Cookie', cookies.marketing_admin ?? '').expect(400);
+      const res = await http().get(`${MEDIA}/not-a-uuid`).set('Cookie', cookies.marketing_admin ?? '').expect(400);
+
+      expect((res.body as ErrorBody).error.code).toBe('BAD_REQUEST');
     });
   });
 
