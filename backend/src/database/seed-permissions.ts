@@ -1,9 +1,9 @@
-import { ALL_PERMISSIONS, PERMISSION_DEFINITIONS, ROLE_PERMISSIONS, ROLES } from '../src/auth/permissions';
-import { PrismaClient } from '../src/generated/prisma/client';
+import { ALL_PERMISSIONS, PERMISSION_DEFINITIONS, ROLE_PERMISSIONS, ROLES } from '../auth/permissions';
+import { PrismaClient } from '../generated/prisma/client';
 
 /**
  * Makes the permission and role tables match src/auth/permissions.ts: adds,
- * updates and removes. Used by prisma/seed.ts and by the e2e tests.
+ * updates and removes. Used by the seed (src/database/seed.ts) and by the e2e tests.
  */
 export async function syncPermissionsAndRoles(prisma: PrismaClient, log: (line: string) => void = () => {}): Promise<void> {
   await prisma.$transaction(async (tx) => {

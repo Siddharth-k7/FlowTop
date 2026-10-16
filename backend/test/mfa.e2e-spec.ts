@@ -2,7 +2,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request, { Response } from 'supertest';
-import { syncPermissionsAndRoles } from '../prisma/seed-permissions';
+import { syncPermissionsAndRoles } from '../src/database/seed-permissions';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import type { RoleName } from '../src/auth';

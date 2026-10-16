@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import request from 'supertest';
-import { syncPermissionsAndRoles } from '../prisma/seed-permissions';
+import { syncPermissionsAndRoles } from '../src/database/seed-permissions';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import type { RoleName } from '../src/auth';
