@@ -9,6 +9,7 @@ const priya: AuthUser = {
   role: 'marketing_admin',
   permissions: ['page:write'],
   mfaEnabled: false,
+  mfaSetupRequired: false,
 };
 const admin: AuthUser = { ...priya, id: 'user-admin', role: 'super_admin', permissions: ['user:read', 'page:write'] };
 

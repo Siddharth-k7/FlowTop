@@ -17,6 +17,13 @@ export class SecondFactorDto {
   recoveryCode?: string;
 }
 
+export class MfaSetupDto {
+  @ApiProperty({ description: 'The current password. A session alone is not enough to enrol an authenticator.' })
+  @IsString()
+  @MaxLength(256)
+  password!: string;
+}
+
 export class MfaVerifyDto {
   @ApiProperty({ example: '123456' })
   @Matches(/^\d{6}$/, { message: CODE_MESSAGE })

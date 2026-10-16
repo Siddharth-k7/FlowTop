@@ -73,7 +73,7 @@ describe('App (e2e)', () => {
       const res = await request(app.getHttpServer()).get('/health').expect(503);
       const body = res.body as ErrorBody;
 
-      expect(body.error.code).toBe('SERVER_ERROR');
+      expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
       expect(body.error.message).toBe('Database unavailable');
       expect(JSON.stringify(body)).not.toContain('ECONNREFUSED');
     });
@@ -132,7 +132,7 @@ describe('App (e2e)', () => {
         .expect(400);
       const body = res.body as ErrorBody;
 
-      expect(body.error.code).toBe('VALIDATION_FAILED');
+      expect(body.error.code).toBe('BAD_REQUEST');
     });
   });
 });

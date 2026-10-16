@@ -7,7 +7,6 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import type { RoleName } from '../src/auth';
 import { AuthMailer } from '../src/auth/auth.mailer';
-import { PasswordHasher } from '../src/auth/password-hasher';
 import type { Paginated } from '../src/common/dto/pagination';
 import { ErrorBody } from '../src/common/errors/error-code';
 import { PrismaService } from '../src/common/prisma/prisma.service';
@@ -15,6 +14,7 @@ import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
 import type { UserSummary } from '../src/users/dto/users.dto';
 import { UsersRepository } from '../src/users/users.repository';
 import { resetDatabase } from './database';
+import { createAccount } from './accounts';
 
 const PASSWORD = `test-only-${randomUUID()}`;
 const NEW_PASSWORD = `test-only-${randomUUID()}`;
@@ -59,12 +59,8 @@ describe('Users (e2e)', () => {
   const http = () => request(app.getHttpServer());
 
   async function account(role: RoleName, name: string = role): Promise<Account> {
-    const email = `${name}@flowtop.in`;
-    const { id: roleId } = await prisma.role.findUniqueOrThrow({ where: { name: role } });
-    const user = await prisma.user.create({
-      data: { name, email, passwordHash: await app.get(PasswordHasher).hash(PASSWORD), roles: { create: { roleId } } },
-    });
-    return { id: user.id, email, cookie: await login(email) };
+    const { id, email, cookie } = await createAccount(app, role, { email: `${name}@flowtop.in`, name, password: PASSWORD });
+    return { id, email, cookie };
   }
 
   async function login(email: string, password = PASSWORD): Promise<string> {
@@ -100,6 +96,15 @@ describe('Users (e2e)', () => {
       const ravi = await account('product_manager', 'ravi');
 
       await http().get(`${USERS}/${ravi.id}`).expect(401);
+    });
+
+    it('checks user:read_self at the route: without it, not even your own record', async () => {
+      const ravi = await account('product_manager', 'ravi');
+      await prisma.rolePermission.deleteMany({ where: { role: { name: 'product_manager' }, permission: { key: 'user:read_self' } } });
+
+      const res = await http().get(`${USERS}/${ravi.id}`).set('Cookie', ravi.cookie).expect(403);
+
+      expect((res.body as ErrorBody).error.code).toBe('FORBIDDEN');
     });
   });
 

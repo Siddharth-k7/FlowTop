@@ -38,7 +38,10 @@ export class UsersService {
     return paginate(rows.map(toSummary), total, query);
   }
 
-  /** Anyone can read their own account; reading anyone else's needs user:read. */
+  /**
+   * The route already required user:read_self. Here, the scope: your own
+   * account always, anyone else's only with user:read.
+   */
   async get(viewer: AuthUser, id: string): Promise<UserSummary> {
     const user = requireRecordAccess(viewer, await this.repository.findById(id), {
       allWith: ['user:read'],

@@ -40,6 +40,8 @@ export const AUTH_MESSAGES = {
   mfaSetupExpired: 'This setup has expired or was never started. Start again to get a new QR code.',
   mfaRequiredForSuperAdmin: 'Super admin accounts must keep two-step sign-in on.',
   mfaDisableInvalid: 'Password or code is incorrect.',
+  mfaSetupRequired: 'Super admin accounts must set up two-step sign-in before doing anything else.',
+  mfaSetupPasswordInvalid: 'Your password is incorrect.',
   resetRequested: 'If an account exists for that email, a password reset link is on its way.',
   resetTokenInvalid: 'This reset link has expired or has already been used. Please request a new one.',
 } as const;
