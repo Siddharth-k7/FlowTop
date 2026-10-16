@@ -55,7 +55,7 @@ read -rs SEED_ADMIN_PASSWORD && export SEED_ADMIN_PASSWORD   # type it; nothing 
 SEED_ADMIN_EMAIL=you@flowtop.in node dist/database/seed.cli.js
 ```
 
-This writes the permissions, the three roles and the eight settings, and creates your super admin. It is safe to run again; it never overwrites an existing user or a changed setting. Then log in and turn on MFA straight away (`POST /api/v1/auth/mfa/setup`).
+This writes the permissions, the three roles and the eight settings, and creates your super admin. It is safe to run again; it never overwrites an existing user or a changed setting. Then log in and set up MFA: until you do, a super admin's session can reach nothing except `POST /api/v1/auth/mfa/setup` (send your password) and `POST /api/v1/auth/mfa/verify` (send the first code). Every other route answers 403 `MFA_SETUP_REQUIRED`.
 
 ### 4. Confirm it is up
 

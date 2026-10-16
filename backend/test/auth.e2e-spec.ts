@@ -67,7 +67,9 @@ describe('Auth (e2e)', () => {
   async function createUser(options: { email?: string; mfaSecret?: string; isActive?: boolean } = {}) {
     const role = await prisma.role.create({
       data: {
-        name: 'super_admin',
+        // Not super_admin: this suite is about login and sessions, and a super admin without MFA
+        // is confined to MFA setup (tested in mfa.e2e-spec.ts).
+        name: 'marketing_admin',
         permissions: { create: [{ permission: { create: { key: 'settings:write' } } }] },
       },
     });
@@ -110,9 +112,10 @@ describe('Auth (e2e)', () => {
           id: user.id,
           name: 'Priya Nair',
           email: 'priya@flowtop.in',
-          role: 'super_admin',
+          role: 'marketing_admin',
           permissions: ['settings:write'],
           mfaEnabled: false,
+          mfaSetupRequired: false,
         },
       });
       expect(cookie).toMatch(/HttpOnly/);

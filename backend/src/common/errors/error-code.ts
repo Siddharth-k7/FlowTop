@@ -4,6 +4,8 @@ import { HttpStatus } from '@nestjs/common';
 export const ERROR_STATUS = {
   UNAUTHENTICATED: HttpStatus.UNAUTHORIZED,
   FORBIDDEN: HttpStatus.FORBIDDEN,
+  /** Signed in, but must finish MFA setup before anything else (super admins, IAM-04). */
+  MFA_SETUP_REQUIRED: HttpStatus.FORBIDDEN,
   NOT_FOUND: HttpStatus.NOT_FOUND,
   VALIDATION_FAILED: HttpStatus.UNPROCESSABLE_ENTITY,
   RATE_LIMITED: HttpStatus.TOO_MANY_REQUESTS,

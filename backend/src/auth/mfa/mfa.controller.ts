@@ -5,7 +5,8 @@ import { AuthGuard } from '../auth.guard';
 import type { AuthUser } from '../auth-user';
 import { CurrentUser } from '../current-user.decorator';
 import { readSessionCookie } from '../session-cookie';
-import { MfaDisableDto, MfaVerifyDto } from './mfa.dto';
+import { AllowDuringMfaSetup } from './allow-during-mfa-setup.decorator';
+import { MfaDisableDto, MfaSetupDto, MfaVerifyDto } from './mfa.dto';
 import type { MfaEnabledResponse, MfaSetupResponse } from './mfa.dto';
 import { MfaService } from './mfa.service';
 
@@ -20,14 +21,17 @@ import { MfaService } from './mfa.service';
 export class MfaController {
   constructor(private readonly mfa: MfaService) {}
 
+  /** Reachable by a super admin who has not set up MFA yet: this is how they do it. */
   @Post('setup')
+  @AllowDuringMfaSetup()
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
-  async setup(@CurrentUser() user: AuthUser): Promise<{ data: MfaSetupResponse }> {
-    return { data: await this.mfa.setup(user) };
+  async setup(@Body() dto: MfaSetupDto, @CurrentUser() user: AuthUser): Promise<{ data: MfaSetupResponse }> {
+    return { data: await this.mfa.setup(user, dto.password) };
   }
 
   @Post('verify')
+  @AllowDuringMfaSetup()
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
   async verify(

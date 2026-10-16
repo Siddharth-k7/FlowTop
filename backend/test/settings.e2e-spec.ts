@@ -6,7 +6,6 @@ import { syncPermissionsAndRoles } from '../src/database/seed-permissions';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import type { RoleName } from '../src/auth';
-import { PasswordHasher } from '../src/auth/password-hasher';
 import { ErrorBody } from '../src/common/errors/error-code';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
@@ -15,6 +14,7 @@ import { SETTING_SEEDS } from '../src/settings/setting-definitions';
 import { seedMissingSettings } from '../src/settings/settings.repository';
 import { SettingsService } from '../src/settings/settings.service';
 import { resetDatabase } from './database';
+import { createAccount } from './accounts';
 
 const PASSWORD = `test-only-${randomUUID()}`;
 const PUBLIC = '/api/v1/settings/public';
@@ -49,13 +49,8 @@ describe('Settings (e2e)', () => {
   const put = (key: string, value: unknown, cookie = admin.cookie) => http().put(ADMIN).set('Cookie', cookie).send({ key, value });
 
   async function account(role: RoleName): Promise<{ id: string; cookie: string }> {
-    const email = `${role}-${randomUUID().slice(0, 8)}@flowtop.in`;
-    const { id: roleId } = await prisma.role.findUniqueOrThrow({ where: { name: role } });
-    const user = await prisma.user.create({
-      data: { name: role, email, passwordHash: await app.get(PasswordHasher).hash(PASSWORD), roles: { create: { roleId } } },
-    });
-    const res = await http().post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(200);
-    return { id: user.id, cookie: (res.headers['set-cookie'] as unknown as string[])[0].split(';')[0] };
+    const { id, cookie } = await createAccount(app, role, { email: `${role}-${randomUUID().slice(0, 8)}@flowtop.in`, password: PASSWORD });
+    return { id, cookie };
   }
 
   describe('GET /settings/public', () => {

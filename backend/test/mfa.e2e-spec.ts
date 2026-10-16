@@ -9,12 +9,12 @@ import type { RoleName } from '../src/auth';
 import { AUTH_MESSAGES } from '../src/auth/auth.constants';
 import type { MfaEnabledResponse, MfaSetupResponse } from '../src/auth/mfa/mfa.dto';
 import { hashRecoveryCode } from '../src/auth/mfa/recovery-codes';
-import { PasswordHasher } from '../src/auth/password-hasher';
 import { generateTotp } from '../src/auth/totp';
 import { ErrorBody } from '../src/common/errors/error-code';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
 import { resetDatabase } from './database';
+import { createAccount } from './accounts';
 
 const PASSWORD = `test-only-${randomUUID()}`;
 const SETUP = '/api/v1/auth/mfa/setup';
@@ -62,18 +62,17 @@ describe('MFA enrolment (e2e)', () => {
   const sessionOf = (res: Response) => (res.headers['set-cookie'] as unknown as string[])[0].split(';')[0];
 
   async function account(role: RoleName = 'product_manager'): Promise<Account> {
-    const email = `${role}-${randomUUID().slice(0, 8)}@flowtop.in`;
-    const { id: roleId } = await prisma.role.findUniqueOrThrow({ where: { name: role } });
-    const user = await prisma.user.create({
-      data: { name: role, email, passwordHash: await app.get(PasswordHasher).hash(PASSWORD), roles: { create: { roleId } } },
+    const { id, email, cookie } = await createAccount(app, role, {
+      email: `${role}-${randomUUID().slice(0, 8)}@flowtop.in`,
+      password: PASSWORD,
+      mfa: false,
     });
-    const res = await http().post(LOGIN).send({ email, password: PASSWORD }).expect(200);
-    return { id: user.id, email, cookie: sessionOf(res) };
+    return { id, email, cookie };
   }
 
   /** Runs setup and verify through the API, using the previous step's code. */
   async function enrol(who: Account): Promise<{ secret: string; recoveryCodes: string[] }> {
-    const setup = await http().post(SETUP).set('Cookie', who.cookie).expect(200);
+    const setup = await http().post(SETUP).set('Cookie', who.cookie).send({ password: PASSWORD }).expect(200);
     const { secret } = (setup.body as { data: MfaSetupResponse }).data;
     const verify = await http().post(VERIFY).set('Cookie', who.cookie).send({ code: codeAt(secret, -1) }).expect(200);
     return { secret, recoveryCodes: (verify.body as { data: MfaEnabledResponse }).data.recoveryCodes };
@@ -90,7 +89,7 @@ describe('MFA enrolment (e2e)', () => {
     it('returns a secret and an otpauth URI, stores the secret encrypted, and changes nothing yet', async () => {
       const priya = await account();
 
-      const res = await http().post(SETUP).set('Cookie', priya.cookie).expect(200);
+      const res = await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(200);
       const data = (res.body as { data: MfaSetupResponse }).data;
 
       expect(data.secret).toMatch(/^[A-Z2-7]{32}$/);
@@ -113,7 +112,7 @@ describe('MFA enrolment (e2e)', () => {
       const priya = await account();
       await enrol(priya);
 
-      const res = await http().post(SETUP).set('Cookie', priya.cookie).expect(409);
+      const res = await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(409);
       expect((res.body as ErrorBody).error.message).toBe(AUTH_MESSAGES.mfaAlreadyOn);
     });
   });
@@ -121,7 +120,7 @@ describe('MFA enrolment (e2e)', () => {
   describe('POST /auth/mfa/verify', () => {
     it('turns MFA on with a correct code and returns 8 recovery codes, stored only as hashes', async () => {
       const priya = await account();
-      const setup = await http().post(SETUP).set('Cookie', priya.cookie).expect(200);
+      const setup = await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(200);
       const { secret } = (setup.body as { data: MfaSetupResponse }).data;
 
       const res = await http().post(VERIFY).set('Cookie', priya.cookie).send({ code: codeAt(secret, 0) }).expect(200);
@@ -162,7 +161,7 @@ describe('MFA enrolment (e2e)', () => {
 
     it('rejects a wrong code and leaves MFA off', async () => {
       const priya = await account();
-      await http().post(SETUP).set('Cookie', priya.cookie).expect(200);
+      await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(200);
 
       const res = await http().post(VERIFY).set('Cookie', priya.cookie).send({ code: '000000' }).expect(422);
 
@@ -172,7 +171,7 @@ describe('MFA enrolment (e2e)', () => {
 
     it('rejects a setup older than 15 minutes, or one never started', async () => {
       const priya = await account();
-      const setup = await http().post(SETUP).set('Cookie', priya.cookie).expect(200);
+      const setup = await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(200);
       const { secret } = (setup.body as { data: MfaSetupResponse }).data;
       await prisma.user.update({ where: { id: priya.id }, data: { mfaPendingExpiresAt: new Date(Date.now() - 1000) } });
 
@@ -292,7 +291,7 @@ describe('MFA enrolment (e2e)', () => {
   describe('lock after 5 wrong codes in 15 minutes', () => {
     it('refuses even the correct code after 5 failures, with 429 and Retry-After', async () => {
       const priya = await account();
-      const setup = await http().post(SETUP).set('Cookie', priya.cookie).expect(200);
+      const setup = await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(200);
       const { secret } = (setup.body as { data: MfaSetupResponse }).data;
 
       for (let i = 0; i < 5; i += 1) {
@@ -322,13 +321,105 @@ describe('MFA enrolment (e2e)', () => {
 
     it('locks one account only: another user is unaffected', async () => {
       const priya = await account();
-      await http().post(SETUP).set('Cookie', priya.cookie).expect(200);
+      await http().post(SETUP).set('Cookie', priya.cookie).send({ password: PASSWORD }).expect(200);
       for (let i = 0; i < 5; i += 1) {
         await http().post(VERIFY).set('Cookie', priya.cookie).send({ code: '000000' }).expect(422);
       }
 
       const ravi = await account();
       await enrol(ravi);
+    });
+  });
+
+  describe('IAM-04: a super admin without MFA is confined to MFA setup', () => {
+    /** Routes anyone may call without a session; they are not behind AuthGuard. */
+    const PUBLIC_ROUTES = new Set([
+      'POST /api/v1/auth/login',
+      'POST /api/v1/auth/mfa',
+      'POST /api/v1/auth/logout',
+      'POST /api/v1/auth/password-reset',
+      'POST /api/v1/auth/password-reset/confirm',
+      'GET /api/v1/settings/public',
+      'GET /health',
+    ]);
+    const SETUP_ROUTES = new Set(['POST /api/v1/auth/mfa/setup', 'POST /api/v1/auth/mfa/verify']);
+
+    it('signs in, but says so: the user carries mfaSetupRequired', async () => {
+      const admin = await account('super_admin');
+      const login = await http().post(LOGIN).send({ email: admin.email, password: PASSWORD }).expect(200);
+
+      expect((login.body as { data: { user: { mfaSetupRequired: boolean } } }).data.user.mfaSetupRequired).toBe(true);
+    });
+
+    it('gets 403 MFA_SETUP_REQUIRED on every other route in the API, found from the live route list', async () => {
+      const admin = await account('super_admin');
+      const docs = await http().get('/docs-json').expect(200);
+      const paths = (docs.body as { paths: Record<string, Record<string, unknown>> }).paths;
+
+      const checked: string[] = [];
+      for (const [path, operations] of Object.entries(paths)) {
+        for (const method of Object.keys(operations)) {
+          const route = `${method.toUpperCase()} ${path}`;
+          if (PUBLIC_ROUTES.has(route) || SETUP_ROUTES.has(route)) continue;
+          const url = path.replace(/\{[^}]+\}/g, admin.id);
+          const res = await http()[method as 'get' | 'post' | 'put' | 'patch' | 'delete'](url).set('Cookie', admin.cookie).send({});
+          expect({ route, status: res.status, code: (res.body as ErrorBody).error?.code }).toEqual({
+            route,
+            status: 403,
+            code: 'MFA_SETUP_REQUIRED',
+          });
+          checked.push(route);
+        }
+      }
+      // Guards against a vacuous pass: the admin routes really were found and tried.
+      expect(checked).toEqual(expect.arrayContaining(['GET /api/v1/auth/me', 'GET /api/v1/admin/settings', 'POST /api/v1/admin/users/invite', 'DELETE /api/v1/admin/media/{id}']));
+      expect(checked.length).toBeGreaterThanOrEqual(15);
+    });
+
+    it('can still log out', async () => {
+      const admin = await account('super_admin');
+
+      await http().post('/api/v1/auth/logout').set('Cookie', admin.cookie).expect(204);
+    });
+
+    it('is released the moment MFA is on, in the same session', async () => {
+      const admin = await account('super_admin');
+      await http().get('/api/v1/admin/settings').set('Cookie', admin.cookie).expect(403);
+
+      await enrol(admin);
+
+      await http().get('/api/v1/admin/settings').set('Cookie', admin.cookie).expect(200);
+      const me = await http().get('/api/v1/auth/me').set('Cookie', admin.cookie).expect(200);
+      expect((me.body as { data: { user: { mfaSetupRequired: boolean } } }).data.user.mfaSetupRequired).toBe(false);
+    });
+
+    it('does not confine roles that are not super admin', async () => {
+      const ravi = await account('product_manager');
+
+      const me = await http().get('/api/v1/auth/me').set('Cookie', ravi.cookie).expect(200);
+      expect((me.body as { data: { user: { mfaSetupRequired: boolean } } }).data.user.mfaSetupRequired).toBe(false);
+    });
+  });
+
+  describe('setup needs the current password', () => {
+    it('rejects setup without a password, or with the wrong one, and stores no secret', async () => {
+      const ravi = await account();
+
+      const missing = await http().post(SETUP).set('Cookie', ravi.cookie).send({}).expect(422);
+      expect((missing.body as ErrorBody).error.fields).toHaveProperty('password');
+      const wrong = await http().post(SETUP).set('Cookie', ravi.cookie).send({ password: 'not the password' }).expect(422);
+      expect((wrong.body as ErrorBody).error.fields).toEqual({ password: AUTH_MESSAGES.mfaSetupPasswordInvalid });
+
+      expect((await prisma.user.findUniqueOrThrow({ where: { id: ravi.id } })).mfaPendingSecret).toBeNull();
+    });
+
+    it('stops a stolen session guessing the password: wrong passwords count towards the 5-failure lock', async () => {
+      const ravi = await account();
+      for (let i = 0; i < 5; i += 1) {
+        await http().post(SETUP).set('Cookie', ravi.cookie).send({ password: `guess-${i}` }).expect(422);
+      }
+
+      await http().post(SETUP).set('Cookie', ravi.cookie).send({ password: PASSWORD }).expect(429);
     });
   });
 });

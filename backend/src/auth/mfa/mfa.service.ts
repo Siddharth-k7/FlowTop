@@ -30,10 +30,19 @@ export class MfaService {
    * A fresh secret, held as pending until a code from it is confirmed. Nothing
    * changes for the account until then, so an abandoned setup is harmless.
    */
-  async setup(user: AuthUser): Promise<MfaSetupResponse> {
+  async setup(user: AuthUser, password: string): Promise<MfaSetupResponse> {
     const state = await this.requireState(user.id);
     if (state.mfaEnabled) {
       throw new ApiException('CONFLICT', AUTH_MESSAGES.mfaAlreadyOn);
+    }
+    // A stolen session must not be enough to enrol the thief's authenticator. Wrong
+    // passwords count towards the same lock as wrong codes, so this cannot be brute-forced.
+    this.assertNotLocked(user.id);
+    if (!(await this.hasher.verify(state.passwordHash, password))) {
+      this.recordFailure(user.id);
+      throw new ApiException('VALIDATION_FAILED', AUTH_MESSAGES.mfaSetupPasswordInvalid, {
+        password: AUTH_MESSAGES.mfaSetupPasswordInvalid,
+      });
     }
     const secret = base32Encode(randomBytes(20));
     const expiresAt = new Date(Date.now() + MFA_SETUP_TTL_MS);

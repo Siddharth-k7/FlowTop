@@ -9,13 +9,13 @@ import { configureApp } from '../src/app.setup';
 import { AuditService } from '../src/audit';
 import { AuthGuard, CurrentUser, PermissionGuard, RequirePermission } from '../src/auth';
 import type { AuthUser, RoleName } from '../src/auth';
-import { PasswordHasher } from '../src/auth/password-hasher';
 import { paginate, PaginationQueryDto } from '../src/common/dto/pagination';
 import type { Paginated } from '../src/common/dto/pagination';
 import { ErrorBody } from '../src/common/errors/error-code';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
 import { resetDatabase } from './database';
+import { createAccount } from './accounts';
 
 const PASSWORD = `test-only-${randomUUID()}`;
 
@@ -103,19 +103,8 @@ describe("Dev B's imports from Dev A (e2e)", () => {
   const http = () => request(app.getHttpServer());
 
   async function signInAs(role: RoleName): Promise<{ cookie: string; userId: string }> {
-    const email = `${role}@flowtop.in`;
-    const { id } = await prisma.role.findUniqueOrThrow({ where: { name: role } });
-    const user = await prisma.user.create({
-      data: {
-        name: role,
-        email,
-        passwordHash: await app.get(PasswordHasher).hash(PASSWORD),
-        roles: { create: { roleId: id } },
-      },
-    });
-    const res = await http().post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(200);
-    const cookies = res.headers['set-cookie'] as unknown as string[];
-    return { cookie: cookies[0].split(';')[0], userId: user.id };
+    const { id, cookie } = await createAccount(app, role, { email: `${role}@flowtop.in`, password: PASSWORD });
+    return { cookie, userId: id };
   }
 
   describe('@UseGuards(AuthGuard, PermissionGuard) + @RequirePermission', () => {
