@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useId, createContext, useContext } from 'react';
 
 export interface TabItem {

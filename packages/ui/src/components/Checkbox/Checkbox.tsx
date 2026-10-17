@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useRef, useId } from 'react';
 
 export interface CheckboxProps

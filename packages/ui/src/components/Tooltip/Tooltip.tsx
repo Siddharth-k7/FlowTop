@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useId, useRef, useEffect } from 'react';
 
 export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
