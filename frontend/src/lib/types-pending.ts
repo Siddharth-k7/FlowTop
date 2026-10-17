@@ -5,6 +5,48 @@
  * Owned by Dev C locally in frontend.
  */
 
+// ─── API Envelope & Pagination ────────────────────────────────────────────────
+export interface PaginationMeta {
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+export interface SingleResponse<T> {
+  data: T;
+}
+
+export interface ApiErrorEnvelope {
+  error: {
+    code: string;
+    message: string;
+    fields?: Record<string, string>;
+  };
+}
+
+// ─── Media Assets ─────────────────────────────────────────────────────────────
+export interface MediaAsset {
+  id: string;
+  url: string;
+  alt: string;
+  width: number;
+  height: number;
+  sizeBytes: number;
+  mimeType: string;
+  variants: {
+    thumb: string;
+    medium: string;
+    large: string;
+  };
+}
+
+// ─── Navigation & Settings ───────────────────────────────────────────────────
 export interface NavigationSubItem {
   id: string;
   label: string;
@@ -54,6 +96,161 @@ export interface PublicSettingsResponse {
   };
 }
 
+// ─── Products & Catalogue ────────────────────────────────────────────────────
+export interface ProductFinish {
+  id: string;
+  name: string;
+  code: string;
+  inStock: boolean;
+  pricePaise?: number; // integer paise
+}
+
+export interface ProductSpecification {
+  key: string;
+  label: string;
+  value: string;
+  unit?: string;
+}
+
+export interface ProductCard {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  price: number; // integer paise
+  salePrice?: number | null; // integer paise
+  primaryImage: string;
+  categorySlug: string;
+  collectionSlug?: string | null;
+  isAvailable: boolean;
+  availabilityMessage?: string | null;
+  finishes: string[]; // e.g. ['chrome', 'brushed-gold', 'matte-black']
+}
+
+export interface ProductDetail extends ProductCard {
+  shortDescription: string;
+  fullDescriptionHtml: string;
+  isPurchasable: boolean;
+  gallery: MediaAsset[];
+  specifications: ProductSpecification[];
+  finishesDetail: ProductFinish[];
+  downloads?: {
+    title: string;
+    url: string;
+    fileType: string;
+  }[];
+}
+
+// ─── Categories & Collections ────────────────────────────────────────────────
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  image?: string;
+  parentSlug?: string | null;
+  productCount: number;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string;
+  description: string;
+  heroImage: string;
+  featured: boolean;
+  productCount: number;
+}
+
+// ─── Cart & Commerce ─────────────────────────────────────────────────────────
+export interface CartItem {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  slug: string;
+  finishName: string;
+  unitPrice: number; // integer paise
+  quantity: number;
+  lineTotal: number; // integer paise
+  imageUrl: string;
+}
+
+export interface Cart {
+  id: string;
+  items: CartItem[];
+  subtotal: number; // integer paise
+  tax: number; // integer paise
+  shipping: number; // integer paise
+  total: number; // integer paise
+  itemCount: number;
+}
+
 export interface CartSummary {
   itemCount: number;
+}
+
+// ─── Submissions ─────────────────────────────────────────────────────────────
+export interface SubmissionRequest {
+  type: 'contact' | 'dealer';
+  payload: {
+    name: string;
+    email: string;
+    phone: string;
+    city?: string;
+    firmName?: string;
+    message: string;
+  };
+}
+
+export interface SubmissionResponse {
+  reference: string;
+  saved: boolean;
+  emailSent: boolean;
+  message: string;
+}
+
+// ─── Journal ─────────────────────────────────────────────────────────────────
+export interface JournalArticleCard {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverImage: string;
+  category: string;
+  publishedAt: string;
+  readTimeMinutes: number;
+}
+
+export interface JournalArticleDetail extends JournalArticleCard {
+  contentHtml: string;
+  author: string;
+  relatedProducts?: ProductCard[];
+}
+
+// ─── Pages & CMS Sections ────────────────────────────────────────────────────
+export type SectionType =
+  | 'hero'
+  | 'product_carousel'
+  | 'collection_showcase'
+  | 'image_text'
+  | 'gallery'
+  | 'cta';
+
+export interface PageSection {
+  id: string;
+  type: SectionType;
+  position: number;
+  visible: boolean;
+  config: Record<string, unknown>;
+}
+
+export interface PageDetail {
+  id: string;
+  title: string;
+  slug: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  sections: PageSection[];
 }

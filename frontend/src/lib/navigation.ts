@@ -5,10 +5,10 @@
  * Only this file will need to be updated when connecting to the real NestJS API.
  */
 
+import { api } from './api';
 import { mockNavigationData } from './mocks/navigation';
 import { mockSettingsData } from './mocks/settings';
 import type {
-  NavigationResponse,
   NavigationItem,
   FooterColumn,
   SocialLink,
@@ -36,51 +36,40 @@ export interface SiteNavigationData {
  * Retrieves navigation and public settings for server and client components.
  */
 export async function getNavigation(): Promise<SiteNavigationData> {
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const useMocks = process.env.NEXT_PUBLIC_USE_MOCKS === 'true' || !apiBaseUrl;
+  let navItems = mockNavigationData.header;
+  let footerData = mockNavigationData.footer;
+  let settingsData = mockSettingsData;
 
-  let navData: NavigationResponse = mockNavigationData;
-  let settingsData: PublicSettingsResponse = mockSettingsData;
+  try {
+    const [navRes, settingsRes] = await Promise.all([
+      api.getNavigation(),
+      api.getPublicSettings(),
+    ]);
 
-  if (!useMocks && apiBaseUrl) {
-    try {
-      const [navRes, settingsRes] = await Promise.all([
-        fetch(`${apiBaseUrl}/api/v1/navigation`, { next: { revalidate: 300 } }),
-        fetch(`${apiBaseUrl}/api/v1/settings/public`, { next: { revalidate: 300 } }),
-      ]);
-
-      if (navRes.ok) {
-        const json = (await navRes.json()) as { data?: NavigationResponse };
-        if (json?.data) {
-          navData = json.data;
-        }
-      }
-
-      if (settingsRes.ok) {
-        const json = (await settingsRes.json()) as { data?: PublicSettingsResponse };
-        if (json?.data) {
-          settingsData = json.data;
-        }
-      }
-    } catch {
-      // Fallback to fixture if API is temporarily unreachable.
-      navData = mockNavigationData;
-      settingsData = mockSettingsData;
+    if (navRes.data) {
+      navItems = navRes.data.header;
+      footerData = navRes.data.footer;
     }
-  }
 
-  // Cart count starts at 0 for initial server render (client will hydrate real API cart count).
-  const initialCartCount = 0;
+    if (settingsRes.data) {
+      settingsData = settingsRes.data;
+    }
+  } catch {
+    // If navigation call fails, fallback gracefully to seed fixtures so the shell remains functional
+    navItems = mockNavigationData.header;
+    footerData = mockNavigationData.footer;
+    settingsData = mockSettingsData;
+  }
 
   return {
     header: {
-      items: navData.header,
-      cartCount: initialCartCount,
+      items: navItems,
+      cartCount: 0,
     },
     footer: {
-      columns: navData.footer.columns,
-      socialLinks: navData.footer.socialLinks,
-      legalNotice: navData.footer.legalNotice,
+      columns: footerData.columns,
+      socialLinks: footerData.socialLinks,
+      legalNotice: footerData.legalNotice,
     },
     settings: settingsData,
   };

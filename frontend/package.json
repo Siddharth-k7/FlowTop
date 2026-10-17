@@ -9,6 +9,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
+    "list:mocks": "node scripts/list-mocks.mjs",
+    "test:api": "npx tsx scripts/test-api.mjs",
     "test": "node ../packages/ui/scripts/check.mjs"
   },
   "dependencies": {

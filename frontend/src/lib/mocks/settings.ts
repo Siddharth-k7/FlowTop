@@ -1,7 +1,6 @@
+// TODO(mock): replace on swap day
 /**
  * Mock public settings fixture for Flowtop.
- *
- * TODO(mock): Swap for real API call (GET /api/v1/settings/public) when backend is deployed.
  */
 
 import type { PublicSettingsResponse } from '../types-pending';

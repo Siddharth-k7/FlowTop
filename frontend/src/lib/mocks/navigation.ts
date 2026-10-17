@@ -1,7 +1,6 @@
+// TODO(mock): replace on swap day
 /**
  * Mock navigation fixture for Flowtop public site.
- *
- * TODO(mock): Swap for real API call (GET /api/v1/navigation) when backend is deployed.
  */
 
 import type { NavigationResponse } from '../types-pending';
