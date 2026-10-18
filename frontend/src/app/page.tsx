@@ -47,7 +47,7 @@ export default function HomePage() {
             <span className="text-caption font-semibold tracking-wide uppercase text-purple-light">
               Indian Architectural Craftsmanship
             </span>
-            <h1 className="text-display font-display font-light tracking-tight leading-tight">
+            <h1 className="text-display font-display font-medium tracking-tight leading-tight text-on-surface-inverse">
               Pure geometry. Enduring brassware.
             </h1>
             <p className="text-body text-purple-pale leading-relaxed max-w-xl">
