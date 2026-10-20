@@ -17,8 +17,9 @@ concurrency:
 # - secret-scan:  no credential in any commit, and no .env file in the repo
 # - backend:      install, typecheck, lint, unit tests, build, e2e tests, migration check
 # - backend-image: the production Docker image still builds
-# - frontend, admin, ui: install, typecheck, lint, unit tests, build. Until an app
-#   has a package.json the job passes with a "skipped" notice, then switches on by itself.
+# - frontend, admin, ui: one `npm ci` at the repo root (npm workspaces), then the app's
+#   typecheck, lint, unit tests, build. Until an app has a package.json the job passes
+#   with a "skipped" notice, then switches on by itself.
 
 jobs:
   # Catches secrets from any clone, including one without the local pre-commit hook.
@@ -96,6 +97,9 @@ jobs:
         uses: ./.github/actions/node-app
         with:
           app: backend
+          # Not an npm workspace yet: the Docker image Render deploys builds from backend/
+          # alone and needs backend/package-lock.json.
+          workspace: 'false'
 
       - name: E2E tests (real Postgres)
         working-directory: backend
