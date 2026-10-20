@@ -10,6 +10,10 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Build output and generated files. Without this, `eslint .` lints the compiled .next/ bundle.
+  {
+    ignores: ['.next/**', 'out/**', 'node_modules/**', 'next-env.d.ts'],
+  },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     rules: {

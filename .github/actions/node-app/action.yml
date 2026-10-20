@@ -5,12 +5,22 @@ description: >-
   Any failing step fails the job. An app with no package.json yet is skipped with a
   notice, so its job can exist before its code does and switches on by itself.
 
+  Workspace apps (frontend, admin, packages/*) are installed once from the root lockfile,
+  because frontend and admin build against packages/ui, whose dependencies are hoisted
+  there. Installing inside one app's folder leaves packages/ui without React or Tailwind.
+
 inputs:
   app:
     description: The app's folder, relative to the repo root (backend, frontend, admin, packages/ui).
     required: true
+  workspace:
+    description: >-
+      'true' when the app is listed in the root package.json "workspaces" and installs from
+      the root lockfile. 'false' for backend, which keeps its own lockfile for its Docker image.
+    required: false
+    default: 'true'
   node-version:
-    description: Node.js major version. Match the app's "engines" field.
+    description: Node.js major version. Match the root and app "engines" fields.
     required: false
     default: '24'
 
@@ -39,12 +49,14 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: npm
-        cache-dependency-path: ${{ inputs.app }}/package-lock.json
+        cache-dependency-path: ${{ inputs.workspace == 'true' && 'package-lock.json' || format('{0}/package-lock.json', inputs.app) }}
 
+    # Workspace apps: one `npm ci` at the root. The steps below then run inside the app's
+    # folder, where `npm run` picks up that workspace's own scripts.
     - name: Install
       if: steps.app.outputs.present == 'true'
       shell: bash
-      working-directory: ${{ inputs.app }}
+      working-directory: ${{ inputs.workspace == 'true' && '.' || inputs.app }}
       run: npm ci
 
     - name: Typecheck
