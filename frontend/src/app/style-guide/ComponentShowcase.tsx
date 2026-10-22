@@ -71,61 +71,115 @@ function ShowcaseContent() {
   const [progressVal, setProgressVal] = useState(65);
   const [currentPage, setCurrentPage] = useState(2);
 
+  // Table sorting states
+  const [tableSortCol, setTableSortCol] = useState<string | undefined>('sku');
+  const [tableSortDir, setTableSortDir] = useState<'asc' | 'desc'>('asc');
+
   return (
     <div className="flex flex-col gap-space-8 max-w-full">
       {/* 1. Button */}
       <section id="demo-button" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">1. Button</h3>
-          <p className="text-caption text-text-muted">
-            Variants (primary, secondary, ghost, danger), sizes (sm, md, lg), loading and disabled states, and icon-only.
+          <h3 className="text-title font-semibold text-fg">1. Button</h3>
+          <p className="text-caption text-fg-muted">
+            Variants (primary, secondary, ghost, danger), sizes (sm, md, lg), loading and disabled states across all variants, and icon-only.
           </p>
         </div>
 
-        <div className="flex flex-col gap-space-4">
-          <div className="flex flex-wrap items-center gap-space-3">
-            <Button
-              variant="primary"
-              onClick={() => {
-                setBtnLoading(true);
-                setTimeout(() => setBtnLoading(false), 2000);
-              }}
-              loading={btnLoading}
-            >
-              {btnLoading ? 'Processing...' : 'Primary (Click for Loading)'}
-            </Button>
-            <Button variant="secondary" onClick={() => toast.info('Secondary button clicked')}>
-              Secondary
-            </Button>
-            <Button variant="ghost" onClick={() => toast.info('Ghost button clicked')}>
-              Ghost
-            </Button>
-            <Button variant="danger" onClick={() => toast.error('Danger button action triggered')}>
-              Danger
-            </Button>
-            <Button variant="primary" disabled>
-              Disabled
-            </Button>
+        <div className="flex flex-col gap-space-5">
+          {/* Primary */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Primary Variant</span>
+            <div className="flex flex-wrap items-center gap-space-3">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setBtnLoading(true);
+                  setTimeout(() => setBtnLoading(false), 2000);
+                }}
+                loading={btnLoading}
+              >
+                {btnLoading ? 'Processing...' : 'Primary (Interactive)'}
+              </Button>
+              <Button variant="primary" loading>
+                Primary Loading
+              </Button>
+              <Button variant="primary" disabled>
+                Primary Disabled
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-space-3">
-            <Button variant="secondary" size="sm">
-              Small (sm)
-            </Button>
-            <Button variant="secondary" size="md">
-              Medium (md)
-            </Button>
-            <Button variant="secondary" size="lg">
-              Large (lg)
-            </Button>
-            <Button
-              variant="ghost"
-              iconOnly
-              aria-label="Add to favourites"
-              onClick={() => toast.success('Added to collection')}
-            >
-              <span aria-hidden="true">★</span>
-            </Button>
+          {/* Secondary */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Secondary Variant</span>
+            <div className="flex flex-wrap items-center gap-space-3">
+              <Button variant="secondary" onClick={() => toast.info('Secondary button clicked')}>
+                Secondary Default
+              </Button>
+              <Button variant="secondary" loading>
+                Secondary Loading
+              </Button>
+              <Button variant="secondary" disabled>
+                Secondary Disabled
+              </Button>
+            </div>
+          </div>
+
+          {/* Ghost */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Ghost Variant</span>
+            <div className="flex flex-wrap items-center gap-space-3">
+              <Button variant="ghost" onClick={() => toast.info('Ghost button clicked')}>
+                Ghost Default
+              </Button>
+              <Button variant="ghost" loading>
+                Ghost Loading
+              </Button>
+              <Button variant="ghost" disabled>
+                Ghost Disabled
+              </Button>
+            </div>
+          </div>
+
+          {/* Danger */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Danger Variant</span>
+            <div className="flex flex-wrap items-center gap-space-3">
+              <Button variant="danger" onClick={() => toast.error('Danger button action triggered')}>
+                Danger Default
+              </Button>
+              <Button variant="danger" loading>
+                Danger Loading
+              </Button>
+              <Button variant="danger" disabled>
+                Danger Disabled
+              </Button>
+            </div>
+          </div>
+
+          {/* Sizes & Icon-Only */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Sizes & Icon-Only</span>
+            <div className="flex flex-wrap items-center gap-space-3">
+              <Button variant="secondary" size="sm">
+                Small (sm)
+              </Button>
+              <Button variant="secondary" size="md">
+                Medium (md)
+              </Button>
+              <Button variant="secondary" size="lg">
+                Large (lg)
+              </Button>
+              <Button
+                variant="ghost"
+                iconOnly
+                aria-label="Add to favourites"
+                onClick={() => toast.success('Added to collection')}
+              >
+                <span aria-hidden="true">★</span>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -133,8 +187,8 @@ function ShowcaseContent() {
       {/* 2. Input */}
       <section id="demo-input" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">2. Input</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">2. Input</h3>
+          <p className="text-caption text-fg-muted">
             Text, email, search, and password (with toggle) with integrated Field validation.
           </p>
         </div>
@@ -194,8 +248,8 @@ function ShowcaseContent() {
       {/* 3. Select */}
       <section id="demo-select" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">3. Select</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">3. Select</h3>
+          <p className="text-caption text-fg-muted">
             Styled native select with 44px minimum touch target and accessible focus rings.
           </p>
         </div>
@@ -223,8 +277,8 @@ function ShowcaseContent() {
       {/* 4. Textarea */}
       <section id="demo-textarea" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">4. Textarea</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">4. Textarea</h3>
+          <p className="text-caption text-fg-muted">
             Multi-line input with optional live character counter and Field integration.
           </p>
         </div>
@@ -249,8 +303,8 @@ function ShowcaseContent() {
       {/* 5. Checkbox */}
       <section id="demo-checkbox" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">5. Checkbox</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">5. Checkbox</h3>
+          <p className="text-caption text-fg-muted">
             Standard, indeterminate, and error states with 44px touch targets.
           </p>
         </div>
@@ -300,8 +354,8 @@ function ShowcaseContent() {
       {/* 6. Radio & RadioGroup */}
       <section id="demo-radio" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">6. Radio & RadioGroup</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">6. Radio & RadioGroup</h3>
+          <p className="text-caption text-fg-muted">
             WAI-ARIA radiogroup with custom purple ring indicator and keyboard arrow navigation.
           </p>
         </div>
@@ -333,8 +387,8 @@ function ShowcaseContent() {
       {/* 7. Switch */}
       <section id="demo-switch" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">7. Switch</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">7. Switch</h3>
+          <p className="text-caption text-fg-muted">
             Toggle switch with <code>role=&quot;switch&quot;</code>, smooth animation, and 44px touch targets.
           </p>
         </div>
@@ -354,8 +408,8 @@ function ShowcaseContent() {
       {/* 8. Card */}
       <section id="demo-card" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">8. Card</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">8. Card</h3>
+          <p className="text-caption text-fg-muted">
             Surface containers in flat, raised, and inset variants with composable slots.
           </p>
         </div>
@@ -366,7 +420,7 @@ function ShowcaseContent() {
               <Card.Title>Flat Variant</Card.Title>
             </Card.Header>
             <Card.Body>
-              <p className="text-small text-text-muted">
+              <p className="text-small text-fg-muted">
                 Clean 1px border with no elevation. Ideal for structured lists and grouped forms.
               </p>
             </Card.Body>
@@ -377,7 +431,7 @@ function ShowcaseContent() {
               <Card.Title>Raised Variant</Card.Title>
             </Card.Header>
             <Card.Body>
-              <p className="text-small text-text-muted">
+              <p className="text-small text-fg-muted">
                 Tinted purple shadow with gentle elevation. Used for hero items and active panels.
               </p>
             </Card.Body>
@@ -393,7 +447,7 @@ function ShowcaseContent() {
               <Card.Title>Inset Variant</Card.Title>
             </Card.Header>
             <Card.Body>
-              <p className="text-small text-text-muted">
+              <p className="text-small text-fg-muted">
                 Recessed surface with subtle border. Ideal for code previews and technical specs.
               </p>
             </Card.Body>
@@ -404,8 +458,8 @@ function ShowcaseContent() {
       {/* 9. Modal & Drawer */}
       <section id="demo-modal-drawer" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">9. Modal & Drawer</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">9. Modal & Drawer</h3>
+          <p className="text-caption text-fg-muted">
             Native &lt;dialog&gt; implementations with backdrop, focus trapping, Escape handling, and scroll lock.
           </p>
         </div>
@@ -451,7 +505,7 @@ function ShowcaseContent() {
           busy={modalBusy}
         >
           <div className="flex flex-col gap-space-4">
-            <p className="text-small text-text-primary">
+            <p className="text-small text-fg">
               This modal reuses native HTML5 dialog primitives. Try pressing Escape to close it, or click the backdrop.
             </p>
             <div className="flex items-center gap-space-2">
@@ -488,7 +542,7 @@ function ShowcaseContent() {
           position={drawerSide}
         >
           <div className="flex flex-col gap-space-4">
-            <p className="text-small text-text-primary">
+            <p className="text-small text-fg">
               Slide-in dialog panel supporting left, right, and bottom directions. Fully accessible and scroll locked.
             </p>
             <Button variant="primary" onClick={() => setDrawerOpen(false)}>
@@ -501,8 +555,8 @@ function ShowcaseContent() {
       {/* 10. Menu */}
       <section id="demo-menu" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">10. Menu</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">10. Menu</h3>
+          <p className="text-caption text-fg-muted">
             Dropdown menu with Arrow keys (Up/Down/Home/End), Enter/Space, and Escape support.
           </p>
         </div>
@@ -522,8 +576,8 @@ function ShowcaseContent() {
       {/* 11. Breadcrumbs */}
       <section id="demo-breadcrumbs" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">11. Breadcrumbs</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">11. Breadcrumbs</h3>
+          <p className="text-caption text-fg-muted">
             Semantic <code>&lt;nav aria-label=&quot;Breadcrumb&quot;&gt;</code> with <code>aria-current=&quot;page&quot;</code> on the active item.
           </p>
         </div>
@@ -541,58 +595,251 @@ function ShowcaseContent() {
       </section>
 
       {/* 12. Table */}
-      <section id="demo-table" className="flex flex-col gap-space-4">
+      <section id="demo-table" className="flex flex-col gap-space-6">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">12. Table</h3>
-          <p className="text-caption text-text-muted">
-            Data table with responsive horizontal overflow and numeric right alignment.
+          <h3 className="text-title font-semibold text-fg">12. Table</h3>
+          <p className="text-caption text-fg-muted">
+            Data table with responsive horizontal overflow, interactive column sorting (aria-sort), loading skeleton, and empty state.
           </p>
         </div>
 
-        <div className="overflow-x-auto max-w-full">
-          <Table<{ sku: string; series: string; finish: string; inventory: string; status: 'In Stock' | 'Low Stock' }>
-            columns={[
-              { id: 'sku', header: 'Product SKU', accessor: (row) => row.sku },
-              { id: 'series', header: 'Series', accessor: (row) => row.series },
-              { id: 'finish', header: 'Finish', accessor: (row) => row.finish },
-              { id: 'inventory', header: 'Inventory', align: 'right', accessor: (row) => row.inventory },
-              {
-                id: 'status',
-                header: 'Status',
-                align: 'right',
-                accessor: (row) => (
-                  <Badge variant={row.status === 'In Stock' ? 'success' : 'warning'}>
-                    {row.status}
-                  </Badge>
-                ),
-              },
-            ]}
-            data={[
-              {
-                sku: 'FLW-BSN-101',
-                series: 'Aura Series',
-                finish: 'Brushed Gold',
-                inventory: '42 units',
-                status: 'In Stock',
-              },
-              {
-                sku: 'FLW-SHW-204',
-                series: 'Cascade Overhead',
-                finish: 'Obsidian Black',
-                inventory: '6 units',
-                status: 'Low Stock',
-              },
-            ]}
-            rowKey={(row) => row.sku}
-          />
+        {/* Interactive Sorting Table */}
+        <div className="flex flex-col gap-space-3">
+          <div className="flex flex-wrap items-center justify-between gap-space-2">
+            <div>
+              <h4 className="text-small font-semibold text-fg">1. Interactive Sorting Table</h4>
+              <p className="text-caption text-fg-muted">Click column headers or use buttons below to test all three aria-sort states.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-space-2">
+              <span className="text-caption font-mono bg-purple-pale text-purple-deep px-space-2 py-space-1 rounded-sm border border-primary/20">
+                Active aria-sort on SKU: <strong>{tableSortCol === 'sku' ? (tableSortDir === 'asc' ? 'ascending' : 'descending') : 'none'}</strong>
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setTableSortCol(undefined)}
+              >
+                Set: Unsorted (none)
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setTableSortCol('sku');
+                  setTableSortDir('asc');
+                }}
+              >
+                Set: Ascending
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setTableSortCol('sku');
+                  setTableSortDir('desc');
+                }}
+              >
+                Set: Descending
+              </Button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto max-w-full">
+            <Table<{ sku: string; series: string; finish: string; inventory: string; status: 'In Stock' | 'Low Stock' }>
+              caption="Live Interactive Products Inventory Table"
+              columns={[
+                { id: 'sku', header: 'Product SKU', sortable: true, accessor: (row) => row.sku },
+                { id: 'series', header: 'Series', sortable: true, accessor: (row) => row.series },
+                { id: 'finish', header: 'Finish', accessor: (row) => row.finish },
+                { id: 'inventory', header: 'Inventory', sortable: true, align: 'right', accessor: (row) => row.inventory },
+                {
+                  id: 'status',
+                  header: 'Status',
+                  align: 'right',
+                  accessor: (row) => (
+                    <Badge variant={row.status === 'In Stock' ? 'success' : 'warning'}>
+                      {row.status}
+                    </Badge>
+                  ),
+                },
+              ]}
+              data={[
+                {
+                  sku: 'FLW-BSN-101',
+                  series: 'Aura Series',
+                  finish: 'Brushed Gold',
+                  inventory: '42 units',
+                  status: 'In Stock',
+                },
+                {
+                  sku: 'FLW-SHW-204',
+                  series: 'Cascade Overhead',
+                  finish: 'Obsidian Black',
+                  inventory: '6 units',
+                  status: 'Low Stock',
+                },
+                {
+                  sku: 'FLW-VLV-309',
+                  series: 'Linear Thermostatic',
+                  finish: 'Chrome Mirror',
+                  inventory: '18 units',
+                  status: 'In Stock',
+                },
+              ]}
+              rowKey={(row) => row.sku}
+              sortColumn={tableSortCol}
+              sortDirection={tableSortDir}
+              onSort={(col, dir) => {
+                setTableSortCol(col);
+                setTableSortDir(dir);
+              }}
+              onRowClick={(row) => toast.info(`Selected ${row.series} (${row.sku})`)}
+            />
+          </div>
+        </div>
+
+        {/* Explicit Three Sorting States Demonstration */}
+        <div className="flex flex-col gap-space-3 pt-space-2 border-t border-border">
+          <h4 className="text-small font-semibold text-fg">Sorting States Comparison (aria-sort visible)</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-space-4">
+            {/* Unsorted (none) */}
+            <div className="flex flex-col gap-space-2">
+              <div className="flex items-center justify-between">
+                <span className="text-caption font-semibold text-fg">State: Unsorted</span>
+                <span className="text-caption font-mono text-fg-muted">aria-sort=&quot;none&quot;</span>
+              </div>
+              <div className="overflow-x-auto max-w-full">
+                <Table<{ sku: string; series: string }>
+                  caption="Unsorted Products Table"
+                  columns={[
+                    { id: 'sku', header: 'SKU', sortable: true, accessor: (r) => r.sku },
+                    { id: 'series', header: 'Series', sortable: true, accessor: (r) => r.series },
+                  ]}
+                  data={[
+                    { sku: 'FLW-BSN-101', series: 'Aura Series' },
+                    { sku: 'FLW-SHW-204', series: 'Cascade Overhead' },
+                  ]}
+                  rowKey={(r) => r.sku}
+                  sortColumn={undefined}
+                />
+              </div>
+            </div>
+
+            {/* Ascending (asc) */}
+            <div className="flex flex-col gap-space-2">
+              <div className="flex items-center justify-between">
+                <span className="text-caption font-semibold text-fg">State: Ascending</span>
+                <span className="text-caption font-mono text-fg-muted">aria-sort=&quot;ascending&quot;</span>
+              </div>
+              <div className="overflow-x-auto max-w-full">
+                <Table<{ sku: string; series: string }>
+                  caption="Ascending Sorted Products Table"
+                  columns={[
+                    { id: 'sku', header: 'SKU', sortable: true, accessor: (r) => r.sku },
+                    { id: 'series', header: 'Series', sortable: true, accessor: (r) => r.series },
+                  ]}
+                  data={[
+                    { sku: 'FLW-BSN-101', series: 'Aura Series' },
+                    { sku: 'FLW-SHW-204', series: 'Cascade Overhead' },
+                  ]}
+                  rowKey={(r) => r.sku}
+                  sortColumn="sku"
+                  sortDirection="asc"
+                />
+              </div>
+            </div>
+
+            {/* Descending (desc) */}
+            <div className="flex flex-col gap-space-2">
+              <div className="flex items-center justify-between">
+                <span className="text-caption font-semibold text-fg">State: Descending</span>
+                <span className="text-caption font-mono text-fg-muted">aria-sort=&quot;descending&quot;</span>
+              </div>
+              <div className="overflow-x-auto max-w-full">
+                <Table<{ sku: string; series: string }>
+                  caption="Descending Sorted Products Table"
+                  columns={[
+                    { id: 'sku', header: 'SKU', sortable: true, accessor: (r) => r.sku },
+                    { id: 'series', header: 'Series', sortable: true, accessor: (r) => r.series },
+                  ]}
+                  data={[
+                    { sku: 'FLW-SHW-204', series: 'Cascade Overhead' },
+                    { sku: 'FLW-BSN-101', series: 'Aura Series' },
+                  ]}
+                  rowKey={(r) => r.sku}
+                  sortColumn="sku"
+                  sortDirection="desc"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading Skeleton State */}
+        <div className="flex flex-col gap-space-2 pt-space-2 border-t border-border">
+          <div className="flex items-center justify-between">
+            <h4 className="text-small font-semibold text-fg">Table State: Loading Skeleton</h4>
+            <span className="text-caption font-mono bg-surface-solid text-fg-muted px-space-2 py-space-1 rounded-sm border border-border">
+              loading=true skeletonRowCount=3
+            </span>
+          </div>
+          <div className="overflow-x-auto max-w-full">
+            <Table<{ sku: string; series: string; finish: string; inventory: string }>
+              caption="Loading Skeleton Table Preview"
+              columns={[
+                { id: 'sku', header: 'Product SKU', sortable: true },
+                { id: 'series', header: 'Series', sortable: true },
+                { id: 'finish', header: 'Finish' },
+                { id: 'inventory', header: 'Inventory', align: 'right' },
+              ]}
+              data={[]}
+              rowKey={(r) => r.sku}
+              loading={true}
+              skeletonRowCount={3}
+            />
+          </div>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col gap-space-2 pt-space-2 border-t border-border">
+          <div className="flex items-center justify-between">
+            <h4 className="text-small font-semibold text-fg">Table State: Empty State</h4>
+            <span className="text-caption font-mono bg-surface-solid text-fg-muted px-space-2 py-space-1 rounded-sm border border-border">
+              data=[] emptyState=&lt;EmptyState /&gt;
+            </span>
+          </div>
+          <div className="overflow-x-auto max-w-full">
+            <Table<{ sku: string; series: string; finish: string; inventory: string }>
+              caption="Empty Table State Preview"
+              columns={[
+                { id: 'sku', header: 'Product SKU' },
+                { id: 'series', header: 'Series' },
+                { id: 'finish', header: 'Finish' },
+                { id: 'inventory', header: 'Inventory', align: 'right' },
+              ]}
+              data={[]}
+              rowKey={(r) => r.sku}
+              emptyState={
+                <EmptyState
+                  title="No Products in Selection"
+                  description="No architectural fittings match the current category or filter criteria."
+                  action={
+                    <Button variant="secondary" size="sm" onClick={() => toast.info('Filters reset')}>
+                      Reset Filters
+                    </Button>
+                  }
+                />
+              }
+            />
+          </div>
         </div>
       </section>
 
       {/* 13. Toast */}
       <section id="demo-toast" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">13. Toast</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">13. Toast</h3>
+          <p className="text-caption text-fg-muted">
             Accessible live notifications with promise tracking and real error messages.
           </p>
         </div>
@@ -612,6 +859,42 @@ function ShowcaseContent() {
           </Button>
           <Button
             variant="primary"
+            id="btn-promise-toast-success"
+            onClick={() => {
+              const promiseToResolve = new Promise<string>((resolve) =>
+                setTimeout(() => resolve('Product specifications synced.'), 1000)
+              );
+              toast.promise(promiseToResolve, {
+                loading: 'Synchronizing product specifications...',
+                success: (data) => data,
+                error: 'Failed to sync product specifications.',
+              });
+            }}
+          >
+            Promise Toast (Success 1s)
+          </Button>
+          <Button
+            variant="secondary"
+            id="btn-promise-toast-reject"
+            onClick={() => {
+              const promiseToReject = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('ERP database server unreachable.')), 1000)
+              );
+              toast
+                .promise(promiseToReject, {
+                  loading: 'Connecting to ERP server...',
+                  success: 'Connected to ERP server.',
+                  error: (err) => (err instanceof Error ? err.message : 'Connection failed.'),
+                })
+                .catch(() => {
+                  // Handled by toast
+                });
+            }}
+          >
+            Promise Toast (Reject 1s)
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => {
               const fakePromise = new Promise((resolve) => setTimeout(resolve, 1500));
               toast.promise(fakePromise, {
@@ -621,7 +904,7 @@ function ShowcaseContent() {
               });
             }}
           >
-            Promise Toast (Async)
+            Promise Toast (Async 1.5s)
           </Button>
         </div>
       </section>
@@ -629,8 +912,8 @@ function ShowcaseContent() {
       {/* 14. Badge */}
       <section id="demo-badge" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">14. Badge</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">14. Badge</h3>
+          <p className="text-caption text-fg-muted">
             Status pills requiring readable text content for accessibility.
           </p>
         </div>
@@ -648,20 +931,21 @@ function ShowcaseContent() {
       {/* 15. Tabs */}
       <section id="demo-tabs" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">15. Tabs</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">15. Tabs</h3>
+          <p className="text-caption text-fg-muted">
             WAI-ARIA tablist with Arrow keys (Left/Right) and scrollable mobile tabstrip.
           </p>
         </div>
 
         <Tabs
+          aria-label="Product Specification Sections"
           defaultValue="specs"
           items={[
             {
               id: 'specs',
               label: 'Technical Specifications',
               content: (
-                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-text-muted">
+                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-fg-muted">
                   Aerator: Neoperl Honeycomb | Flow Rate: 6.2 L/min at 3.0 bar pressure.
                 </div>
               ),
@@ -670,7 +954,7 @@ function ShowcaseContent() {
               id: 'finish',
               label: 'Finish & Care',
               content: (
-                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-text-muted">
+                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-fg-muted">
                   Clean with mild warm soapy water and microfiber cloth. Avoid abrasive detergents.
                 </div>
               ),
@@ -679,8 +963,18 @@ function ShowcaseContent() {
               id: 'warranty',
               label: 'Warranty Terms',
               content: (
-                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-text-muted">
+                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-fg-muted">
                   10-year comprehensive warranty on brass body and cartridge integrity.
+                </div>
+              ),
+            },
+            {
+              id: 'cad',
+              label: 'CAD & 3D BIM (Disabled)',
+              disabled: true,
+              content: (
+                <div className="p-space-4 bg-surface rounded-sm border border-border text-small text-fg-muted">
+                  CAD downloads are currently restricted for this product line.
                 </div>
               ),
             },
@@ -691,8 +985,8 @@ function ShowcaseContent() {
       {/* 16. Spinner & Skeleton */}
       <section id="demo-feedback" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">16. Spinner & Skeleton</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">16. Spinner & Skeleton</h3>
+          <p className="text-caption text-fg-muted">
             Calm loading animations that respect prefers-reduced-motion.
           </p>
         </div>
@@ -701,15 +995,15 @@ function ShowcaseContent() {
           <div className="flex items-center gap-space-6">
             <div className="flex items-center gap-space-2">
               <Spinner size="sm" label="Loading small" />
-              <span className="text-caption text-text-muted">Small (sm)</span>
+              <span className="text-caption text-fg-muted">Small (sm)</span>
             </div>
             <div className="flex items-center gap-space-2">
               <Spinner size="md" label="Loading medium" />
-              <span className="text-caption text-text-muted">Medium (md)</span>
+              <span className="text-caption text-fg-muted">Medium (md)</span>
             </div>
             <div className="flex items-center gap-space-2">
               <Spinner size="lg" label="Loading large" />
-              <span className="text-caption text-text-muted">Large (lg)</span>
+              <span className="text-caption text-fg-muted">Large (lg)</span>
             </div>
           </div>
 
@@ -729,8 +1023,8 @@ function ShowcaseContent() {
       {/* 17. ProgressBar */}
       <section id="demo-progressbar" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">17. ProgressBar</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">17. ProgressBar</h3>
+          <p className="text-caption text-fg-muted">
             Determinate and indeterminate progress indicators following WAI-ARIA standards.
           </p>
         </div>
@@ -767,8 +1061,8 @@ function ShowcaseContent() {
       {/* 18. Tooltip */}
       <section id="demo-tooltip" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">18. Tooltip</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">18. Tooltip</h3>
+          <p className="text-caption text-fg-muted">
             Advisory tooltip shown on hover and keyboard focus. Dismissible with Escape.
           </p>
         </div>
@@ -800,8 +1094,8 @@ function ShowcaseContent() {
       {/* 19. Pagination */}
       <section id="demo-pagination" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">19. Pagination</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">19. Pagination</h3>
+          <p className="text-caption text-fg-muted">
             Real links through getHref(page) for zero-JS fallback, plus interactive onPageChange.
           </p>
         </div>
@@ -813,7 +1107,7 @@ function ShowcaseContent() {
             getHref={(p) => `?page=${p}`}
             onPageChange={(p) => setCurrentPage(p)}
           />
-          <span className="text-caption text-text-muted">
+          <span className="text-caption text-fg-muted">
             Current active page: {currentPage} of 8
           </span>
         </div>
@@ -822,8 +1116,8 @@ function ShowcaseContent() {
       {/* 20. Avatar */}
       <section id="demo-avatar" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">20. Avatar</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">20. Avatar</h3>
+          <p className="text-caption text-fg-muted">
             User/item avatars with sizes (sm, md, lg, xl), shapes (circle, square), and initials fallback.
           </p>
         </div>
@@ -831,23 +1125,23 @@ function ShowcaseContent() {
         <div className="flex flex-wrap items-center gap-space-4">
           <div className="flex items-center gap-space-2">
             <Avatar name="Arun Kumar" alt="Arun Kumar" size="sm" />
-            <span className="text-caption text-text-muted">sm (AK)</span>
+            <span className="text-caption text-fg-muted">sm (AK)</span>
           </div>
           <div className="flex items-center gap-space-2">
             <Avatar name="Vikram Malhotra" alt="Vikram Malhotra" size="md" />
-            <span className="text-caption text-text-muted">md (VM)</span>
+            <span className="text-caption text-fg-muted">md (VM)</span>
           </div>
           <div className="flex items-center gap-space-2">
             <Avatar name="Pooja Sharma" alt="Pooja Sharma" size="lg" />
-            <span className="text-caption text-text-muted">lg (PS)</span>
+            <span className="text-caption text-fg-muted">lg (PS)</span>
           </div>
           <div className="flex items-center gap-space-2">
             <Avatar name="Flowtop Design" alt="Flowtop Design" size="xl" />
-            <span className="text-caption text-text-muted">xl (FD)</span>
+            <span className="text-caption text-fg-muted">xl (FD)</span>
           </div>
           <div className="flex items-center gap-space-2">
             <Avatar name="Square Shape" alt="Square Shape" size="md" shape="square" />
-            <span className="text-caption text-text-muted">square</span>
+            <span className="text-caption text-fg-muted">square</span>
           </div>
         </div>
       </section>
@@ -855,8 +1149,8 @@ function ShowcaseContent() {
       {/* 21. EmptyState */}
       <section id="demo-emptystate" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">21. EmptyState</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">21. EmptyState</h3>
+          <p className="text-caption text-fg-muted">
             Actionable view guiding next steps instead of a dead end.
           </p>
         </div>
@@ -877,8 +1171,8 @@ function ShowcaseContent() {
       {/* 22. Field */}
       <section id="demo-field" className="flex flex-col gap-space-4">
         <div className="border-b border-border pb-space-2">
-          <h3 className="text-title font-semibold text-text-primary">22. Field</h3>
-          <p className="text-caption text-text-muted">
+          <h3 className="text-title font-semibold text-fg">22. Field</h3>
+          <p className="text-caption text-fg-muted">
             Shared form control wrapper with visible label, required asterisk, hint, and accessible error message.
           </p>
         </div>
@@ -890,11 +1184,17 @@ function ShowcaseContent() {
             required
             error="Invalid GSTIN checksum for Maharashtra state."
           >
-            <input
-              type="text"
-              defaultValue="27AAAAA0000A1Z0"
-              className="w-full h-touch px-space-3 rounded-sm border border-error bg-surface-solid text-body focus-ring"
-            />
+            {({ id, 'aria-describedby': describedBy, 'aria-invalid': ariaInvalid, required }) => (
+              <input
+                id={id}
+                type="text"
+                aria-describedby={describedBy}
+                aria-invalid={ariaInvalid}
+                required={required}
+                defaultValue="27AAAAA0000A1Z0"
+                className="w-full h-touch px-space-3 rounded-sm border border-error bg-surface-solid text-body focus-ring"
+              />
+            )}
           </Field>
         </div>
       </section>

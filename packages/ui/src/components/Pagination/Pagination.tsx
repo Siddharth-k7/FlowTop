@@ -89,7 +89,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               href={getHref(currentPage - 1)}
               onClick={(e) => handleClick(e, currentPage - 1)}
               rel="prev"
-              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-text-primary rounded-sm hover:bg-purple-pale transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-fg rounded-sm hover:bg-purple-pale transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               aria-label="Go to previous page"
             >
               Previous
@@ -97,7 +97,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           ) : (
             <span
               aria-disabled="true"
-              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-text-muted opacity-40 cursor-not-allowed select-none"
+              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-fg-muted opacity-40 cursor-not-allowed select-none"
             >
               Previous
             </span>
@@ -111,7 +111,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               <li key={`ellipsis-${index}`}>
                 <span
                   aria-hidden="true"
-                  className="min-w-touch min-h-touch flex items-center justify-center text-small text-text-muted select-none"
+                  className="min-w-touch min-h-touch flex items-center justify-center text-small text-fg-muted select-none"
                 >
                   &hellip;
                 </span>
@@ -131,7 +131,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                   'min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small rounded-sm font-medium transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                   isCurrent
                     ? 'bg-primary text-on-primary font-semibold'
-                    : 'text-text-primary hover:bg-purple-pale',
+                    : 'text-fg hover:bg-purple-pale',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -150,7 +150,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               href={getHref(currentPage + 1)}
               onClick={(e) => handleClick(e, currentPage + 1)}
               rel="next"
-              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-text-primary rounded-sm hover:bg-purple-pale transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-fg rounded-sm hover:bg-purple-pale transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               aria-label="Go to next page"
             >
               Next
@@ -158,7 +158,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           ) : (
             <span
               aria-disabled="true"
-              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-text-muted opacity-40 cursor-not-allowed select-none"
+              className="min-w-touch min-h-touch px-space-3 flex items-center justify-center text-small font-medium text-fg-muted opacity-40 cursor-not-allowed select-none"
             >
               Next
             </span>

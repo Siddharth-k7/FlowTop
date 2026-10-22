@@ -22,8 +22,9 @@
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "lint": "node scripts/check.mjs",
-    "test": "node scripts/check.mjs",
+    "lint": "eslint . && node scripts/check.mjs",
+    "test": "node scripts/check.mjs && node --test test/components.test.mjs",
+    "test:components": "node --test test/components.test.mjs",
     "check": "node scripts/check.mjs"
   },
   "peerDependencies": {

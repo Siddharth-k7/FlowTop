@@ -1,8 +1,9 @@
 /**
  * Flowtop Component Registry
  *
- * Lists every component exported by @flowtop/ui.
- * Validated by packages/ui/scripts/check.mjs to ensure all exports are documented and demoed.
+ * Lists every component exported by @flowtop/ui with its documented variants and states.
+ * Validated by packages/ui/scripts/check.mjs to ensure all exports, variants and states
+ * are documented in COMPONENTS.md and demoed in /style-guide.
  */
 
 export interface ComponentEntry {
@@ -10,6 +11,8 @@ export interface ComponentEntry {
   name: string;
   category: 'Actions' | 'Forms' | 'Layout' | 'Feedback' | 'Navigation' | 'Data Display';
   description: string;
+  requiredVariants?: string[];
+  requiredStates?: string[];
 }
 
 export const COMPONENT_REGISTRY: ComponentEntry[] = [
@@ -18,12 +21,14 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Avatar',
     category: 'Data Display',
     description: 'Image avatar with accessible initials fallback and multiple sizes.',
+    requiredVariants: ['sm', 'md', 'lg'],
   },
   {
     id: 'badge',
     name: 'Badge',
     category: 'Data Display',
     description: 'Status pill requiring text content, never relying on colour alone.',
+    requiredVariants: ['neutral', 'success', 'warning', 'error', 'info'],
   },
   {
     id: 'breadcrumbs',
@@ -36,24 +41,39 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Button',
     category: 'Actions',
     description: 'Action button with loading, disabled, ghost, and danger variants.',
+    requiredVariants: ['primary', 'secondary', 'ghost', 'danger'],
+    requiredStates: [
+      'primary-loading',
+      'primary-disabled',
+      'secondary-loading',
+      'secondary-disabled',
+      'ghost-loading',
+      'ghost-disabled',
+      'danger-loading',
+      'danger-disabled',
+    ],
   },
   {
     id: 'card',
     name: 'Card',
     category: 'Layout',
     description: 'Surface container supporting flat, raised, and inset variants.',
+    requiredVariants: ['flat', 'raised', 'inset'],
   },
   {
     id: 'checkbox',
     name: 'Checkbox',
     category: 'Forms',
     description: 'Accessible checkbox supporting checked, unchecked, and indeterminate states.',
+    requiredStates: ['checked', 'unchecked', 'indeterminate', 'disabled'],
   },
   {
     id: 'drawer',
     name: 'Drawer',
     category: 'Layout',
     description: 'Native dialog slide-in sheet from left, right, or bottom.',
+    requiredVariants: ['left', 'right', 'bottom'],
+    requiredStates: ['open'],
   },
   {
     id: 'empty-state',
@@ -66,12 +86,15 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Field',
     category: 'Forms',
     description: 'Accessible form field wrapper with label, hint, and field errors.',
+    requiredStates: ['error'],
   },
   {
     id: 'input',
     name: 'Input',
     category: 'Forms',
     description: 'Text, email, password (with show/hide), and search input.',
+    requiredVariants: ['text', 'search', 'password'],
+    requiredStates: ['error'],
   },
   {
     id: 'menu',
@@ -84,6 +107,7 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Modal',
     category: 'Layout',
     description: 'Native dialog modal with backdrop, focus lock, and escape handling.',
+    requiredStates: ['open', 'busy'],
   },
   {
     id: 'pagination',
@@ -96,6 +120,7 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'ProgressBar',
     category: 'Feedback',
     description: 'Determinate and indeterminate progress indicator.',
+    requiredStates: ['determinate', 'indeterminate'],
   },
   {
     id: 'radio',
@@ -120,30 +145,41 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Skeleton',
     category: 'Feedback',
     description: 'Calm loading placeholder loader matching tokens.',
+    requiredVariants: ['text', 'rectangular', 'circular'],
   },
   {
     id: 'spinner',
     name: 'Spinner',
     category: 'Feedback',
     description: 'Calm rotating loader with accessible role and reduced-motion fallback.',
+    requiredVariants: ['sm', 'md', 'lg'],
   },
   {
     id: 'switch',
     name: 'Switch',
     category: 'Forms',
     description: 'Accessible toggle switch with 44px touch target.',
+    requiredStates: ['checked', 'disabled'],
   },
   {
     id: 'table',
     name: 'Table',
     category: 'Data Display',
     description: 'Tabular data container with header, numeric alignment, and row hover.',
+    requiredStates: [
+      'sorting-none',
+      'sorting-asc',
+      'sorting-desc',
+      'loading',
+      'empty',
+    ],
   },
   {
     id: 'tabs',
     name: 'Tabs',
     category: 'Navigation',
     description: 'WAI-ARIA tabbed navigation with keyboard arrow navigation.',
+    requiredStates: ['active', 'inactive', 'disabled'],
   },
   {
     id: 'textarea',
@@ -156,6 +192,7 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Toast',
     category: 'Feedback',
     description: 'Temporary notification alerts with promise tracking.',
+    requiredStates: ['success', 'error', 'info', 'promise'],
   },
   {
     id: 'tooltip',

@@ -75,7 +75,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-invalid={Boolean(error) || Boolean(isOverLimit)}
           aria-describedby={computedDescribedBy}
           className={[
-            'w-full p-space-3 text-small text-primary bg-surface-solid rounded-sm border focus-ring transition-colors placeholder:text-muted resize-y min-h-[5rem]',
+            'w-full p-space-3 text-small text-fg bg-surface-solid rounded-sm border focus-ring transition-colors placeholder:text-fg-muted resize-y min-h-[5rem]',
             error || isOverLimit
               ? 'border-error'
               : 'border-border-input hover:border-border-strong',
@@ -96,7 +96,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                 ? 'text-error font-semibold'
                 : isNearLimit
                 ? 'text-warning font-medium'
-                : 'text-muted'
+                : 'text-fg-muted'
             }`}
           >
             {currentLength} / {maxLength}

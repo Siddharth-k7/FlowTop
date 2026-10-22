@@ -1,7 +1,9 @@
+import preset from '../packages/ui/tailwind-preset.cjs';
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   presets: [
-    require('../packages/ui/tailwind-preset.cjs'),
+    preset,
   ],
   content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,3 +11,5 @@ module.exports = {
   ],
   plugins: [],
 };
+
+export default config;

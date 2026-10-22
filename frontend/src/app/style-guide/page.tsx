@@ -98,6 +98,8 @@ export default function StyleGuidePage() {
     'surface-light',
     'surface-inverse',
     'on-surface-inverse',
+    'fg',
+    'fg-muted',
     'text-primary',
     'text-muted',
     'border',
@@ -184,14 +186,14 @@ export default function StyleGuidePage() {
     },
     {
       level: 'caption',
-      class: 'text-caption font-body font-regular text-text-muted',
+      class: 'text-caption font-body font-regular text-fg-muted',
       label: 'Caption',
       sample: 'SKU: FLW-BSN-101 | 10-Year Body Warranty',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-surface text-primary antialiased py-space-6 px-space-4 md:px-space-8 max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-surface text-fg antialiased py-space-6 px-space-4 md:px-space-8 max-w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto flex flex-col gap-space-8">
         {/* Header */}
         <header className="flex flex-col gap-space-2 border-b border-border pb-space-6">
@@ -200,7 +202,7 @@ export default function StyleGuidePage() {
               <span className="text-caption font-semibold tracking-tight text-primary uppercase">
                 Design System & Component Kit
               </span>
-              <h1 className="text-headline font-display font-semibold text-text-primary tracking-tight">
+              <h1 className="text-headline font-display font-semibold text-fg tracking-tight">
                 Flowtop Style Guide
               </h1>
             </div>
@@ -208,7 +210,7 @@ export default function StyleGuidePage() {
               Live from tokens.css
             </div>
           </div>
-          <p className="text-body text-text-muted max-w-2xl">
+          <p className="text-body text-fg-muted max-w-2xl">
             Single source of truth for Flowtop design tokens, scales, and shared components. All
             token values are extracted directly from <code className="text-small">tokens.css</code> at
             runtime, ensuring they never go stale.
@@ -219,8 +221,8 @@ export default function StyleGuidePage() {
         <section className="flex flex-col gap-space-4 bg-surface-solid p-space-6 rounded-md border border-border shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-space-2">
             <div>
-              <h2 className="text-title font-semibold text-text-primary">Component Registry</h2>
-              <p className="text-caption text-text-muted">
+              <h2 className="text-title font-semibold text-fg">Component Registry</h2>
+              <p className="text-caption text-fg-muted">
                 {COMPONENT_REGISTRY.length} exported components verified by <code className="text-caption">scripts/check.mjs</code>.
               </p>
             </div>
@@ -233,8 +235,8 @@ export default function StyleGuidePage() {
                 href={`#demo-${comp.id}`}
                 className="p-space-2 rounded-sm border border-border bg-surface hover:bg-purple-pale hover:border-primary transition-colors duration-fast flex flex-col gap-px focus-ring"
               >
-                <span className="text-small font-semibold text-text-primary">{comp.name}</span>
-                <span className="text-caption text-text-muted">{comp.category}</span>
+                <span className="text-small font-semibold text-fg">{comp.name}</span>
+                <span className="text-caption text-fg-muted">{comp.category}</span>
               </a>
             ))}
           </div>
@@ -243,15 +245,15 @@ export default function StyleGuidePage() {
         {/* 1. Colour Tokens */}
         <section className="flex flex-col gap-space-6">
           <div>
-            <h2 className="text-headline font-display font-semibold text-text-primary">1. Colour Tokens</h2>
-            <p className="text-small text-text-muted">
+            <h2 className="text-headline font-display font-semibold text-fg">1. Colour Tokens</h2>
+            <p className="text-small text-fg-muted">
               Curated purple, ink, and tinted neutral palettes meeting WCAG AA contrast standards.
             </p>
           </div>
 
           {/* Brand Palette */}
           <div className="flex flex-col gap-space-3">
-            <h3 className="text-title font-medium text-text-primary">Brand Palette</h3>
+            <h3 className="text-title font-medium text-fg">Brand Palette</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-3">
               {brandColors.map((t) => (
                 <div
@@ -263,8 +265,8 @@ export default function StyleGuidePage() {
                     style={{ backgroundColor: `var(--${t.name})` }}
                   />
                   <div className="p-space-2 flex flex-col">
-                    <span className="text-small font-semibold text-text-primary truncate">--{t.name}</span>
-                    <span className="text-caption text-text-muted font-mono">{t.value}</span>
+                    <span className="text-small font-semibold text-fg truncate">--{t.name}</span>
+                    <span className="text-caption text-fg-muted font-mono">{t.value}</span>
                   </div>
                 </div>
               ))}
@@ -273,7 +275,7 @@ export default function StyleGuidePage() {
 
           {/* Functional Roles */}
           <div className="flex flex-col gap-space-3">
-            <h3 className="text-title font-medium text-text-primary">Semantic & Functional Roles</h3>
+            <h3 className="text-title font-medium text-fg">Semantic & Functional Roles</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-space-3">
               {roleColors.map((t) => (
                 <div
@@ -285,8 +287,8 @@ export default function StyleGuidePage() {
                     style={{ backgroundColor: `var(--${t.name})` }}
                   />
                   <div className="flex flex-col min-w-0">
-                    <span className="text-small font-semibold text-text-primary truncate">--{t.name}</span>
-                    <span className="text-caption text-text-muted font-mono truncate">{t.value}</span>
+                    <span className="text-small font-semibold text-fg truncate">--{t.name}</span>
+                    <span className="text-caption text-fg-muted font-mono truncate">{t.value}</span>
                   </div>
                 </div>
               ))}
@@ -295,7 +297,7 @@ export default function StyleGuidePage() {
 
           {/* Grey Scale */}
           <div className="flex flex-col gap-space-3">
-            <h3 className="text-title font-medium text-text-primary">Purple-Tinted Grey Scale</h3>
+            <h3 className="text-title font-medium text-fg">Purple-Tinted Grey Scale</h3>
             <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-space-2">
               {greyColors.map((t) => (
                 <div
@@ -307,10 +309,10 @@ export default function StyleGuidePage() {
                     style={{ backgroundColor: `var(--${t.name})` }}
                   />
                   <div className="p-space-1 flex flex-col">
-                    <span className="text-caption font-medium text-text-primary truncate">
+                    <span className="text-caption font-medium text-fg truncate">
                       {t.name.replace('color-', '')}
                     </span>
-                    <span className="text-caption text-text-muted font-mono truncate">{t.value}</span>
+                    <span className="text-caption text-fg-muted font-mono truncate">{t.value}</span>
                   </div>
                 </div>
               ))}
@@ -319,7 +321,7 @@ export default function StyleGuidePage() {
 
           {/* Semantic Status */}
           <div className="flex flex-col gap-space-3">
-            <h3 className="text-title font-medium text-text-primary">Semantic States & Tints</h3>
+            <h3 className="text-title font-medium text-fg">Semantic States & Tints</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-space-3">
               {semanticColors.map((t) => (
                 <div
@@ -331,8 +333,8 @@ export default function StyleGuidePage() {
                     style={{ backgroundColor: `var(--${t.name})` }}
                   />
                   <div className="flex flex-col min-w-0">
-                    <span className="text-small font-semibold text-text-primary truncate">--{t.name}</span>
-                    <span className="text-caption text-text-muted font-mono truncate">{t.value}</span>
+                    <span className="text-small font-semibold text-fg truncate">--{t.name}</span>
+                    <span className="text-caption text-fg-muted font-mono truncate">{t.value}</span>
                   </div>
                 </div>
               ))}
@@ -343,8 +345,8 @@ export default function StyleGuidePage() {
         {/* 2. Type Scale */}
         <section className="flex flex-col gap-space-6 border-t border-border pt-space-8">
           <div>
-            <h2 className="text-headline font-display font-semibold text-text-primary">2. Typography Scale</h2>
-            <p className="text-small text-text-muted">
+            <h2 className="text-headline font-display font-semibold text-fg">2. Typography Scale</h2>
+            <p className="text-small text-fg-muted">
               Fluid typography scaling smoothly from 360px to 1440px viewport widths with clamp().
             </p>
           </div>
@@ -358,9 +360,9 @@ export default function StyleGuidePage() {
                   <div className="flex flex-wrap items-baseline justify-between gap-space-2">
                     <div className="flex items-center gap-space-2">
                       <span className="text-small font-semibold text-primary">{lvl.label}</span>
-                      <code className="text-caption text-text-muted">--text-{lvl.level}-size: {sizeVal}</code>
+                      <code className="text-caption text-fg-muted">--text-{lvl.level}-size: {sizeVal}</code>
                     </div>
-                    <span className="text-caption text-text-muted font-mono">leading: {leadingVal}</span>
+                    <span className="text-caption text-fg-muted font-mono">leading: {leadingVal}</span>
                   </div>
                   <div className={lvl.class}>{lvl.sample}</div>
                 </div>
@@ -372,8 +374,8 @@ export default function StyleGuidePage() {
         {/* 3. Spacing Scale as Bars */}
         <section className="flex flex-col gap-space-6 border-t border-border pt-space-8">
           <div>
-            <h2 className="text-headline font-display font-semibold text-text-primary">3. Spacing Scale</h2>
-            <p className="text-small text-text-muted">
+            <h2 className="text-headline font-display font-semibold text-fg">3. Spacing Scale</h2>
+            <p className="text-small text-fg-muted">
               4px incremental base scale plus 44px minimum interactive touch target. Shown as proportional bars.
             </p>
           </div>
@@ -381,8 +383,8 @@ export default function StyleGuidePage() {
           <div className="flex flex-col gap-space-3 bg-surface-solid p-space-6 rounded-md border border-border">
             {spacingTokens.map((sp) => (
               <div key={sp.name} className="flex flex-col gap-space-1">
-                <div className="flex justify-between items-center text-caption text-text-muted">
-                  <code className="font-semibold text-text-primary">--{sp.name}</code>
+                <div className="flex justify-between items-center text-caption text-fg-muted">
+                  <code className="font-semibold text-fg">--{sp.name}</code>
                   <span className="font-mono">{sp.value}</span>
                 </div>
                 <div className="w-full bg-surface rounded-sm h-space-4 overflow-hidden border border-border flex items-center">
@@ -399,10 +401,10 @@ export default function StyleGuidePage() {
         {/* 4. Radii, Shadows and Motion */}
         <section className="flex flex-col gap-space-6 border-t border-border pt-space-8">
           <div>
-            <h2 className="text-headline font-display font-semibold text-text-primary">
+            <h2 className="text-headline font-display font-semibold text-fg">
               4. Radii, Shadows & Motion
             </h2>
-            <p className="text-small text-text-muted">
+            <p className="text-small text-fg-muted">
               Token curves for rounded surfaces, tinted elevation shadows, and duration timings.
             </p>
           </div>
@@ -410,7 +412,7 @@ export default function StyleGuidePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-space-6">
             {/* Radii */}
             <div className="flex flex-col gap-space-3 bg-surface-solid p-space-6 rounded-md border border-border">
-              <h3 className="text-title font-medium text-text-primary">Border Radii</h3>
+              <h3 className="text-title font-medium text-fg">Border Radii</h3>
               <div className="flex flex-col gap-space-3">
                 {radiiTokens.map((r) => (
                   <div key={r.name} className="flex items-center gap-space-3">
@@ -419,8 +421,8 @@ export default function StyleGuidePage() {
                       style={{ borderRadius: `var(--${r.name})` }}
                     />
                     <div className="flex flex-col">
-                      <span className="text-small font-semibold text-text-primary">--{r.name}</span>
-                      <span className="text-caption text-text-muted font-mono">{r.value}</span>
+                      <span className="text-small font-semibold text-fg">--{r.name}</span>
+                      <span className="text-caption text-fg-muted font-mono">{r.value}</span>
                     </div>
                   </div>
                 ))}
@@ -429,7 +431,7 @@ export default function StyleGuidePage() {
 
             {/* Shadows */}
             <div className="flex flex-col gap-space-3 bg-surface-solid p-space-6 rounded-md border border-border">
-              <h3 className="text-title font-medium text-text-primary">Tinted Shadows</h3>
+              <h3 className="text-title font-medium text-fg">Tinted Shadows</h3>
               <div className="flex flex-col gap-space-4">
                 {shadowTokens.map((s) => (
                   <div
@@ -437,8 +439,8 @@ export default function StyleGuidePage() {
                     className="p-space-3 rounded-sm bg-surface border border-border flex flex-col"
                     style={{ boxShadow: `var(--${s.name})` }}
                   >
-                    <span className="text-small font-semibold text-text-primary">--{s.name}</span>
-                    <span className="text-caption text-text-muted font-mono truncate">{s.value}</span>
+                    <span className="text-small font-semibold text-fg">--{s.name}</span>
+                    <span className="text-caption text-fg-muted font-mono truncate">{s.value}</span>
                   </div>
                 ))}
               </div>
@@ -446,12 +448,12 @@ export default function StyleGuidePage() {
 
             {/* Motion */}
             <div className="flex flex-col gap-space-3 bg-surface-solid p-space-6 rounded-md border border-border">
-              <h3 className="text-title font-medium text-text-primary">Motion & Timing</h3>
+              <h3 className="text-title font-medium text-fg">Motion & Timing</h3>
               <div className="flex flex-col gap-space-3">
                 {motionTokens.map((m) => (
                   <div key={m.name} className="flex flex-col p-space-2 rounded-sm bg-surface border border-border">
-                    <span className="text-small font-semibold text-text-primary">--{m.name}</span>
-                    <span className="text-caption text-text-muted font-mono truncate">{m.value}</span>
+                    <span className="text-small font-semibold text-fg">--{m.name}</span>
+                    <span className="text-caption text-fg-muted font-mono truncate">{m.value}</span>
                   </div>
                 ))}
               </div>
@@ -462,10 +464,10 @@ export default function StyleGuidePage() {
         {/* 5. Complete Component Showcase */}
         <section className="flex flex-col gap-space-6 border-t border-border pt-space-8">
           <div>
-            <h2 className="text-headline font-display font-semibold text-text-primary">
+            <h2 className="text-headline font-display font-semibold text-fg">
               5. Interactive Component Showcase
             </h2>
-            <p className="text-small text-text-muted">
+            <p className="text-small text-fg-muted">
               Every exported component, variant, and interactive state. Clickable and testable live.
             </p>
           </div>

@@ -7,15 +7,15 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   as?: 'div' | 'article' | 'section';
 }
 
-export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   as?: 'h2' | 'h3' | 'h4' | 'span';
 }
 
-export interface CardBodyProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardBodyProps = React.HTMLAttributes<HTMLDivElement>;
 
-export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type CardFooterProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className = '', children, ...props }, ref) => (
@@ -34,7 +34,7 @@ export const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ as: Component = 'h3', className = '', children, ...props }, ref) => (
     <Component
       ref={ref}
-      className={`text-title font-medium text-primary ${className}`}
+      className={`text-title font-medium text-fg ${className}`}
       {...props}
     >
       {children}
@@ -45,7 +45,7 @@ CardTitle.displayName = 'CardTitle';
 
 export const CardBody = React.forwardRef<HTMLDivElement, CardBodyProps>(
   ({ className = '', children, ...props }, ref) => (
-    <div ref={ref} className={`p-space-4 text-body text-primary ${className}`} {...props}>
+    <div ref={ref} className={`p-space-4 text-body text-fg ${className}`} {...props}>
       {children}
     </div>
   )

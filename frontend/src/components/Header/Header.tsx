@@ -151,7 +151,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
               aria-label="Open navigation menu"
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-navigation-drawer"
-              className="lg:hidden min-w-touch min-h-touch flex items-center justify-center rounded-sm text-text-primary hover:text-primary transition-colors focus-ring"
+              className="lg:hidden min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
                 width="22"
@@ -173,7 +173,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
             {/* Wordmark */}
             <Link
               href="/"
-              className="inline-flex items-center gap-space-2 text-text-primary focus-ring rounded-sm py-space-1 px-space-1"
+              className="inline-flex items-center gap-space-2 text-fg focus-ring rounded-sm py-space-1 px-space-1"
               aria-label="Flowtop - Go to homepage"
             >
               <span className="font-display font-semibold tracking-tight text-title text-primary uppercase">
@@ -197,7 +197,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                   <Link
                     key={item.id}
                     href={item.href}
-                    className="text-small font-medium text-text-primary hover:text-primary transition-colors focus-ring px-space-2 py-space-1 rounded-sm"
+                    className="text-small font-medium text-fg hover:text-primary transition-colors focus-ring px-space-2 py-space-1 rounded-sm"
                   >
                     {item.label}
                   </Link>
@@ -215,7 +215,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                     onClick={() => setOpenDropdown(isCurrentOpen ? null : item.id)}
                     className={[
                       'inline-flex items-center gap-space-1 text-small font-medium transition-colors focus-ring px-space-2 py-space-1 rounded-sm',
-                      isCurrentOpen ? 'text-primary' : 'text-text-primary hover:text-primary',
+                      isCurrentOpen ? 'text-primary' : 'text-fg hover:text-primary',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -230,7 +230,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className={`transition-transform duration-fast ${isCurrentOpen ? 'rotate-180 text-primary' : 'text-text-muted'}`}
+                      className={`transition-transform duration-fast ${isCurrentOpen ? 'rotate-180 text-primary' : 'text-fg-muted'}`}
                       aria-hidden="true"
                     >
                       <polyline points="6 9 12 15 18 9" />
@@ -253,7 +253,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                           className="flex flex-col p-space-2 rounded-sm hover:bg-surface transition-colors focus-ring text-left"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-small font-medium text-text-primary">
+                            <span className="text-small font-medium text-fg">
                               {sub.label}
                             </span>
                             {sub.badge && (
@@ -263,7 +263,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                             )}
                           </div>
                           {sub.description && (
-                            <span className="text-caption text-text-muted mt-px line-clamp-1">
+                            <span className="text-caption text-fg-muted mt-px line-clamp-1">
                               {sub.description}
                             </span>
                           )}
@@ -282,7 +282,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
             <button
               type="button"
               aria-label="Search catalogue"
-              className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-text-primary hover:text-primary transition-colors focus-ring"
+              className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
                 width="20"
@@ -304,7 +304,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
             <Link
               href="/cart"
               aria-label={cartCount > 0 ? `Shopping cart, ${cartCount} items` : 'Shopping cart'}
-              className="min-w-touch min-h-touch relative flex items-center justify-center rounded-sm text-text-primary hover:text-primary transition-colors focus-ring"
+              className="min-w-touch min-h-touch relative flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
                 width="20"
@@ -356,7 +356,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
               type="button"
               onClick={handleCloseMobileMenu}
               aria-label="Close navigation menu"
-              className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-text-primary hover:text-primary transition-colors focus-ring"
+              className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
                 width="24"
@@ -387,7 +387,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                     <Link
                       href={item.href}
                       onClick={handleCloseMobileMenu}
-                      className="min-h-touch flex items-center text-title font-medium text-text-primary hover:text-primary transition-colors focus-ring rounded-sm px-space-2"
+                      className="min-h-touch flex items-center text-title font-medium text-fg hover:text-primary transition-colors focus-ring rounded-sm px-space-2"
                     >
                       {item.label}
                     </Link>
@@ -401,7 +401,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                     type="button"
                     aria-expanded={isExpanded}
                     onClick={() => setExpandedMobileItem(isExpanded ? null : item.id)}
-                    className="min-h-touch flex items-center justify-between text-title font-medium text-text-primary hover:text-primary transition-colors focus-ring rounded-sm px-space-2 text-left"
+                    className="min-h-touch flex items-center justify-between text-title font-medium text-fg hover:text-primary transition-colors focus-ring rounded-sm px-space-2 text-left"
                   >
                     <span>{item.label}</span>
                     <svg
@@ -413,7 +413,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className={`transition-transform duration-fast ${isExpanded ? 'rotate-180 text-primary' : 'text-text-muted'}`}
+                      className={`transition-transform duration-fast ${isExpanded ? 'rotate-180 text-primary' : 'text-fg-muted'}`}
                       aria-hidden="true"
                     >
                       <polyline points="6 9 12 15 18 9" />
@@ -428,7 +428,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                           key={sub.id}
                           href={sub.href}
                           onClick={handleCloseMobileMenu}
-                          className="min-h-touch flex flex-col justify-center px-space-2 rounded-sm text-small font-medium text-text-primary hover:text-primary focus-ring"
+                          className="min-h-touch flex flex-col justify-center px-space-2 rounded-sm text-small font-medium text-fg hover:text-primary focus-ring"
                         >
                           <div className="flex items-center gap-space-2">
                             <span>{sub.label}</span>
@@ -439,7 +439,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                             )}
                           </div>
                           {sub.description && (
-                            <span className="text-caption text-text-muted">
+                            <span className="text-caption text-fg-muted">
                               {sub.description}
                             </span>
                           )}
@@ -464,7 +464,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
             <Link
               href="/contact"
               onClick={handleCloseMobileMenu}
-              className="min-h-touch flex items-center justify-center border border-border text-text-primary font-medium rounded-sm hover:bg-surface focus-ring"
+              className="min-h-touch flex items-center justify-center border border-border text-fg font-medium rounded-sm hover:bg-surface focus-ring"
             >
               Contact Experience Studio
             </Link>

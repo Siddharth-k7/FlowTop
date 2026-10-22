@@ -25,11 +25,11 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-screen flex flex-col bg-surface text-primary antialiased max-w-full overflow-x-hidden">
+      <body className="min-h-screen flex flex-col bg-surface text-fg antialiased max-w-full overflow-x-hidden">
         {/* Skip to Content link (first focusable element) */}
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-space-4 focus:left-space-4 focus:z-skip-link focus:bg-surface-solid focus:text-primary focus:p-space-3 focus:rounded-sm focus-ring shadow-md font-medium text-small"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-space-4 focus:left-space-4 focus:z-skip-link focus:bg-surface-solid focus:text-fg focus:p-space-3 focus:rounded-sm focus-ring shadow-md font-medium text-small"
         >
           Skip to main content
         </a>

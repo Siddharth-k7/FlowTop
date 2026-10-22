@@ -2,6 +2,7 @@
 
 Shared design tokens, Tailwind v3 preset, and component kit for Flowtop.
 Owned by **Dev C**. Imported by `frontend/` and `admin/` (Dev D).
+See [`COMPONENTS.md`](./COMPONENTS.md) for full component specifications, props tables, and verbatim-compilable usage examples.
 
 ---
 
@@ -53,7 +54,7 @@ module.exports = {
 
 ## Token & Class Cheat Sheet
 
-Tailwind's default scale has been **completely replaced**. Only Flowtop token classes exist. Arbitrary hex codes, arbitrary pixel brackets (`p-[18px]`), and default colors (`bg-red-500`) will not compile.
+Tailwind's default scales have been **completely replaced** with Flowtop design tokens. While arbitrary values (such as `bg-[#123456]` or `p-[18px]`) are syntactically supported by Tailwind's engine and are not blocked from compiling, they are strictly banned by project convention and checked by `scripts/check.mjs`. Use only Flowtop token classes.
 
 ### 1. Colours
 
@@ -65,9 +66,9 @@ Tailwind's default scale has been **completely replaced**. Only Flowtop token cl
 | `bg-ink`, `text-ink` | `--color-ink` (`#16121C`) | Dark text & surface-inverse |
 | `bg-white`, `text-white` | `--color-white` (`#FFFFFF`) | Pure white |
 | `bg-grey-50` ... `bg-grey-900` | `--color-grey-50`...`900` | Purple-tinted neutral grey scale |
-| `bg-primary`, `text-primary` | Role tokens | Primary brand action colour |
+| `bg-primary`, `text-primary` | Role tokens | Primary brand action & accent colour (`#5B2A86` purple) |
+| `text-fg`, `text-fg-muted` | Role tokens | Body text (`#16121C` ink) vs secondary text (`#635A73` grey-600) |
 | `bg-surface`, `bg-surface-solid` | Role tokens | Page background vs Card background |
-| `text-primary`, `text-muted` | Role tokens | `#16121C` (ink) vs `#635A73` (grey-600) |
 | `border-border`, `border-border-input` | Role tokens | Default card border vs Input field border |
 | `bg-success`, `bg-success-tint` | Semantic tokens | Success states |
 | `bg-warning`, `bg-warning-tint` | Semantic tokens | Warning states |
@@ -124,9 +125,36 @@ Tailwind's default scale has been **completely replaced**. Only Flowtop token cl
 | `font-medium` | 500 weight |
 | `font-semibold` | 600 weight |
 
-### 6. Special Component Classes & Utilities
+### 6. Overlay Max Heights
+
+| Class | Value | Token | Intended Usage |
+|---|---|---|---|
+| `max-h-dialog` | `85vh` | `--max-h-dialog` | Desktop modal dialogs and bottom drawer sheets |
+| `max-h-sheet` | `90vh` | `--max-h-sheet` | Mobile bottom sheet modals (preserves 10vh top backdrop) |
+
+### 7. Breakpoints (Single Source of Truth)
+
+Breakpoints are defined once in `packages/ui/src/tokens.css` as the single source of truth:
+- `--breakpoint-xs: 360px`
+- `--breakpoint-md: 768px`
+- `--breakpoint-lg: 1024px`
+- `--breakpoint-xl: 1440px`
+
+`packages/ui/tailwind-preset.cjs` parses `tokens.css` directly. If `tokens.css` is missing or any required breakpoint (`xs`, `md`, `lg`, `xl`) is absent, it throws a descriptive error immediately with no silent fallback.
+For JavaScript/TypeScript consumers, `packages/ui/src/index.ts` re-exports `BREAKPOINTS` and `Breakpoint` typed helpers, and `packages/ui/scripts/check.mjs` strictly asserts that `index.ts` matches `tokens.css`.
+
+### 8. Special Component Classes & Utilities
 
 - `.container-page`: Standard page container with responsive gutters and max-width (`1440px`).
 - `.container-wide`: Wide layout container (`1680px`) for wide sections.
 - `.focus-ring`: Accessible 2px focus ring using `--focus-ring` with 2px offset on `:focus-visible`.
 - `.touch-target`: Enforces 44px min-width and min-height for mobile accessibility.
+- `.scrollbar-none`: Hides scrollbars across WebKit, Firefox, and Edge while retaining scroll capability.
+- `.animate-in`, `.fade-in`, `.zoom-in-95`, `.slide-in-from-*`: Preset entry animation utilities utilizing `--duration-base` and `--ease-standard`, honoring `prefers-reduced-motion`.
+
+### 9. Component-Scoped Dimensions & Rationale
+
+A small number of component-internal ergonomic defaults are deliberately maintained as component-scoped properties rather than promoted to global tokens:
+- **`Menu` (`min-w-[12rem]` / 192px)**: Intrinsic minimum width for the action dropdown popover. Ensures that menu action items have adequate tap target width and text legibility even if menu item labels are short (e.g. "Edit", "Copy"), preventing awkward narrow dropdowns without imposing a rigid global dimension across unrelated controls.
+- **`Textarea` (`min-h-[5rem]` / 80px)**: Initial minimum height for the multiline `<textarea>` control (approx. 3 lines of text with 12px padding). Guarantees an immediate visual distinction from single-line `<Input>` before user vertical resizing (`resize-y`).
+

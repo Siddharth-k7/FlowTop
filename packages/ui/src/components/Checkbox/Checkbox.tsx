@@ -62,7 +62,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             .filter(Boolean)
             .join(' ')}
         >
-          <div className="relative flex items-center justify-center shrink-0 mt-0.5">
+          <div className="relative flex items-center justify-center shrink-0 mt-space-1">
             <input
               ref={setRef}
               id={id}
@@ -125,9 +125,9 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
 
           {label && (
             <div className="flex flex-col">
-              <span className="text-primary font-medium">{label}</span>
+              <span className="text-fg font-medium">{label}</span>
               {hint && !error && (
-                <span id={hintId} className="text-caption text-muted">
+                <span id={hintId} className="text-caption text-fg-muted">
                   {hint}
                 </span>
               )}

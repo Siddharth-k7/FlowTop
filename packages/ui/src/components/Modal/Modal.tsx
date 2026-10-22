@@ -103,6 +103,7 @@ export const Modal = React.forwardRef<HTMLDialogElement, ModalProps>(
     };
 
     return (
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- Native dialog backdrop click handles outside dismiss; keyboard dismiss is handled by Escape via onCancel
       <dialog
         ref={setRef}
         aria-labelledby={titleId}
@@ -111,12 +112,12 @@ export const Modal = React.forwardRef<HTMLDialogElement, ModalProps>(
         onCancel={handleCancel}
         onClick={handleBackdropClick}
         className={[
-          'fixed p-0 border border-border shadow-lg bg-surface-solid text-primary',
+          'fixed p-0 border border-border shadow-lg bg-surface-solid text-fg',
           'backdrop:bg-ink/60 backdrop:backdrop-blur-sm',
           // Mobile bottom sheet: anchored to bottom, full width, rounded top
-          'max-md:m-0 max-md:mt-auto max-md:bottom-0 max-md:w-full max-md:max-h-[90vh] max-md:rounded-b-none max-md:rounded-t-lg',
+          'max-md:m-0 max-md:mt-auto max-md:bottom-0 max-md:w-full max-md:max-h-sheet max-md:rounded-b-none max-md:rounded-t-lg',
           // Desktop centered modal
-          'md:m-auto md:w-full md:rounded-md md:max-h-[85vh]',
+          'md:m-auto md:w-full md:rounded-md md:max-h-dialog',
           maxWidthClasses[maxWidth],
           className,
         ]
@@ -127,11 +128,11 @@ export const Modal = React.forwardRef<HTMLDialogElement, ModalProps>(
           {/* Header */}
           <div className="p-space-4 border-b border-border flex items-start justify-between gap-space-3 shrink-0">
             <div>
-              <h2 id={titleId} className="text-title font-medium text-primary">
+              <h2 id={titleId} className="text-title font-medium text-fg">
                 {title}
               </h2>
               {description && (
-                <p id={descId} className="text-small text-muted mt-space-1">
+                <p id={descId} className="text-small text-fg-muted mt-space-1">
                   {description}
                 </p>
               )}
@@ -142,7 +143,7 @@ export const Modal = React.forwardRef<HTMLDialogElement, ModalProps>(
               disabled={busy}
               onClick={onClose}
               aria-label="Close dialog"
-              className="touch-target text-muted hover:text-primary focus-ring rounded-pill p-space-2 disabled:opacity-40 disabled:cursor-not-allowed -mr-space-2 -mt-space-2"
+              className="touch-target text-fg-muted hover:text-primary focus-ring rounded-pill p-space-2 disabled:opacity-40 disabled:cursor-not-allowed -mr-space-2 -mt-space-2"
             >
               <svg
                 className="w-space-5 h-space-5"
@@ -162,7 +163,7 @@ export const Modal = React.forwardRef<HTMLDialogElement, ModalProps>(
           </div>
 
           {/* Body */}
-          <div className="p-space-4 overflow-y-auto flex-1 text-body text-primary">
+          <div className="p-space-4 overflow-y-auto flex-1 text-body text-fg">
             {children}
           </div>
 

@@ -21,7 +21,7 @@ export function getFieldDescribedBy(
   error?: string
 ): string | undefined {
   const parts: string[] = [];
-  if (hint) parts.push(`${id}-hint`);
+  if (hint && !error) parts.push(`${id}-hint`);
   if (error) parts.push(`${id}-error`);
   return parts.length > 0 ? parts.join(' ') : undefined;
 }
@@ -44,7 +44,7 @@ export const Field: React.FC<FieldProps> = ({
       {label && (
         <label
           htmlFor={id}
-          className="text-small font-medium text-primary flex items-center gap-space-1 select-none"
+          className="text-small font-medium text-fg flex items-center gap-space-1 select-none"
         >
           <span>{label}</span>
           {required && (
@@ -65,7 +65,7 @@ export const Field: React.FC<FieldProps> = ({
         : children}
 
       {hint && !error && (
-        <p id={`${id}-hint`} className="text-caption text-muted">
+        <p id={`${id}-hint`} className="text-caption text-fg-muted">
           {hint}
         </p>
       )}

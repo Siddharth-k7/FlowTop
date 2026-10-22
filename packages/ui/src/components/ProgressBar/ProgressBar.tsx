@@ -34,9 +34,9 @@ export const ProgressBar = React.forwardRef<HTMLDivElement, ProgressBarProps>(
       <div ref={ref} className={`w-full flex flex-col gap-space-1 ${className}`} {...props}>
         {(label || showValue) && (
           <div className="flex items-center justify-between text-caption font-medium select-none">
-            {label && <span className="text-primary">{label}</span>}
+            {label && <span className="text-fg">{label}</span>}
             {showValue && !isIndeterminate && (
-              <span className="text-muted ml-auto">{percentage}%</span>
+              <span className="text-fg-muted ml-auto">{percentage}%</span>
             )}
           </div>
         )}

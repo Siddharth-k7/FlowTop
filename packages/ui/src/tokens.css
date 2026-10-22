@@ -56,6 +56,8 @@
   --surface-inverse: var(--color-ink);
   --on-surface-inverse: var(--color-white);
 
+  --fg: var(--color-ink);
+  --fg-muted: var(--color-grey-600);
   --text-primary: var(--color-ink);
   --text-muted: var(--color-grey-600);
 
@@ -165,6 +167,10 @@
   --z-toast: 500;
   --z-tooltip: 600;
   --z-skip-link: 700;
+
+  /* ---------------------------------------------------------------- Overlay max-height constraints */
+  --max-h-dialog: 85vh;
+  --max-h-sheet: 90vh;
 
   /* ---------------------------------------------------------------- Motion */
   /* Animate transform and opacity only. */

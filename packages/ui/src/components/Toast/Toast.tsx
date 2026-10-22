@@ -201,40 +201,110 @@ const ToastCard: React.FC<{
   onDismiss: (id: string) => void;
 }> = ({ toast, onDismiss }) => {
   const { id, type, message, title, duration, loading } = toast;
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const remainingTimeRef = useRef<number>(duration);
   const isPausedRef = useRef<boolean>(false);
+  const isHoveredRef = useRef<boolean>(false);
+  const isFocusedRef = useRef<boolean>(false);
+  const prevLoadingRef = useRef<boolean | undefined>(loading);
+  const isMountedRef = useRef<boolean>(false);
 
-  const startTimer = useCallback(() => {
-    if (duration <= 0) return;
-    startTimeRef.current = Date.now();
-    timerRef.current = setTimeout(() => {
-      onDismiss(id);
-    }, remainingTimeRef.current);
-  }, [duration, id, onDismiss]);
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
 
-  const pauseTimer = () => {
-    if (duration <= 0 || !timerRef.current) return;
-    clearTimeout(timerRef.current);
-    timerRef.current = null;
-    const elapsed = Date.now() - startTimeRef.current;
-    remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
+  const startTimer = useCallback(
+    (timeToWait: number) => {
+      clearTimer();
+      if (timeToWait <= 0) return;
+      startTimeRef.current = Date.now();
+      timerRef.current = setTimeout(() => {
+        onDismissRef.current(id);
+      }, timeToWait);
+    },
+    [id, clearTimer]
+  );
+
+  const pauseTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearTimer();
+      const elapsed = Date.now() - startTimeRef.current;
+      remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
+    }
     isPausedRef.current = true;
+  }, [clearTimer]);
+
+  const resumeTimer = useCallback(() => {
+    if (isHoveredRef.current || isFocusedRef.current) {
+      return;
+    }
+    isPausedRef.current = false;
+    if (remainingTimeRef.current > 0) {
+      startTimer(remainingTimeRef.current);
+    }
+  }, [startTimer]);
+
+  const handleMouseEnter = () => {
+    isHoveredRef.current = true;
+    pauseTimer();
   };
 
-  const resumeTimer = () => {
-    if (duration <= 0 || !isPausedRef.current) return;
-    isPausedRef.current = false;
-    startTimer();
+  const handleMouseLeave = () => {
+    isHoveredRef.current = false;
+    resumeTimer();
+  };
+
+  const handleFocus = () => {
+    isFocusedRef.current = true;
+    pauseTimer();
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    isFocusedRef.current = false;
+    resumeTimer();
   };
 
   useEffect(() => {
-    startTimer();
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      if (!loading && duration > 0) {
+        remainingTimeRef.current = duration;
+        isPausedRef.current = false;
+        startTimer(duration);
+      }
+    } else {
+      // Reinitialise timer state if toast transitions from loading to settled (success / error)
+      if (prevLoadingRef.current && !loading) {
+        clearTimer();
+        remainingTimeRef.current = duration;
+        startTimeRef.current = Date.now();
+
+        if (isHoveredRef.current || isFocusedRef.current) {
+          isPausedRef.current = true;
+        } else if (duration > 0) {
+          isPausedRef.current = false;
+          startTimer(duration);
+        }
+      }
+    }
+    prevLoadingRef.current = loading;
+  }, [loading, duration, startTimer, clearTimer]);
+
+  useEffect(() => {
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      clearTimer();
     };
-  }, [startTimer]);
+  }, [clearTimer]);
 
   const typeConfig: Record<
     ToastType,
@@ -267,17 +337,16 @@ const ToastCard: React.FC<{
   };
 
   const current = typeConfig[type];
-  const isAlert = type === 'error' || type === 'warning';
 
   return (
     <div
-      role={isAlert ? 'alert' : 'status'}
-      aria-live={isAlert ? 'assertive' : 'polite'}
-      onMouseEnter={pauseTimer}
-      onMouseLeave={resumeTimer}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       className={`pointer-events-auto flex items-start gap-space-3 p-space-4 rounded-md border shadow-md w-full max-w-sm ${current.bg} ${current.border} transition-all`}
     >
-      <div className={`shrink-0 mt-0.5 ${current.iconColor}`}>
+      <div className={`shrink-0 mt-space-1 ${current.iconColor}`}>
         {loading ? (
           <Spinner size="sm" />
         ) : type === 'success' ? (
@@ -300,10 +369,10 @@ const ToastCard: React.FC<{
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4 className="text-small font-medium text-primary">
+        <div className="text-small font-medium text-fg">
           {title || current.defaultTitle}
-        </h4>
-        <div className="text-caption text-muted mt-space-1 break-words">
+        </div>
+        <div className="text-caption text-fg-muted mt-space-1 break-words">
           {message}
         </div>
       </div>
@@ -312,7 +381,7 @@ const ToastCard: React.FC<{
         type="button"
         onClick={() => onDismiss(id)}
         aria-label="Dismiss notification"
-        className="touch-target -mr-space-2 -mt-space-2 p-space-2 text-muted hover:text-primary focus-ring rounded-pill shrink-0 inline-flex items-center justify-center"
+        className="touch-target -mr-space-2 -mt-space-2 p-space-2 text-fg-muted hover:text-primary focus-ring rounded-pill shrink-0 inline-flex items-center justify-center"
       >
         <svg className="w-space-4 h-space-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -326,7 +395,8 @@ const ToastContainer: React.FC<{
   toasts: ToastItem[];
   onDismiss: (id: string) => void;
 }> = ({ toasts, onDismiss }) => {
-  if (toasts.length === 0) return null;
+  const politeToasts = toasts.filter(t => t.type !== 'error');
+  const assertiveToasts = toasts.filter(t => t.type === 'error');
 
   return (
     <div
@@ -334,9 +404,29 @@ const ToastContainer: React.FC<{
       aria-label="Notifications"
       className="fixed bottom-space-4 right-space-4 z-toast flex flex-col gap-space-2 max-w-sm w-full pointer-events-none px-space-3"
     >
-      {toasts.map(toast => (
-        <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
-      ))}
+      {/* Assertive live region for errors */}
+      <div
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="false"
+        className="flex flex-col gap-space-2 w-full"
+      >
+        {assertiveToasts.map(toast => (
+          <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
+        ))}
+      </div>
+
+      {/* Polite live region for info, success, warning */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
+        className="flex flex-col gap-space-2 w-full"
+      >
+        {politeToasts.map(toast => (
+          <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
+        ))}
+      </div>
     </div>
   );
 };

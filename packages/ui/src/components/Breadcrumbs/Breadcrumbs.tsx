@@ -16,7 +16,7 @@ export const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
 
     const defaultSeparator = (
       <svg
-        className="w-space-4 h-space-4 text-muted shrink-0"
+        className="w-space-4 h-space-4 text-fg-muted shrink-0"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -30,7 +30,7 @@ export const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
       <nav
         ref={ref}
         aria-label="Breadcrumb"
-        className={`flex items-center text-small text-muted ${className}`}
+        className={`flex items-center text-small text-fg-muted ${className}`}
         {...props}
       >
         <ol className="flex items-center gap-space-2 flex-wrap">
@@ -49,8 +49,8 @@ export const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
                     aria-current={isLast ? 'page' : undefined}
                     className={
                       isLast
-                        ? 'font-medium text-primary select-none'
-                        : 'text-muted'
+                        ? 'font-medium text-fg select-none'
+                        : 'text-fg-muted'
                     }
                   >
                     {item.label}
@@ -58,7 +58,7 @@ export const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
                 ) : (
                   <a
                     href={item.href}
-                    className="text-muted hover:text-primary focus-ring rounded-sm touch-target py-space-1 px-space-1 -mx-space-1 inline-flex items-center transition-colors"
+                    className="text-fg-muted hover:text-primary focus-ring rounded-sm touch-target py-space-1 px-space-1 -mx-space-1 inline-flex items-center transition-colors"
                   >
                     {item.label}
                   </a>

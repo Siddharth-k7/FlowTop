@@ -1,99 +1,116 @@
 /**
  * Flowtop Tailwind v3 Preset
  *
- * This preset REPLACES Tailwind defaults with Flowtop design tokens.
- * Only token-backed utilities are generated (e.g. bg-purple-deep, p-space-4, rounded-md).
- * Arbitrary hex/pixel values and default classes like bg-red-500 are excluded.
+ * This preset replaces Tailwind defaults with Flowtop design tokens.
+ * While arbitrary values (such as custom hex colors or custom pixel brackets)
+ * are syntactically supported by Tailwind's engine, they are not part of the design
+ * system and are strictly banned by project convention and validated by check.mjs.
  */
 
 const fs = require('fs');
 const path = require('path');
 const plugin = require('tailwindcss/plugin');
 
-function getBreakpoints() {
-  const tokensPath = path.resolve(__dirname, './src/tokens.css');
-  try {
-    const content = fs.readFileSync(tokensPath, 'utf8');
-    const screens = {};
-    const regex = /--breakpoint-([a-z0-9]+):\s*([0-9]+px);/g;
-    let match;
-    while ((match = regex.exec(content)) !== null) {
-      screens[match[1]] = match[2];
+function colorToken(variableName) {
+  return ({ opacityValue } = {}) => {
+    if (opacityValue !== undefined) {
+      return `color-mix(in srgb, var(${variableName}) calc(${opacityValue} * 100%), transparent)`;
     }
-    if (Object.keys(screens).length > 0) {
-      return screens;
-    }
-  } catch {
-    // fallback if tokens.css cannot be read directly
-  }
-  return {
-    xs: '360px',
-    md: '768px',
-    lg: '1024px',
-    xl: '1440px',
+    return `var(${variableName})`;
   };
+}
+
+function getBreakpoints(customContent) {
+  let content;
+  if (customContent !== undefined) {
+    content = customContent;
+  } else {
+    const tokensPath = path.join(__dirname, 'src', 'tokens.css');
+    if (!fs.existsSync(tokensPath)) {
+      throw new Error(`[Flowtop Preset] tokens.css not found at: ${tokensPath}`);
+    }
+    content = fs.readFileSync(tokensPath, 'utf8');
+  }
+  const screens = {};
+  const regex = /--breakpoint-([a-z0-9]+):\s*([0-9]+px);/g;
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    screens[match[1]] = match[2];
+  }
+
+  const REQUIRED_BREAKPOINTS = ['xs', 'md', 'lg', 'xl'];
+  const missing = REQUIRED_BREAKPOINTS.filter((bp) => !screens[bp]);
+  if (missing.length > 0) {
+    throw new Error(
+      `[Flowtop Preset] Missing required breakpoint(s) in tokens.css: ${missing.join(', ')}. ` +
+      `Expected definitions for: ${REQUIRED_BREAKPOINTS.join(', ')}.`
+    );
+  }
+
+  return screens;
 }
 
 module.exports = {
   theme: {
-    // REPLACES screens with token breakpoints
+    // REPLACES screens with token breakpoints from tokens.css
     screens: getBreakpoints(),
 
-    // REPLACES default colors with Flowtop tokens only
+    // REPLACES default colors with Flowtop tokens only, with full opacity modifier support
     colors: {
       transparent: 'transparent',
       current: 'currentColor',
 
       // Brand
-      'purple-deep': 'var(--color-purple-deep)',
-      'purple-light': 'var(--color-purple-light)',
-      'purple-pale': 'var(--color-purple-pale)',
-      ink: 'var(--color-ink)',
-      white: 'var(--color-white)',
+      'purple-deep': colorToken('--color-purple-deep'),
+      'purple-light': colorToken('--color-purple-light'),
+      'purple-pale': colorToken('--color-purple-pale'),
+      ink: colorToken('--color-ink'),
+      white: colorToken('--color-white'),
 
       // Grey scale
-      'grey-50': 'var(--color-grey-50)',
-      'grey-100': 'var(--color-grey-100)',
-      'grey-200': 'var(--color-grey-200)',
-      'grey-300': 'var(--color-grey-300)',
-      'grey-400': 'var(--color-grey-400)',
-      'grey-500': 'var(--color-grey-500)',
-      'grey-600': 'var(--color-grey-600)',
-      'grey-700': 'var(--color-grey-700)',
-      'grey-800': 'var(--color-grey-800)',
-      'grey-900': 'var(--color-grey-900)',
+      'grey-50': colorToken('--color-grey-50'),
+      'grey-100': colorToken('--color-grey-100'),
+      'grey-200': colorToken('--color-grey-200'),
+      'grey-300': colorToken('--color-grey-300'),
+      'grey-400': colorToken('--color-grey-400'),
+      'grey-500': colorToken('--color-grey-500'),
+      'grey-600': colorToken('--color-grey-600'),
+      'grey-700': colorToken('--color-grey-700'),
+      'grey-800': colorToken('--color-grey-800'),
+      'grey-900': colorToken('--color-grey-900'),
 
       // Semantics
-      success: 'var(--color-success)',
-      'success-tint': 'var(--color-success-tint)',
-      warning: 'var(--color-warning)',
-      'warning-tint': 'var(--color-warning-tint)',
-      error: 'var(--color-error)',
-      'error-tint': 'var(--color-error-tint)',
-      info: 'var(--color-info)',
-      'info-tint': 'var(--color-info-tint)',
+      success: colorToken('--color-success'),
+      'success-tint': colorToken('--color-success-tint'),
+      warning: colorToken('--color-warning'),
+      'warning-tint': colorToken('--color-warning-tint'),
+      error: colorToken('--color-error'),
+      'error-tint': colorToken('--color-error-tint'),
+      info: colorToken('--color-info'),
+      'info-tint': colorToken('--color-info-tint'),
 
       // Roles
-      primary: 'var(--primary)',
-      'primary-dark': 'var(--primary-dark)',
-      'primary-tint': 'var(--primary-tint)',
-      accent: 'var(--accent)',
-      'on-primary': 'var(--on-primary)',
+      primary: colorToken('--primary'),
+      'primary-dark': colorToken('--primary-dark'),
+      'primary-tint': colorToken('--primary-tint'),
+      accent: colorToken('--accent'),
+      'on-primary': colorToken('--on-primary'),
 
-      surface: 'var(--surface)',
-      'surface-solid': 'var(--surface-solid)',
-      'surface-glass': 'var(--surface-glass)',
-      'surface-light': 'var(--surface-light)',
-      'surface-inverse': 'var(--surface-inverse)',
-      'on-surface-inverse': 'var(--on-surface-inverse)',
+      surface: colorToken('--surface'),
+      'surface-solid': colorToken('--surface-solid'),
+      'surface-glass': colorToken('--surface-glass'),
+      'surface-light': colorToken('--surface-light'),
+      'surface-inverse': colorToken('--surface-inverse'),
+      'on-surface-inverse': colorToken('--on-surface-inverse'),
 
-      'text-primary': 'var(--text-primary)',
-      'text-muted': 'var(--text-muted)',
+      // Foreground text roles
+      fg: colorToken('--fg'),
+      'fg-muted': colorToken('--fg-muted'),
 
-      border: 'var(--border)',
-      'border-strong': 'var(--border-strong)',
-      'border-input': 'var(--border-input)',
-      'focus-ring': 'var(--focus-ring)',
+      border: colorToken('--border'),
+      'border-strong': colorToken('--border-strong'),
+      'border-input': colorToken('--border-input'),
+      'focus-ring': colorToken('--focus-ring'),
     },
 
     // REPLACES spacing with Flowtop 4px scale + touch
@@ -175,9 +192,19 @@ module.exports = {
       standard: 'var(--ease-standard)',
       emphasized: 'var(--ease-emphasized)',
     },
+
+    // REPLACES maxHeight with Flowtop overlay tokens
+    maxHeight: {
+      none: 'none',
+      full: '100%',
+      screen: '100vh',
+      dialog: 'var(--max-h-dialog)',
+      sheet: 'var(--max-h-sheet)',
+      modal: 'var(--max-h-dialog)',
+    },
   },
   plugins: [
-    plugin(function ({ addComponents }) {
+    plugin(function ({ addComponents, addUtilities }) {
       addComponents({
         '.container-page': {
           width: '100%',
@@ -238,6 +265,55 @@ module.exports = {
           justifyContent: 'center',
         },
       });
+
+      addUtilities({
+        '.scrollbar-none': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+        },
+        '@keyframes enter': {
+          from: {
+            opacity: 'var(--tw-enter-opacity, 1)',
+            transform:
+              'translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))',
+          },
+        },
+        '.animate-in': {
+          animationName: 'enter',
+          animationDuration: 'var(--duration-base)',
+          animationTimingFunction: 'var(--ease-standard)',
+          '--tw-enter-opacity': 'initial',
+          '--tw-enter-scale': 'initial',
+          '--tw-enter-translate-x': 'initial',
+          '--tw-enter-translate-y': 'initial',
+          '@media (prefers-reduced-motion: reduce)': {
+            animationDuration: 'var(--duration-fast)',
+            '--tw-enter-scale': '1 !important',
+            '--tw-enter-translate-x': '0 !important',
+            '--tw-enter-translate-y': '0 !important',
+          },
+        },
+        '.fade-in': {
+          '--tw-enter-opacity': '0',
+        },
+        '.zoom-in-95': {
+          '--tw-enter-scale': '0.95',
+        },
+        '.slide-in-from-left': {
+          '--tw-enter-translate-x': '-100%',
+        },
+        '.slide-in-from-right': {
+          '--tw-enter-translate-x': '100%',
+        },
+        '.slide-in-from-bottom': {
+          '--tw-enter-translate-y': '100%',
+        },
+      });
     }),
   ],
 };
+
+module.exports.getBreakpoints = getBreakpoints;

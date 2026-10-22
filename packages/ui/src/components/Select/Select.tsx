@@ -50,7 +50,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           aria-invalid={Boolean(error)}
           aria-describedby={computedDescribedBy}
           className={[
-            'w-full min-h-touch pl-space-3 pr-space-7 py-space-2 text-small text-primary bg-surface-solid rounded-sm border appearance-none focus-ring transition-colors cursor-pointer select-none',
+            'w-full min-h-touch pl-space-3 pr-space-7 py-space-2 text-small text-fg bg-surface-solid rounded-sm border appearance-none focus-ring transition-colors cursor-pointer select-none',
             error ? 'border-error' : 'border-border-input hover:border-border-strong',
             disabled ? 'opacity-50 cursor-not-allowed bg-surface' : '',
             className,
@@ -70,7 +70,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 
         {/* Custom chevron dropdown icon */}
         <span
-          className="absolute right-space-3 pointer-events-none text-muted inline-flex items-center"
+          className="absolute right-space-3 pointer-events-none text-fg-muted inline-flex items-center"
           aria-hidden="true"
         >
           <svg

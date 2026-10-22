@@ -21,7 +21,7 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
           'w-full flex items-center gap-space-3 px-space-3 py-space-2 text-small text-left rounded-sm transition-colors focus-ring touch-target select-none',
           destructive
             ? 'text-error hover:bg-error-tint active:bg-error-tint'
-            : 'text-primary hover:bg-surface active:bg-surface-light',
+            : 'text-fg hover:bg-surface active:bg-surface-light',
           disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
           className,
         ]
@@ -29,7 +29,7 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
           .join(' ')}
         {...props}
       >
-        {icon && <span className="shrink-0 text-muted inline-flex items-center" aria-hidden="true">{icon}</span>}
+        {icon && <span className="shrink-0 text-fg-muted inline-flex items-center" aria-hidden="true">{icon}</span>}
         <span className="flex-1">{children}</span>
       </button>
     );
@@ -38,12 +38,13 @@ export const MenuItem = React.forwardRef<HTMLButtonElement, MenuItemProps>(
 MenuItem.displayName = 'MenuItem';
 
 export const MenuDivider: React.FC = () => (
-  <hr className="my-space-1 border-t border-border" role="separator" />
+  <hr className="my-space-1 border-t border-border" />
 );
 
 export interface MenuProps {
   trigger: React.ReactElement<{
     onClick?: React.MouseEventHandler;
+    onKeyDown?: React.KeyboardEventHandler;
     'aria-haspopup'?: string | boolean;
     'aria-expanded'?: boolean;
     'aria-controls'?: string;
@@ -97,16 +98,16 @@ export const Menu: React.FC<MenuProps> = ({
     );
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        setIsOpen(true);
-        focusedIndexRef.current = 0;
-      }
-      return;
+  const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
+    trigger.props.onKeyDown?.(e);
+    if (!isOpen && (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      setIsOpen(true);
+      focusedIndexRef.current = 0;
     }
+  };
 
+  const handleMenuKeyDown = (e: React.KeyboardEvent) => {
     const items = getMenuItems();
     if (items.length === 0) return;
 
@@ -173,12 +174,12 @@ export const Menu: React.FC<MenuProps> = ({
       trigger.props.onClick?.(e);
       setIsOpen(prev => !prev);
     },
+    onKeyDown: handleTriggerKeyDown,
   });
 
   return (
     <div
       ref={containerRef}
-      onKeyDown={handleKeyDown}
       className="relative inline-block text-left"
     >
       {clonedTrigger}
@@ -198,6 +199,7 @@ export const Menu: React.FC<MenuProps> = ({
             .filter(Boolean)
             .join(' ')}
           onClick={() => setIsOpen(false)}
+          onKeyDown={handleMenuKeyDown}
         >
           {children}
         </div>

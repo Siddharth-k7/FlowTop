@@ -73,7 +73,7 @@ export default function HomePage() {
             <span className="text-caption font-semibold uppercase tracking-tight text-primary">
               Curation
             </span>
-            <h2 className="text-headline font-display font-semibold text-text-primary">
+            <h2 className="text-headline font-display font-semibold text-fg">
               Featured Collections
             </h2>
           </div>
@@ -91,12 +91,12 @@ export default function HomePage() {
               <Card.Header>
                 <div className="flex items-center justify-between w-full">
                   <Badge variant="primary">{col.badge}</Badge>
-                  <span className="text-caption text-text-muted">{col.finish}</span>
+                  <span className="text-caption text-fg-muted">{col.finish}</span>
                 </div>
               </Card.Header>
               <Card.Body className="flex-1 flex flex-col gap-space-2">
                 <Card.Title>{col.name}</Card.Title>
-                <p className="text-small text-text-muted leading-relaxed">
+                <p className="text-small text-fg-muted leading-relaxed">
                   {col.description}
                 </p>
               </Card.Body>
@@ -118,22 +118,22 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-space-4 p-space-6 bg-surface-solid rounded-md border border-border shadow-sm">
           <div className="flex flex-col gap-space-2">
             <span className="text-caption font-semibold uppercase text-primary">01 / Metallurgical Purity</span>
-            <h3 className="text-title font-medium text-text-primary">Architectural Brass</h3>
-            <p className="text-small text-text-muted leading-relaxed">
+            <h3 className="text-title font-medium text-fg">Architectural Brass</h3>
+            <p className="text-small text-fg-muted leading-relaxed">
               Forged exclusively from certified lead-free brass ingots, preventing groundwater leaching and guaranteeing decades of hydraulic integrity.
             </p>
           </div>
           <div className="flex flex-col gap-space-2">
             <span className="text-caption font-semibold uppercase text-primary">02 / Surface Resilience</span>
-            <h3 className="text-title font-medium text-text-primary">Vapour Deposition (PVD)</h3>
-            <p className="text-small text-text-muted leading-relaxed">
+            <h3 className="text-title font-medium text-fg">Vapour Deposition (PVD)</h3>
+            <p className="text-small text-fg-muted leading-relaxed">
               Zirconium and titanium molecular bonding produces an ultra-hard surface impervious to corrosion, abrasive cleaning, and harsh water.
             </p>
           </div>
           <div className="flex flex-col gap-space-2">
             <span className="text-caption font-semibold uppercase text-primary">03 / Specifier Support</span>
-            <h3 className="text-title font-medium text-text-primary">BIM & Hydraulic Data</h3>
-            <p className="text-small text-text-muted leading-relaxed">
+            <h3 className="text-title font-medium text-fg">BIM & Hydraulic Data</h3>
+            <p className="text-small text-fg-muted leading-relaxed">
               Complete CAD geometry, Revit families, and dynamic flow rate curves prepared specifically for hospitality and residential architects.
             </p>
           </div>

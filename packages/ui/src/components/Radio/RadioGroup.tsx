@@ -63,13 +63,13 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
       {(label || hint) && (
         <div className="flex flex-col gap-space-1">
           {label && (
-            <span id={labelId} className="text-small font-medium text-text-primary">
+            <span id={labelId} className="text-small font-medium text-fg">
               {label}
               {required && <span className="text-error ml-space-1" aria-hidden="true">*</span>}
             </span>
           )}
           {hint && (
-            <span id={hintId} className="text-caption text-text-muted">
+            <span id={hintId} className="text-caption text-fg-muted">
               {hint}
             </span>
           )}

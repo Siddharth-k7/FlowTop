@@ -10,7 +10,7 @@ export interface FooterProps {
 
 export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
   return (
-    <footer className="w-full bg-surface-solid border-t border-border pt-space-8 pb-space-6 text-text-primary select-none">
+    <footer className="w-full bg-surface-solid border-t border-border pt-space-8 pb-space-6 text-fg select-none">
       <div className="max-w-7xl mx-auto px-space-4 md:px-space-6 flex flex-col gap-space-8">
         {/* Brand & Introduction */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-4 border-b border-border pb-space-6">
@@ -18,7 +18,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
             <span className="font-display font-semibold tracking-tight text-headline text-primary uppercase">
               FLOWTOP
             </span>
-            <p className="text-small text-text-muted leading-relaxed">
+            <p className="text-small text-fg-muted leading-relaxed">
               Architectural bath fittings and brassware crafted in India from lead-free brass. Engineered for enduring luxury and flawless precision.
             </p>
           </div>
@@ -32,7 +32,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={social.label}
-                className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-text-muted hover:text-primary transition-colors focus-ring"
+                className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg-muted hover:text-primary transition-colors focus-ring"
               >
                 {social.platform === 'instagram' && (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -70,7 +70,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-space-6">
           {columns.map((col) => (
             <div key={col.id} className="flex flex-col gap-space-3">
-              <h3 className="text-small font-semibold text-text-primary tracking-tight">
+              <h3 className="text-small font-semibold text-fg tracking-tight">
                 {col.title}
               </h3>
               <ul className="flex flex-col gap-space-2 list-none p-0 m-0">
@@ -78,7 +78,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
                   <li key={link.id}>
                     <Link
                       href={link.href}
-                      className="text-small text-text-muted hover:text-primary transition-colors focus-ring rounded-sm inline-block py-px"
+                      className="text-small text-fg-muted hover:text-primary transition-colors focus-ring rounded-sm inline-block py-px"
                     >
                       {link.label}
                     </Link>
@@ -90,7 +90,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
         </div>
 
         {/* Legal Line & Credits */}
-        <div className="border-t border-border pt-space-6 flex flex-col sm:flex-row items-center justify-between gap-space-3 text-caption text-text-muted">
+        <div className="border-t border-border pt-space-6 flex flex-col sm:flex-row items-center justify-between gap-space-3 text-caption text-fg-muted">
           <p>{legalNotice}</p>
           <div className="flex items-center gap-space-4">
             <Link href="/privacy" className="hover:text-primary transition-colors focus-ring rounded-sm">

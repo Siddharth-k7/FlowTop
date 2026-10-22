@@ -25,10 +25,10 @@ export default function ErrorBoundary({ error, reset }: ErrorProps) {
         </div>
 
         <div className="flex flex-col gap-space-2">
-          <h1 className="text-headline font-display font-semibold text-text-primary tracking-tight">
+          <h1 className="text-headline font-display font-semibold text-fg tracking-tight">
             Something Went Wrong
           </h1>
-          <p className="text-body text-text-muted leading-relaxed">
+          <p className="text-body text-fg-muted leading-relaxed">
             We were unable to complete your request. Our technical team has been notified.
             Please try reloading the page, or return to our homepage.
           </p>

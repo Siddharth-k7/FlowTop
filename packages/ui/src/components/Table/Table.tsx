@@ -52,9 +52,9 @@ export function Table<T>({
 
   return (
     <div
-      className={`w-full overflow-x-auto rounded-md border border-border bg-surface-solid ${className}`}
-      tabIndex={0}
+      role="region"
       aria-label={caption || 'Data table'}
+      className={`w-full overflow-x-auto rounded-md border border-border bg-surface-solid ${className}`}
     >
       <table className="w-full text-left border-collapse text-small">
         {caption && <caption className="sr-only">{caption}</caption>}
@@ -83,7 +83,7 @@ export function Table<T>({
                   scope="col"
                   aria-sort={ariaSort}
                   style={col.width ? { width: col.width } : undefined}
-                  className={`p-space-3 font-medium text-primary select-none ${alignClass} ${
+                  className={`p-space-3 font-medium text-fg select-none ${alignClass} ${
                     col.className || ''
                   }`}
                 >
@@ -91,12 +91,12 @@ export function Table<T>({
                     <button
                       type="button"
                       onClick={() => handleSortClick(col.id)}
-                      className={`inline-flex items-center gap-space-2 touch-target py-space-1 px-space-2 -mx-space-2 rounded-sm focus-ring font-medium text-primary hover:text-purple-deep transition-colors ${
+                      className={`inline-flex items-center gap-space-2 touch-target py-space-1 px-space-2 -mx-space-2 rounded-sm focus-ring font-medium text-fg hover:text-primary transition-colors ${
                         col.align === 'right' ? 'flex-row-reverse' : ''
                       }`}
                     >
                       <span>{col.header}</span>
-                      <span className="text-muted inline-flex items-center" aria-hidden="true">
+                      <span className="text-fg-muted inline-flex items-center" aria-hidden="true">
                         {isSorted ? (
                           sortDirection === 'asc' ? (
                             <svg className="w-space-4 h-space-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -136,7 +136,7 @@ export function Table<T>({
             ))
           ) : data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="p-space-6 text-center text-muted">
+              <td colSpan={columns.length} className="p-space-6 text-center text-fg-muted">
                 {emptyState || 'No records found.'}
               </td>
             </tr>
@@ -153,7 +153,7 @@ export function Table<T>({
                     isClickable ? 'cursor-pointer hover:bg-surface/70 focus-within:bg-surface/70' : 'hover:bg-surface/40'
                   }`}
                 >
-                  {columns.map(col => {
+                  {columns.map((col, colIndex) => {
                     const alignClass =
                       col.align === 'right'
                         ? 'text-right'
@@ -161,12 +161,29 @@ export function Table<T>({
                         ? 'text-center'
                         : 'text-left';
 
+                    const cellContent = col.accessor
+                      ? col.accessor(item)
+                      : (item as Record<string, React.ReactNode>)[col.id];
+
                     return (
                       <td
                         key={col.id}
-                        className={`p-space-3 text-primary ${alignClass} ${col.className || ''}`}
+                        className={`p-space-3 text-fg ${alignClass} ${col.className || ''}`}
                       >
-                        {col.accessor ? col.accessor(item) : (item as Record<string, React.ReactNode>)[col.id]}
+                        {colIndex === 0 && isClickable ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRowClick?.(item);
+                            }}
+                            className="font-medium text-left text-fg hover:text-primary focus-ring rounded-sm touch-target py-space-1 px-space-1 -mx-space-1 inline-flex items-center"
+                          >
+                            {cellContent}
+                          </button>
+                        ) : (
+                          cellContent
+                        )}
                       </td>
                     );
                   })}

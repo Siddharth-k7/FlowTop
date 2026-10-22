@@ -30,9 +30,9 @@ export function buttonClasses({
     primary:
       'bg-primary text-on-primary hover:bg-primary-dark active:bg-primary-dark shadow-sm border border-transparent',
     secondary:
-      'bg-surface-solid text-primary border border-border-input hover:bg-surface active:bg-surface-light shadow-sm',
+      'bg-surface-solid text-fg border border-border-input hover:bg-surface active:bg-surface-light shadow-sm',
     ghost:
-      'bg-transparent text-primary border border-transparent hover:bg-surface-light active:bg-surface',
+      'bg-transparent text-fg border border-transparent hover:bg-surface-light active:bg-surface',
     danger:
       'bg-error text-white border border-transparent hover:opacity-90 active:opacity-100 shadow-sm',
   };

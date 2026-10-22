@@ -95,10 +95,11 @@ export const Drawer = React.forwardRef<HTMLDialogElement, DrawerProps>(
       right:
         'fixed top-0 bottom-0 right-0 m-0 h-full max-h-none w-full max-w-md rounded-l-lg rounded-r-none border-l border-border shadow-lg animate-in slide-in-from-right',
       bottom:
-        'fixed bottom-0 left-0 right-0 m-0 w-full max-h-[85vh] rounded-t-lg rounded-b-none border-t border-border shadow-lg animate-in slide-in-from-bottom',
+        'fixed bottom-0 left-0 right-0 m-0 w-full max-h-dialog rounded-t-lg rounded-b-none border-t border-border shadow-lg animate-in slide-in-from-bottom',
     };
 
     return (
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- Native dialog backdrop click handles outside dismiss; keyboard dismiss is handled by Escape via onCancel
       <dialog
         ref={setRef}
         aria-labelledby={titleId}
@@ -107,7 +108,7 @@ export const Drawer = React.forwardRef<HTMLDialogElement, DrawerProps>(
         onCancel={handleCancel}
         onClick={handleBackdropClick}
         className={[
-          'p-0 bg-surface-solid text-primary backdrop:bg-ink/60 backdrop:backdrop-blur-sm overflow-hidden',
+          'p-0 bg-surface-solid text-fg backdrop:bg-ink/60 backdrop:backdrop-blur-sm overflow-hidden',
           positionClasses[position],
           className,
         ]
@@ -118,11 +119,11 @@ export const Drawer = React.forwardRef<HTMLDialogElement, DrawerProps>(
           {/* Header */}
           <div className="p-space-4 border-b border-border flex items-start justify-between gap-space-3 shrink-0">
             <div>
-              <h2 id={titleId} className="text-title font-medium text-primary">
+              <h2 id={titleId} className="text-title font-medium text-fg">
                 {title}
               </h2>
               {description && (
-                <p id={descId} className="text-small text-muted mt-space-1">
+                <p id={descId} className="text-small text-fg-muted mt-space-1">
                   {description}
                 </p>
               )}
@@ -133,7 +134,7 @@ export const Drawer = React.forwardRef<HTMLDialogElement, DrawerProps>(
               disabled={busy}
               onClick={onClose}
               aria-label="Close drawer"
-              className="touch-target text-muted hover:text-primary focus-ring rounded-pill p-space-2 disabled:opacity-40 disabled:cursor-not-allowed -mr-space-2 -mt-space-2"
+              className="touch-target text-fg-muted hover:text-primary focus-ring rounded-pill p-space-2 disabled:opacity-40 disabled:cursor-not-allowed -mr-space-2 -mt-space-2"
             >
               <svg
                 className="w-space-5 h-space-5"
@@ -153,7 +154,7 @@ export const Drawer = React.forwardRef<HTMLDialogElement, DrawerProps>(
           </div>
 
           {/* Body */}
-          <div className="p-space-4 overflow-y-auto flex-1 text-body text-primary">
+          <div className="p-space-4 overflow-y-auto flex-1 text-body text-fg">
             {children}
           </div>
 

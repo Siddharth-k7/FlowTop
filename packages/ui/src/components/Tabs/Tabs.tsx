@@ -17,6 +17,8 @@ export interface TabsProps {
   orientation?: 'horizontal' | 'vertical';
   className?: string;
   children?: React.ReactNode;
+  'aria-label'?: string;
+  label?: string;
 }
 
 interface TabsContextValue {
@@ -46,6 +48,8 @@ export const Tabs: React.FC<TabsProps> = ({
   orientation = 'horizontal',
   className = '',
   children,
+  'aria-label': ariaLabel,
+  label,
 }) => {
   const tabsId = useId();
   const initialValue = controlledValue ?? defaultValue ?? items?.[0]?.id ?? '';
@@ -83,7 +87,7 @@ export const Tabs: React.FC<TabsProps> = ({
     return (
       <TabsContext.Provider value={contextValue}>
         <div className={`flex flex-col w-full ${className}`}>
-          <TabList>
+          <TabList aria-label={ariaLabel || label || 'Tabs'}>
             {items.map(item => (
               <Tab key={item.id} value={item.id} disabled={item.disabled}>
                 {item.label}
@@ -110,12 +114,14 @@ export const Tabs: React.FC<TabsProps> = ({
   );
 };
 
-export interface TabListProps extends React.HTMLAttributes<HTMLDivElement> {
+export type TabListProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'aria-label'> & {
   'aria-label'?: string;
-}
+  label?: string;
+} & ({ 'aria-label': string } | { label: string });
 
 export const TabList = React.forwardRef<HTMLDivElement, TabListProps>(
-  ({ className = '', children, ...props }, ref) => {
+  ({ className = '', children, 'aria-label': ariaLabel, label, ...props }, ref) => {
+    const finalLabel = ariaLabel || label;
     const { orientation, activeTab, setActiveTab, tabElements } = useTabsContext();
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -159,9 +165,11 @@ export const TabList = React.forwardRef<HTMLDivElement, TabListProps>(
     };
 
     return (
+      // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- WAI-ARIA tabs pattern uses roving tabindex on child tabs; tablist container manages arrow navigation and is not itself focusable
       <div
         ref={ref}
         role="tablist"
+        aria-label={finalLabel}
         aria-orientation={orientation}
         onKeyDown={handleKeyDown}
         className={[
@@ -205,14 +213,14 @@ export const Tab = React.forwardRef<HTMLButtonElement, TabProps>(
         type="button"
         disabled={disabled}
         aria-selected={isSelected}
-        aria-controls={panelId}
+        aria-controls={isSelected ? panelId : undefined}
         tabIndex={isSelected ? 0 : -1}
         onClick={() => !disabled && setActiveTab(value)}
         className={[
           'min-h-touch touch-target px-space-4 py-space-2 text-small font-medium select-none transition-colors relative focus-ring',
           isSelected
             ? 'text-purple-deep border-b-2 border-purple-deep font-semibold'
-            : 'text-muted hover:text-primary hover:border-b-2 hover:border-border-strong',
+            : 'text-fg-muted hover:text-primary hover:border-b-2 hover:border-border-strong',
           disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
           className,
         ]

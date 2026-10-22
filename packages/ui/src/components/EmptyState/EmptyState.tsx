@@ -42,9 +42,9 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           {icon || defaultIcon}
         </div>
 
-        <h3 className="text-title font-medium text-primary">{title}</h3>
+        <h3 className="text-title font-medium text-fg">{title}</h3>
 
-        <div className="text-small text-muted mt-space-2 max-w-sm">
+        <div className="text-small text-fg-muted mt-space-2 max-w-sm">
           {description}
         </div>
 

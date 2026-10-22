@@ -12,10 +12,10 @@ export default function NotFound() {
         </div>
 
         <div className="flex flex-col gap-space-2">
-          <h1 className="text-headline font-display font-semibold text-text-primary tracking-tight">
+          <h1 className="text-headline font-display font-semibold text-fg tracking-tight">
             Page or Fitting Not Found
           </h1>
-          <p className="text-body text-text-muted leading-relaxed">
+          <p className="text-body text-fg-muted leading-relaxed">
             The collection, specification sheet, or page you requested has been relocated or is no
             longer active in our live catalogue.
           </p>
@@ -23,7 +23,7 @@ export default function NotFound() {
 
         {/* Helpful next steps */}
         <div className="w-full bg-surface p-space-4 rounded-sm border border-border flex flex-col gap-space-3 text-left">
-          <span className="text-caption font-semibold uppercase tracking-tight text-text-primary">
+          <span className="text-caption font-semibold uppercase tracking-tight text-fg">
             Recommended Next Steps
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-2 text-small">

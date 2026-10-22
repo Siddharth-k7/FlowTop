@@ -70,14 +70,13 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
       <div className={`flex flex-col gap-space-1 ${className}`}>
         <div
           className={[
-            'inline-flex items-center gap-space-3 select-none text-small touch-target py-space-1',
-            disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
+            'inline-flex items-center gap-space-3 select-none text-small py-space-1',
+            disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : '',
           ]
             .filter(Boolean)
             .join(' ')}
-          onClick={handleToggle}
         >
-          {/* Switch track button */}
+          {/* Switch interactive control */}
           <button
             ref={ref}
             type="button"
@@ -90,27 +89,29 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
             aria-invalid={Boolean(error)}
             disabled={disabled}
             onKeyDown={handleKeyDown}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleToggle();
-            }}
-            className={[
-              'relative inline-flex items-center shrink-0 w-space-7 h-space-5 rounded-pill transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2',
-              isChecked ? 'bg-primary' : 'bg-grey-300',
-              error ? 'ring-2 ring-error' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+            onClick={handleToggle}
+            className="group relative inline-flex items-center justify-center shrink-0 touch-target p-0 bg-transparent border-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none"
           >
-            {/* Knob */}
+            {/* Visual track */}
             <span
               className={[
-                'inline-block w-space-4 h-space-4 rounded-pill bg-white shadow-sm transition-transform duration-fast ease-standard pointer-events-none',
-                isChecked ? 'translate-x-space-3' : 'translate-x-space-1',
+                'relative inline-flex items-center shrink-0 w-space-7 h-space-5 rounded-pill transition-colors duration-fast group-focus-visible:ring-2 group-focus-visible:ring-focus-ring group-focus-visible:ring-offset-2',
+                isChecked ? 'bg-primary' : 'bg-grey-300',
+                error ? 'ring-2 ring-error' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
-            />
+            >
+              {/* Knob */}
+              <span
+                className={[
+                  'inline-block w-space-4 h-space-4 rounded-pill bg-white shadow-sm transition-transform duration-fast ease-standard pointer-events-none',
+                  isChecked ? 'translate-x-space-3' : 'translate-x-space-1',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              />
+            </span>
           </button>
 
           {/* Optional hidden input for standard form submission */}
@@ -130,12 +131,21 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
           {(label || hint) && (
             <div className="flex flex-col">
               {label && (
-                <span id={labelId} className="font-medium text-text-primary leading-normal">
+                <label
+                  htmlFor={id}
+                  id={labelId}
+                  className={[
+                    'font-medium text-fg leading-normal',
+                    disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   {label}
-                </span>
+                </label>
               )}
               {hint && (
-                <span id={hintId} className="text-caption text-text-muted">
+                <span id={hintId} className="text-caption text-fg-muted">
                   {hint}
                 </span>
               )}

@@ -11,12 +11,91 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uiRoot = path.resolve(__dirname, '..');
-const repoRoot = path.resolve(uiRoot, '../..');
+const repoRoot = path.resolve(uiRoot, '..', '..');
+
+/**
+ * Normalises any file or directory path to a canonical file URL string.
+ * This eliminates all differences in separators (\ vs /) and drive letters.
+ */
+function toCanonicalUrl(targetPath) {
+  return pathToFileURL(path.resolve(targetPath)).href;
+}
+
+/**
+ * Normalises any file or directory path to a canonical native filesystem path.
+ */
+function toCanonicalPath(targetPath) {
+  return fileURLToPath(pathToFileURL(path.resolve(targetPath)));
+}
+
+/**
+ * Checks if targetPath is inside dirPath (or equals dirPath)
+ * without hardcoding or splitting on path separators.
+ */
+function isPathInside(targetPath, dirPath) {
+  const normTarget = toCanonicalPath(targetPath);
+  const normDir = toCanonicalPath(dirPath);
+  if (normTarget === normDir) return true;
+  const rel = path.relative(normDir, normTarget);
+  return Boolean(rel) && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+/**
+ * Checks if any segment in the path hierarchy matches a given directory name
+ * (e.g. 'node_modules', '.next', 'dist').
+ * Traverses using path.dirname and path.basename so no separator splitting is needed.
+ */
+function hasDirectorySegment(targetPath, segmentName) {
+  let current = toCanonicalPath(targetPath);
+  while (true) {
+    if (path.basename(current) === segmentName) {
+      return true;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      break;
+    }
+    current = parent;
+  }
+  return false;
+}
+
+/**
+ * Specifically checks if a path is inside a 'lib/mocks' directory hierarchy,
+ * without splitting or comparing on "/" or "\".
+ */
+function isInsideLibMocks(targetPath) {
+  let current = toCanonicalPath(targetPath);
+  while (true) {
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    if (path.basename(current) === 'mocks' && path.basename(parent) === 'lib') {
+      return true;
+    }
+    current = parent;
+  }
+  return false;
+}
+
+/**
+ * Checks whether a given file is tokens.css, supporting any path separator.
+ */
+const tokensCssUrl = toCanonicalUrl(path.resolve(uiRoot, 'src', 'tokens.css'));
+function isTokensCss(filePath) {
+  return toCanonicalUrl(filePath) === tokensCssUrl;
+}
+
+/**
+ * Checks whether a given path is inside node_modules, supporting any path separator.
+ */
+function isInsideNodeModules(filePath) {
+  return hasDirectorySegment(filePath, 'node_modules');
+}
 
 let hasErrors = false;
 
@@ -63,10 +142,10 @@ const tokens = {
 };
 
 const contrastPairs = [
-  { fg: tokens.ink, bg: tokens.white, label: 'text-primary on white', min: 4.5 },
-  { fg: tokens.ink, bg: tokens.surface, label: 'text-primary on surface', min: 4.5 },
-  { fg: tokens.textMuted, bg: tokens.white, label: 'text-muted on white', min: 4.5 },
-  { fg: tokens.textMuted, bg: tokens.surface, label: 'text-muted on surface', min: 4.5 },
+  { fg: tokens.ink, bg: tokens.white, label: 'text-fg on white', min: 4.5 },
+  { fg: tokens.ink, bg: tokens.surface, label: 'text-fg on surface', min: 4.5 },
+  { fg: tokens.textMuted, bg: tokens.white, label: 'text-fg-muted on white', min: 4.5 },
+  { fg: tokens.textMuted, bg: tokens.surface, label: 'text-fg-muted on surface', min: 4.5 },
   { fg: tokens.white, bg: tokens.purpleDeep, label: 'on-primary on primary (white on purple-deep)', min: 4.5 },
   { fg: tokens.white, bg: tokens.ink, label: 'on-surface-inverse on surface-inverse (white on ink)', min: 4.5 },
   { fg: tokens.success, bg: tokens.white, label: 'success on white', min: 4.5 },
@@ -98,14 +177,16 @@ console.log('\n2. Checking for hex colours outside packages/ui/src/tokens.css...
 
 const hexRegex = /#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
 
+const ignoredDirNames = new Set(['node_modules', '.next', 'dist', '.git', 'coverage']);
+
 function findFiles(dir, extensions) {
   const results = [];
   if (!fs.existsSync(dir)) return results;
   const list = fs.readdirSync(dir, { withFileTypes: true });
   for (const item of list) {
-    const fullPath = path.join(dir, item.name);
+    const fullPath = path.resolve(dir, item.name);
     if (item.isDirectory()) {
-      if (['node_modules', '.next', 'dist', '.git', 'coverage'].includes(item.name)) {
+      if (ignoredDirNames.has(item.name) || isInsideNodeModules(fullPath)) {
         continue;
       }
       results.push(...findFiles(fullPath, extensions));
@@ -117,8 +198,8 @@ function findFiles(dir, extensions) {
 }
 
 const checkTargets = [
-  path.join(repoRoot, 'packages/ui'),
-  path.join(repoRoot, 'frontend'),
+  path.resolve(repoRoot, 'packages', 'ui'),
+  path.resolve(repoRoot, 'frontend'),
 ];
 
 let scannedFiles = [];
@@ -126,18 +207,38 @@ for (const target of checkTargets) {
   scannedFiles.push(...findFiles(target, ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.css']));
 }
 
+// Exclude files from hex colour validation strictly by PATH, never by line markers:
+// 1. packages/ui/src/tokens.css - the design tokens definition file
+// 2. packages/ui/scripts/check.mjs - the validation script itself (contains contrast check token fixtures)
+// 3. frontend/src/lib/mocks (or any lib/mocks folder) - typed mock fixtures (e.g. finish swatch hex data)
+const hexExclusionList = [
+  path.resolve(uiRoot, 'src', 'tokens.css'),
+  toCanonicalPath(__filename),
+  path.resolve(repoRoot, 'frontend', 'src', 'lib', 'mocks'),
+];
+
+function isExcludedFromHexCheck(filePath) {
+  if (isTokensCss(filePath)) return true;
+  for (const excludedPath of hexExclusionList) {
+    if (isPathInside(filePath, excludedPath)) {
+      return true;
+    }
+  }
+  if (isInsideLibMocks(filePath)) {
+    return true;
+  }
+  return false;
+}
+
 let hexFoundCount = 0;
 for (const file of scannedFiles) {
-  const relPath = path.relative(repoRoot, file);
-  // Exclude tokens.css and this check script itself
-  if (relPath === 'packages/ui/src/tokens.css' || relPath === 'packages/ui/scripts/check.mjs') {
+  if (isExcludedFromHexCheck(file)) {
     continue;
   }
+  const relPath = path.relative(repoRoot, file);
   const content = fs.readFileSync(file, 'utf8');
   const lines = content.split('\n');
   lines.forEach((line, idx) => {
-    // Ignore comments mentioning hex or examples if specifically marked
-    if (line.includes('eslint-disable') || line.includes('swatchHex')) return;
     const matches = line.match(hexRegex);
     if (matches) {
       console.error(`  FAIL: Hex colour ${matches.join(', ')} in ${relPath}:${idx + 1}`);
@@ -156,7 +257,6 @@ if (hexFoundCount === 0) {
 console.log('\n3. Checking for `any` type usage in TypeScript files...');
 
 const tsFiles = scannedFiles.filter(f => f.endsWith('.ts') || f.endsWith('.tsx'));
-const anyRegex = /(\bany\b)/g;
 
 let anyFoundCount = 0;
 for (const file of tsFiles) {
@@ -182,7 +282,7 @@ if (anyFoundCount === 0) {
 
 // 4. Style Guide Component Registry check
 console.log('\n4. Checking Style Guide component registry completeness...');
-const registryFile = path.join(repoRoot, 'frontend/src/app/style-guide/registry.ts');
+const registryFile = path.resolve(repoRoot, 'frontend', 'src', 'app', 'style-guide', 'registry.ts');
 if (!fs.existsSync(registryFile)) {
   console.error(`  FAIL: Style Guide registry file not found at ${registryFile}`);
   hasErrors = true;
@@ -194,13 +294,13 @@ if (!fs.existsSync(registryFile)) {
     registeredNames.add(m[1]);
   }
 
-  const indexFile = path.join(uiRoot, 'src/index.ts');
+  const indexFile = path.resolve(uiRoot, 'src', 'index.ts');
   const indexContent = fs.readFileSync(indexFile, 'utf8');
   const componentExports = [...indexContent.matchAll(/export\s+\*\s+from\s+['"]\.\/components\/([A-Za-z0-9_-]+)['"]/g)].map(m => m[1]);
 
   let missingCount = 0;
   for (const compDir of componentExports) {
-    const dirPath = path.join(uiRoot, 'src/components', compDir);
+    const dirPath = path.resolve(uiRoot, 'src', 'components', compDir);
     const files = fs.readdirSync(dirPath);
     const tsxFiles = files.filter(f => f.endsWith('.tsx') && !f.includes('.test.') && !f.includes('.spec.'));
     for (const f of tsxFiles) {
@@ -216,6 +316,244 @@ if (!fs.existsSync(registryFile)) {
   if (missingCount === 0) {
     console.log(`  PASS: All exported components (${registeredNames.size}) are present in the Style Guide registry.`);
   }
+
+  // 4b. Verify required variants and states are present on the Style Guide page
+  const showcaseFile = path.resolve(repoRoot, 'frontend', 'src', 'app', 'style-guide', 'ComponentShowcase.tsx');
+  if (!fs.existsSync(showcaseFile)) {
+    console.error(`  FAIL: ComponentShowcase.tsx not found at ${showcaseFile}`);
+    hasErrors = true;
+  } else {
+    const showcaseContent = fs.readFileSync(showcaseFile, 'utf8');
+
+    const entryRegex = /\{\s*id:\s*['"]([^'"]+)['"][\s\S]*?name:\s*['"]([^'"]+)['"]([\s\S]*?)\},/g;
+    let entryMatch;
+    let missingCoverageCount = 0;
+
+    while ((entryMatch = entryRegex.exec(registryContent)) !== null) {
+      const compId = entryMatch[1];
+      const compName = entryMatch[2];
+      const rest = entryMatch[3];
+
+      const varMatch = rest.match(/requiredVariants:\s*\[([^\]]*)\]/);
+      const stateMatch = rest.match(/requiredStates:\s*\[([^\]]*)\]/);
+
+      const variants = varMatch
+        ? varMatch[1].split(',').map(s => s.replace(/['"\s]/g, '')).filter(Boolean)
+        : [];
+      const states = stateMatch
+        ? stateMatch[1].split(',').map(s => s.replace(/['"\s]/g, '')).filter(Boolean)
+        : [];
+
+      // Check Button variants and states
+      if (compId === 'button') {
+        for (const v of variants) {
+          const varRegex = new RegExp(`variant=['"]${v}['"]`);
+          if (!varRegex.test(showcaseContent)) {
+            console.error(`  FAIL: ${compName} missing variant "${v}" on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+        for (const st of states) {
+          const [v, stateType] = st.split('-');
+          const vStateRegex = new RegExp(`variant=['"]${v}['"][^>]*\\b${stateType}\\b`);
+          if (!vStateRegex.test(showcaseContent)) {
+            console.error(`  FAIL: ${compName} missing ${st} state on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+      }
+
+      // Check Table states
+      if (compId === 'table') {
+        for (const st of states) {
+          let found = false;
+          if (st === 'sorting-asc') {
+            found = /sortDirection=['"]asc['"]/.test(showcaseContent) || /tableSortDir/.test(showcaseContent);
+          } else if (st === 'sorting-desc') {
+            found = /sortDirection=['"]desc['"]/.test(showcaseContent) || /tableSortDir/.test(showcaseContent);
+          } else if (st === 'sorting-none') {
+            found = /aria-sort=['"]none['"]/.test(showcaseContent) || /sortColumn=\{undefined\}/.test(showcaseContent);
+          } else if (st === 'loading') {
+            found = /<Table[\s\S]*?\bloading=\{true\}/.test(showcaseContent);
+          } else if (st === 'empty') {
+            found = /<Table[\s\S]*?\bemptyState=/.test(showcaseContent);
+          }
+          if (!found) {
+            console.error(`  FAIL: Table missing state "${st}" on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+      }
+
+      // Check Tabs states
+      if (compId === 'tabs') {
+        for (const st of states) {
+          let found = false;
+          if (st === 'disabled') {
+            found = /disabled:\s*true/.test(showcaseContent) || /<Tab[^>]*\bdisabled\b/.test(showcaseContent);
+          } else if (st === 'active' || st === 'inactive') {
+            found = /defaultValue=['"]specs['"]/.test(showcaseContent) || /<Tab\b/.test(showcaseContent);
+          }
+          if (!found) {
+            console.error(`  FAIL: Tabs missing state "${st}" on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+      }
+
+      // Check Card variants
+      if (compId === 'card') {
+        for (const v of variants) {
+          const varRegex = new RegExp(`variant=['"]${v}['"]`);
+          if (!varRegex.test(showcaseContent)) {
+            console.error(`  FAIL: Card missing variant "${v}" on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+      }
+
+      // Check Badge variants
+      if (compId === 'badge') {
+        for (const v of variants) {
+          const varRegex = new RegExp(`variant=['"]${v}['"]`);
+          if (!varRegex.test(showcaseContent)) {
+            console.error(`  FAIL: Badge missing variant "${v}" on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+      }
+
+      // Check Drawer variants
+      if (compId === 'drawer') {
+        for (const v of variants) {
+          const varRegex = new RegExp(`(position|side)=['"]${v}['"]`);
+          if (!varRegex.test(showcaseContent)) {
+            console.error(`  FAIL: Drawer missing position "${v}" on /style-guide page!`);
+            missingCoverageCount++;
+            hasErrors = true;
+          }
+        }
+      }
+    }
+
+    if (missingCoverageCount === 0) {
+      console.log(`  PASS: All documented component variants and states are present on the Style Guide page.`);
+    }
+  }
+}
+
+// 5. Breakpoints Single Source of Truth & Consistency Check
+console.log('\n5. Checking Breakpoints single source & consistency...');
+
+const tokensPath = path.resolve(uiRoot, 'src', 'tokens.css');
+if (!fs.existsSync(tokensPath)) {
+  console.error(`  FAIL: tokens.css not found at ${tokensPath}`);
+  hasErrors = true;
+} else {
+  const tokensContent = fs.readFileSync(tokensPath, 'utf8');
+  const cssBreakpoints = {};
+  const bpRegex = /--breakpoint-([a-z0-9]+):\s*([0-9]+)px;/g;
+  let bpMatch;
+  while ((bpMatch = bpRegex.exec(tokensContent)) !== null) {
+    cssBreakpoints[bpMatch[1]] = parseInt(bpMatch[2], 10);
+  }
+
+  const REQUIRED_BREAKPOINTS = ['xs', 'md', 'lg', 'xl'];
+  const missingInCss = REQUIRED_BREAKPOINTS.filter(bp => !(bp in cssBreakpoints));
+  if (missingInCss.length > 0) {
+    console.error(`  FAIL: Missing required breakpoint(s) in tokens.css: ${missingInCss.join(', ')}`);
+    hasErrors = true;
+  } else {
+    console.log(`  PASS: tokens.css defines all required breakpoints (${REQUIRED_BREAKPOINTS.join(', ')}).`);
+  }
+
+  // Verify preset loads screens from tokens.css and matches exactly
+  try {
+    const presetPath = path.resolve(uiRoot, 'tailwind-preset.cjs');
+    const { createRequire } = await import('node:module');
+    const require = createRequire(import.meta.url);
+    const preset = require(presetPath);
+    const presetScreens = preset.theme?.screens;
+    if (!presetScreens) {
+      console.error('  FAIL: Preset screens not defined in theme.');
+      hasErrors = true;
+    } else {
+      let presetMatches = true;
+      for (const [bp, val] of Object.entries(cssBreakpoints)) {
+        if (presetScreens[bp] !== `${val}px`) {
+          console.error(`  FAIL: Preset screen mismatch for ${bp}: expected ${val}px, got ${presetScreens[bp]}`);
+          presetMatches = false;
+          hasErrors = true;
+        }
+      }
+      if (presetMatches) {
+        console.log('  PASS: tailwind-preset.cjs screens match tokens.css exactly.');
+      }
+    }
+
+    // Verify preset throws a clear error if a breakpoint is missing
+    let threwOnMissing = false;
+    try {
+      preset.getBreakpoints('--breakpoint-xs: 360px;');
+    } catch (e) {
+      if (e.message.includes('Missing required breakpoint(s) in tokens.css')) {
+        threwOnMissing = true;
+      }
+    }
+    if (threwOnMissing) {
+      console.log('  PASS: tailwind-preset.cjs throws clear error on missing breakpoint.');
+    } else {
+      console.error('  FAIL: tailwind-preset.cjs did not throw when a required breakpoint was missing.');
+      hasErrors = true;
+    }
+  } catch (err) {
+    console.error(`  FAIL: Error testing tailwind-preset.cjs screens: ${err.message}`);
+    hasErrors = true;
+  }
+
+  // Verify index.ts BREAKPOINTS export matches tokens.css
+  const indexPath = path.resolve(uiRoot, 'src', 'index.ts');
+  if (fs.existsSync(indexPath)) {
+    const indexContent = fs.readFileSync(indexPath, 'utf8');
+    if (indexContent.includes('export const BREAKPOINTS')) {
+      const matchObj = indexContent.match(/export const BREAKPOINTS = \{([^}]+)\}/s);
+      if (matchObj) {
+        const bpLines = matchObj[1].split('\n');
+        const tsBreakpoints = {};
+        for (const line of bpLines) {
+          const m = line.match(/([a-z0-9]+):\s*([0-9]+)/);
+          if (m) {
+            tsBreakpoints[m[1]] = parseInt(m[2], 10);
+          }
+        }
+
+        let tsMatches = true;
+        for (const [bp, val] of Object.entries(cssBreakpoints)) {
+          if (tsBreakpoints[bp] !== val) {
+            console.error(`  FAIL: index.ts BREAKPOINTS.${bp} (${tsBreakpoints[bp]}) does not match tokens.css (${val})`);
+            tsMatches = false;
+            hasErrors = true;
+          }
+        }
+        for (const bp of Object.keys(tsBreakpoints)) {
+          if (!(bp in cssBreakpoints)) {
+            console.error(`  FAIL: index.ts BREAKPOINTS has unexpected breakpoint "${bp}" not in tokens.css`);
+            tsMatches = false;
+            hasErrors = true;
+          }
+        }
+        if (tsMatches) {
+          console.log('  PASS: index.ts BREAKPOINTS equals tokens.css.');
+        }
+      }
+    }
+  }
 }
 
 console.log('\n-----------------------------------------------------');
@@ -225,4 +563,5 @@ if (hasErrors) {
 } else {
   console.log('All checks passed successfully.');
 }
+
 

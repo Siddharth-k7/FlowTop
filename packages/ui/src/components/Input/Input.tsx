@@ -45,12 +45,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <div className={`relative flex items-center w-full ${containerClassName}`}>
         {/* Left icon or Search icon */}
         {leftIcon ? (
-          <span className="absolute left-space-3 text-muted pointer-events-none inline-flex items-center">
+          <span className="absolute left-space-3 text-fg-muted pointer-events-none inline-flex items-center">
             {leftIcon}
           </span>
         ) : isSearch ? (
           <span
-            className="absolute left-space-3 text-muted pointer-events-none inline-flex items-center"
+            className="absolute left-space-3 text-fg-muted pointer-events-none inline-flex items-center"
             aria-hidden="true"
           >
             <svg
@@ -78,7 +78,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={Boolean(error)}
           aria-describedby={computedDescribedBy}
           className={[
-            'w-full min-h-touch px-space-3 py-space-2 text-small text-primary bg-surface-solid rounded-sm border focus-ring transition-colors placeholder:text-muted',
+            'w-full min-h-touch px-space-3 py-space-2 text-small text-fg bg-surface-solid rounded-sm border focus-ring transition-colors placeholder:text-fg-muted',
             error ? 'border-error' : 'border-border-input hover:border-border-strong',
             leftIcon || isSearch ? 'pl-space-7' : '',
             rightIcon || isPassword ? 'pr-space-7' : '',
@@ -98,7 +98,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             aria-controls={id}
             tabIndex={disabled ? -1 : 0}
-            className="absolute right-0 top-0 bottom-0 px-space-3 text-muted hover:text-primary focus-ring touch-target flex items-center justify-center rounded-sm"
+            className="absolute right-0 top-0 bottom-0 px-space-3 text-fg-muted hover:text-primary focus-ring touch-target flex items-center justify-center rounded-sm"
           >
             {showPassword ? (
               <svg
@@ -142,7 +142,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
         {/* Custom right icon if not password */}
         {rightIcon && !isPassword && (
-          <span className="absolute right-space-3 text-muted pointer-events-none inline-flex items-center">
+          <span className="absolute right-space-3 text-fg-muted pointer-events-none inline-flex items-center">
             {rightIcon}
           </span>
         )}

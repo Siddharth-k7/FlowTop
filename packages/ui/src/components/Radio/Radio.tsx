@@ -80,7 +80,6 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
               defaultChecked={!isControlled ? defaultChecked : undefined}
               onChange={handleChange}
               aria-describedby={describedBy}
-              aria-invalid={Boolean(error)}
               className="peer sr-only"
               {...props}
             />
@@ -104,7 +103,7 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
                 className={[
                   'w-space-2 h-space-2 rounded-pill bg-primary transition-all duration-fast scale-0',
                   'peer-checked:scale-100',
-                  disabled ? 'bg-text-muted' : '',
+                  disabled ? 'bg-fg-muted' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -115,12 +114,12 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
           {(label || hint) && (
             <div className="flex flex-col pt-px">
               {label && (
-                <span className="font-medium text-text-primary leading-normal">
+                <span className="font-medium text-fg leading-normal">
                   {label}
                 </span>
               )}
               {hint && (
-                <span id={hintId} className="text-caption text-text-muted">
+                <span id={hintId} className="text-caption text-fg-muted">
                   {hint}
                 </span>
               )}
