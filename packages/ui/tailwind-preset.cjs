@@ -1,10 +1,14 @@
 /**
  * Flowtop Tailwind v3 Preset
  *
- * This preset replaces Tailwind defaults with Flowtop design tokens.
- * While arbitrary values (such as custom hex colors or custom pixel brackets)
- * are syntactically supported by Tailwind's engine, they are not part of the design
- * system and are strictly banned by project convention and validated by check.mjs.
+ * Token scales live under theme.extend so consumers keep Tailwind's defaults
+ * (w-56, z-10, font-mono, the sm screen, and the rest). theme.colors is the
+ * one scale this preset still replaces: the default palette is not part of
+ * the design system. Arbitrary hex colours and pixel brackets stay banned
+ * by project convention and are validated by check.mjs.
+ *
+ * Same-named keys inside extend override the Tailwind default. See
+ * "What the preset replaces" in COMPONENTS.md.
  */
 
 const fs = require('fs');
@@ -52,10 +56,7 @@ function getBreakpoints(customContent) {
 
 module.exports = {
   theme: {
-    // REPLACES screens with token breakpoints from tokens.css
-    screens: getBreakpoints(),
-
-    // REPLACES default colors with Flowtop tokens only, with full opacity modifier support
+    // Replaces the default palette. Opacity modifiers stay on colorToken().
     colors: {
       transparent: 'transparent',
       current: 'currentColor',
@@ -113,94 +114,97 @@ module.exports = {
       'focus-ring': colorToken('--focus-ring'),
     },
 
-    // REPLACES spacing with Flowtop 4px scale + touch
-    spacing: {
-      '0': 'var(--space-0)',
-      px: 'var(--space-px)',
-      'space-1': 'var(--space-1)', // 4px
-      'space-2': 'var(--space-2)', // 8px
-      'space-3': 'var(--space-3)', // 12px
-      'space-4': 'var(--space-4)', // 16px
-      'space-5': 'var(--space-5)', // 24px
-      'space-6': 'var(--space-6)', // 32px
-      'space-7': 'var(--space-7)', // 48px
-      'space-8': 'var(--space-8)', // 64px
-      touch: 'var(--size-touch)', // 44px touch target
-    },
+    extend: {
+      // Token breakpoints. xl overrides Tailwind's 1280px with 1440px.
+      // sm (640px) and 2xl (1536px) stay from the default theme.
+      screens: getBreakpoints(),
 
-    // REPLACES border radius with Flowtop radius scale
-    borderRadius: {
-      none: 'var(--radius-none)',
-      sm: 'var(--radius-sm)', // 12px
-      md: 'var(--radius-md)', // 24px
-      lg: 'var(--radius-lg)', // 40px
-      pill: 'var(--radius-pill)', // 9999px
-    },
+      // Named space-* steps do not collide with Tailwind's numeric scale.
+      // 0 and px match the default pixel values and resolve through tokens.
+      spacing: {
+        '0': 'var(--space-0)',
+        px: 'var(--space-px)',
+        'space-1': 'var(--space-1)', // 4px
+        'space-2': 'var(--space-2)', // 8px
+        'space-3': 'var(--space-3)', // 12px
+        'space-4': 'var(--space-4)', // 16px
+        'space-5': 'var(--space-5)', // 24px
+        'space-6': 'var(--space-6)', // 32px
+        'space-7': 'var(--space-7)', // 48px
+        'space-8': 'var(--space-8)', // 64px
+        touch: 'var(--size-touch)', // 44px touch target
+      },
 
-    // REPLACES shadows with Flowtop purple-tinted shadows
-    boxShadow: {
-      none: 'none',
-      sm: 'var(--shadow-sm)',
-      md: 'var(--shadow-md)',
-      lg: 'var(--shadow-lg)',
-    },
+      // sm/md/lg override Tailwind's 2px/6px/8px radii with the token radii.
+      borderRadius: {
+        none: 'var(--radius-none)',
+        sm: 'var(--radius-sm)', // 12px
+        md: 'var(--radius-md)', // 24px
+        lg: 'var(--radius-lg)', // 40px
+        pill: 'var(--radius-pill)', // 9999px
+      },
 
-    // REPLACES typography sizes with Flowtop fluid/fixed type scale
-    fontSize: {
-      caption: ['var(--text-caption-size)', { lineHeight: 'var(--text-caption-leading)' }],
-      small: ['var(--text-small-size)', { lineHeight: 'var(--text-small-leading)' }],
-      body: ['var(--text-body-size)', { lineHeight: 'var(--text-body-leading)' }],
-      title: ['var(--text-title-size)', { lineHeight: 'var(--text-title-leading)' }],
-      headline: ['var(--text-headline-size)', { lineHeight: 'var(--text-headline-leading)' }],
-      display: ['var(--text-display-size)', { lineHeight: 'var(--text-display-leading)' }],
-    },
+      // sm/md/lg override Tailwind's black shadows with the purple-tinted tokens.
+      boxShadow: {
+        none: 'none',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+      },
 
-    // REPLACES font families
-    fontFamily: {
-      display: 'var(--font-display)',
-      body: 'var(--font-body)',
-    },
+      fontSize: {
+        caption: ['var(--text-caption-size)', { lineHeight: 'var(--text-caption-leading)' }],
+        small: ['var(--text-small-size)', { lineHeight: 'var(--text-small-leading)' }],
+        body: ['var(--text-body-size)', { lineHeight: 'var(--text-body-leading)' }],
+        title: ['var(--text-title-size)', { lineHeight: 'var(--text-title-leading)' }],
+        headline: ['var(--text-headline-size)', { lineHeight: 'var(--text-headline-leading)' }],
+        display: ['var(--text-display-size)', { lineHeight: 'var(--text-display-leading)' }],
+      },
 
-    // REPLACES font weights
-    fontWeight: {
-      light: 'var(--weight-light)',
-      regular: 'var(--weight-regular)',
-      medium: 'var(--weight-medium)',
-      semibold: 'var(--weight-semibold)',
-    },
+      // display and body are additive. sans, serif, and mono stay.
+      fontFamily: {
+        display: 'var(--font-display)',
+        body: 'var(--font-body)',
+      },
 
-    // REPLACES z-index layers
-    zIndex: {
-      base: 'var(--z-base)',
-      raised: 'var(--z-raised)',
-      dropdown: 'var(--z-dropdown)',
-      sticky: 'var(--z-sticky)',
-      overlay: 'var(--z-overlay)',
-      modal: 'var(--z-modal)',
-      toast: 'var(--z-toast)',
-      tooltip: 'var(--z-tooltip)',
-      'skip-link': 'var(--z-skip-link)',
-    },
+      // light/medium/semibold match Tailwind's 300/500/600 and resolve through tokens.
+      fontWeight: {
+        light: 'var(--weight-light)',
+        regular: 'var(--weight-regular)',
+        medium: 'var(--weight-medium)',
+        semibold: 'var(--weight-semibold)',
+      },
 
-    // REPLACES transition durations & easings
-    transitionDuration: {
-      fast: 'var(--duration-fast)',
-      base: 'var(--duration-base)',
-      slow: 'var(--duration-slow)',
-    },
-    transitionTimingFunction: {
-      standard: 'var(--ease-standard)',
-      emphasized: 'var(--ease-emphasized)',
-    },
+      zIndex: {
+        base: 'var(--z-base)',
+        raised: 'var(--z-raised)',
+        dropdown: 'var(--z-dropdown)',
+        sticky: 'var(--z-sticky)',
+        overlay: 'var(--z-overlay)',
+        modal: 'var(--z-modal)',
+        toast: 'var(--z-toast)',
+        tooltip: 'var(--z-tooltip)',
+        'skip-link': 'var(--z-skip-link)',
+      },
 
-    // REPLACES maxHeight with Flowtop overlay tokens
-    maxHeight: {
-      none: 'none',
-      full: '100%',
-      screen: '100vh',
-      dialog: 'var(--max-h-dialog)',
-      sheet: 'var(--max-h-sheet)',
-      modal: 'var(--max-h-dialog)',
+      transitionDuration: {
+        fast: 'var(--duration-fast)',
+        base: 'var(--duration-base)',
+        slow: 'var(--duration-slow)',
+      },
+      transitionTimingFunction: {
+        standard: 'var(--ease-standard)',
+        emphasized: 'var(--ease-emphasized)',
+      },
+
+      maxHeight: {
+        none: 'none',
+        full: '100%',
+        screen: '100vh',
+        dialog: 'var(--max-h-dialog)',
+        sheet: 'var(--max-h-sheet)',
+        modal: 'var(--max-h-dialog)',
+      },
     },
   },
   plugins: [

@@ -509,13 +509,11 @@ function ShowcaseContent() {
               This modal reuses native HTML5 dialog primitives. Try pressing Escape to close it, or click the backdrop.
             </p>
             <div className="flex items-center gap-space-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setModalBusy(!modalBusy)}
-              >
-                {modalBusy ? 'Disable Busy Mode' : 'Enable Busy Mode (Locks Escape)'}
-              </Button>
+              <Switch
+                label="Enable Busy Mode (Locks Escape)"
+                checked={modalBusy}
+                onChange={setModalBusy}
+              />
             </div>
             <div className="flex justify-end gap-space-2 pt-space-2 border-t border-border">
               <Button variant="secondary" onClick={() => setIsModalOpen(false)}>

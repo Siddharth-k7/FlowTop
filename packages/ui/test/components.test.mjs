@@ -4,6 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const tsc = require.resolve('typescript/bin/tsc');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,9 +97,8 @@ describe('COMPONENTS.md Code Snippets Validation', () => {
     }
 
     // Execute tsc --noEmit
-    const tscBin = path.resolve(uiRoot, 'node_modules', 'typescript', 'bin', 'tsc');
     try {
-      execSync(`node "${tscBin}" -p "${path.join(cacheDir, 'tsconfig.json')}"`, {
+      execSync(`node "${tsc}" -p "${path.join(cacheDir, 'tsconfig.json')}"`, {
         encoding: 'utf8',
         stdio: 'pipe',
       });

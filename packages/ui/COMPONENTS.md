@@ -1125,3 +1125,32 @@ export function AvatarExample() {
   );
 }
 ```
+
+---
+
+## What the preset replaces
+
+`tailwind-preset.cjs` puts Flowtop token scales on `theme.extend`, so consumers keep Tailwind's default utilities (`w-56`, `z-10`, `font-mono`, the `sm` screen, and the rest). One scale is still replaced outright.
+
+### `theme.colors`
+
+The colour scale replaces Tailwind's default palette. `bg-red-500`, `text-slate-900`, `bg-black`, and the other default colour utilities are not generated. Every colour in the preset is a Flowtop token, and `colorToken()` still accepts opacity modifiers: `bg-ink/60` compiles to a `color-mix(in srgb, var(--color-ink) …)` rule.
+
+### Keys on `theme.extend` that override a default
+
+Same-named keys override the Tailwind value. The rest of that scale stays.
+
+| Scale | Key | Tailwind default | Flowtop value |
+|---|---|---|---|
+| `screens` | `xl` | `1280px` | `1440px` (`--breakpoint-xl`) |
+| `spacing` | `0` | `0px` | `var(--space-0)`, which is `0` |
+| `spacing` | `px` | `1px` | `var(--space-px)`, which is `1px` |
+| `borderRadius` | `sm` | `0.125rem` (2px) | `var(--radius-sm)`, `0.75rem` (12px) |
+| `borderRadius` | `md` | `0.375rem` (6px) | `var(--radius-md)`, `1.5rem` (24px) |
+| `borderRadius` | `lg` | `0.5rem` (8px) | `var(--radius-lg)`, `2.5rem` (40px) |
+| `boxShadow` | `sm`, `md`, `lg` | black `rgb()` shadows | purple-tinted `--shadow-sm` / `--shadow-md` / `--shadow-lg` |
+| `fontWeight` | `light`, `medium`, `semibold` | `300`, `500`, `600` | `var(--weight-light)` / `--weight-medium` / `--weight-semibold`, same numbers |
+
+`screens.md` (`768px`) and `screens.lg` (`1024px`) match Tailwind. `sm` (`640px`) and `2xl` (`1536px`) are the defaults again. `screens.xs` (`360px`) is added.
+
+Spacing tokens are named `space-1` … `space-8`, not `1` … `8`. They do not override Tailwind's numeric steps. In particular `space-5` is `1.5rem` (24px) while Tailwind's `5` is `1.25rem` (20px), `space-6` is `2rem` (32px) while Tailwind's `6` is `1.5rem` (24px), and `space-8` is `4rem` (64px) while Tailwind's `8` is `2rem` (32px). `p-space-6` and `w-6` are different utilities. `0` and `px` are the only spacing keys that override a default, and their computed sizes match.

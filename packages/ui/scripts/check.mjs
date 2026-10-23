@@ -479,9 +479,9 @@ if (!fs.existsSync(tokensPath)) {
     const { createRequire } = await import('node:module');
     const require = createRequire(import.meta.url);
     const preset = require(presetPath);
-    const presetScreens = preset.theme?.screens;
+    const presetScreens = preset.theme?.extend?.screens ?? preset.theme?.screens;
     if (!presetScreens) {
-      console.error('  FAIL: Preset screens not defined in theme.');
+      console.error('  FAIL: Preset screens not defined in theme.extend or theme.');
       hasErrors = true;
     } else {
       let presetMatches = true;
