@@ -49,6 +49,9 @@ Read the relevant doc before you build, not after.
 | `docs/02-mvp-scope.md` | What ships in v1, what is deferred | Adding anything not already specified |
 | `docs/05-team-split.md` | Who owns what, and the seams between them | Working near a boundary |
 | `docs/06-conventions.md` | Naming, folders, patterns | Creating new files |
+| `docs/10-review-standards.md` | How to review, and when work counts as done | Writing any review, or reporting work complete |
+
+[docs/10-review-standards.md](docs/10-review-standards.md) must be read before writing any review or reporting work complete.
 
 The API contract is the agreement between four people. Changing it is a pull request all four review, never a unilateral edit.
 
