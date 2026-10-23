@@ -46,7 +46,10 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
       }
     }, [indeterminate]);
 
-    const hintId = hint ? `${id}-hint` : undefined;
+    // The hint is not rendered while an error shows, so it is only referenced
+    // when it is actually in the DOM.
+    const showHint = Boolean(hint) && !error;
+    const hintId = showHint ? `${id}-hint` : undefined;
     const errorId = error ? `${id}-error` : undefined;
     const describedBy =
       explicitDescribedBy || [hintId, errorId].filter(Boolean).join(' ') || undefined;
@@ -123,10 +126,10 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             </div>
           </div>
 
-          {label && (
+          {(label || showHint) && (
             <div className="flex flex-col">
-              <span className="text-fg font-medium">{label}</span>
-              {hint && !error && (
+              {label && <span className="text-fg font-medium">{label}</span>}
+              {showHint && (
                 <span id={hintId} className="text-caption text-fg-muted">
                   {hint}
                 </span>

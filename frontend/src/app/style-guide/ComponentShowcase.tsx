@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Button,
   Input,
@@ -29,15 +29,26 @@ import {
   Avatar,
   Field,
   useToast,
-  ToastProvider,
 } from '@flowtop/ui';
 
+type InventoryRow = {
+  sku: string;
+  series: string;
+  finish: string;
+  inventory: number;
+  status: 'In Stock' | 'Low Stock';
+};
+
+const INVENTORY_ROWS: InventoryRow[] = [
+  { sku: 'FLW-BSN-101', series: 'Aura Series', finish: 'Brushed Gold', inventory: 42, status: 'In Stock' },
+  { sku: 'FLW-SHW-204', series: 'Cascade Overhead', finish: 'Obsidian Black', inventory: 6, status: 'Low Stock' },
+  { sku: 'FLW-VLV-309', series: 'Linear Thermostatic', finish: 'Chrome Mirror', inventory: 18, status: 'In Stock' },
+];
+
+// The app-wide ToastProvider in app/providers.tsx already wraps this page.
+// A second provider here rendered a second pair of live regions.
 export function ComponentShowcase() {
-  return (
-    <ToastProvider>
-      <ShowcaseContent />
-    </ToastProvider>
-  );
+  return <ShowcaseContent />;
 }
 
 function ShowcaseContent() {
@@ -74,6 +85,23 @@ function ShowcaseContent() {
   // Table sorting states
   const [tableSortCol, setTableSortCol] = useState<string | undefined>('sku');
   const [tableSortDir, setTableSortDir] = useState<'asc' | 'desc'>('asc');
+  const [tableLoading, setTableLoading] = useState(false);
+  const [tableEmpty, setTableEmpty] = useState(false);
+
+  // Table only reports the requested sort. The caller sorts the rows.
+  const sortedInventory = useMemo(() => {
+    if (tableEmpty) return [];
+    if (!tableSortCol) return INVENTORY_ROWS;
+    const key = tableSortCol as 'sku' | 'series' | 'inventory';
+    const sorted = [...INVENTORY_ROWS].sort((a, b) => {
+      const av = a[key];
+      const bv = b[key];
+      return typeof av === 'number' && typeof bv === 'number'
+        ? av - bv
+        : String(av).localeCompare(String(bv));
+    });
+    return tableSortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [tableSortCol, tableSortDir, tableEmpty]);
 
   return (
     <div className="flex flex-col gap-space-8 max-w-full">
@@ -606,7 +634,7 @@ function ShowcaseContent() {
           <div className="flex flex-wrap items-center justify-between gap-space-2">
             <div>
               <h4 className="text-small font-semibold text-fg">1. Interactive Sorting Table</h4>
-              <p className="text-caption text-fg-muted">Click column headers or use buttons below to test all three aria-sort states.</p>
+              <p className="text-caption text-fg-muted">Click a sortable header (SKU, Series, Inventory) to reorder the rows. The buttons set each aria-sort state and switch this same table into its loading and empty states.</p>
             </div>
             <div className="flex flex-wrap items-center gap-space-2">
               <span className="text-caption font-mono bg-purple-pale text-purple-deep px-space-2 py-space-1 rounded-sm border border-primary/20">
@@ -639,17 +667,33 @@ function ShowcaseContent() {
               >
                 Set: Descending
               </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-pressed={tableLoading}
+                onClick={() => setTableLoading(v => !v)}
+              >
+                {tableLoading ? 'Stop loading' : 'Toggle loading'}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-pressed={tableEmpty}
+                onClick={() => setTableEmpty(v => !v)}
+              >
+                {tableEmpty ? 'Show rows' : 'Toggle empty'}
+              </Button>
             </div>
           </div>
 
           <div className="overflow-x-auto max-w-full">
-            <Table<{ sku: string; series: string; finish: string; inventory: string; status: 'In Stock' | 'Low Stock' }>
+            <Table<InventoryRow>
               caption="Live Interactive Products Inventory Table"
               columns={[
                 { id: 'sku', header: 'Product SKU', sortable: true, accessor: (row) => row.sku },
                 { id: 'series', header: 'Series', sortable: true, accessor: (row) => row.series },
                 { id: 'finish', header: 'Finish', accessor: (row) => row.finish },
-                { id: 'inventory', header: 'Inventory', sortable: true, align: 'right', accessor: (row) => row.inventory },
+                { id: 'inventory', header: 'Inventory', sortable: true, align: 'right', accessor: (row) => `${row.inventory} units` },
                 {
                   id: 'status',
                   header: 'Status',
@@ -661,29 +705,7 @@ function ShowcaseContent() {
                   ),
                 },
               ]}
-              data={[
-                {
-                  sku: 'FLW-BSN-101',
-                  series: 'Aura Series',
-                  finish: 'Brushed Gold',
-                  inventory: '42 units',
-                  status: 'In Stock',
-                },
-                {
-                  sku: 'FLW-SHW-204',
-                  series: 'Cascade Overhead',
-                  finish: 'Obsidian Black',
-                  inventory: '6 units',
-                  status: 'Low Stock',
-                },
-                {
-                  sku: 'FLW-VLV-309',
-                  series: 'Linear Thermostatic',
-                  finish: 'Chrome Mirror',
-                  inventory: '18 units',
-                  status: 'In Stock',
-                },
-              ]}
+              data={sortedInventory}
               rowKey={(row) => row.sku}
               sortColumn={tableSortCol}
               sortDirection={tableSortDir}
@@ -691,6 +713,19 @@ function ShowcaseContent() {
                 setTableSortCol(col);
                 setTableSortDir(dir);
               }}
+              loading={tableLoading}
+              skeletonRowCount={3}
+              emptyState={
+                <EmptyState
+                  title="No products match"
+                  description="Clear the filter to show the inventory again."
+                  action={
+                    <Button variant="secondary" size="sm" onClick={() => setTableEmpty(false)}>
+                      Clear filter
+                    </Button>
+                  }
+                />
+              }
               onRowClick={(row) => toast.info(`Selected ${row.series} (${row.sku})`)}
             />
           </div>

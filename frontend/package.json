@@ -11,9 +11,10 @@
     "lint": "next lint",
     "list:mocks": "node scripts/list-mocks.mjs",
     "test:api": "npx tsx scripts/test-api.mjs",
-    "test": "node ../packages/ui/scripts/check.mjs"
+    "test": "node ../packages/ui/scripts/check.mjs && node scripts/check-agents-examples.mjs"
   },
   "dependencies": {
+    "@flowtop/types": "file:../shared/types",
     "@flowtop/ui": "file:../packages/ui",
     "next": "^15.2.0",
     "react": "^19.0.0",
