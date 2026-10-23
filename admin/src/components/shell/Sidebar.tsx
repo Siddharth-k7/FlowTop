@@ -2,14 +2,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { NAV } from './nav';
+import { NAV, canSee } from './nav';
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const user = useCurrentUser();
   // COSMETIC ONLY: hiding menu items is presentation, not security.
   // The server re-checks permissions on every API call; never rely on this filter as a guard.
-  const items = NAV.filter((i) => !i.permission || user.permissions.includes(i.permission));
+  const items = NAV.filter((i) => canSee(user.permissions, i.permission));
   return (
     <nav aria-label="Main" className="flex flex-col gap-1 p-2">
       {items.map((i) => {

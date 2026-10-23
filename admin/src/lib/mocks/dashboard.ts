@@ -1,4 +1,4 @@
-import type { DashboardSummary } from '@/types';
+import type { DashboardSummary } from '@/lib/dashboard';
 
 // TODO: swap for real API (Dev B aggregate endpoint, Phase 4)
 export const mockDashboard: DashboardSummary = {

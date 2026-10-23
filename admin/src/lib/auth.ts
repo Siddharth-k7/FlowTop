@@ -1,5 +1,10 @@
 import { api } from '@/lib/api';
-import type { LoginResult, User } from '@/types';
+import type { User } from '@flowtop/types';
+
+/** POST /auth/login and POST /auth/mfa, docs/03-api-contract.md:53-55. Not in @flowtop/types yet. */
+export type LoginResult =
+  | { requiresMfa: false; user: User }
+  | { requiresMfa: true; mfaToken: string };
 
 // Session is an httpOnly cookie set by the API. Nothing is stored in localStorage.
 export const login = (email: string, password: string) =>
