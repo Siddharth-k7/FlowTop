@@ -12,6 +12,8 @@ src/generated
 
 # Not needed to build or run the API.
 test
+# Unit specs live in src/. Keep them out so nothing that imports outside backend/ enters the image.
+**/*.spec.ts
 docker-compose.yml
 Dockerfile
 .dockerignore

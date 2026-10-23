@@ -2,6 +2,16 @@
   "name": "@flowtop/types",
   "version": "0.0.0",
   "private": true,
-  "main": "src/index.ts",
-  "types": "src/index.ts"
+  "description": "Type-only API types for the Flowtop frontend and admin. No runtime code and no dependencies.",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "src"
+  ]
 }
