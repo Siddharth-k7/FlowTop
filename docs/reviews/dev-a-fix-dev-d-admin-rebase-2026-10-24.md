@@ -6,7 +6,7 @@ Dev D's two commits keep him as author (`29a3967`, `7b9fe6e`). The fixes are fiv
 
 ## Verdict
 
-Mergeable once CI is green and Dev D has compared it with his branch. Admin typecheck, lint, test (38) and build pass on a clean clone. The real-API browser run passed 33 of 33 checks. Nothing is blocked inside this branch. Two items wait on others: the GitGuardian false-positive mark (the user, in the dashboard) and the Phase 4 `/admin/dashboard` endpoint (Dev B).
+Mergeable once CI is green and Dev D has compared it with his branch. Admin typecheck, lint, test (38 at f2353a8, 40 now) and build pass. The clean-clone run was at f2353a8. The real-API browser run reported 33/33, but that was **32 real checks plus 1 vacuous one (PM 5)**. PM 5 is now fixed and proven red/green (see "PM 5: correction and fix"). Nothing is blocked inside this branch. Two items wait on others: the GitGuardian false-positive mark (the user, in the dashboard) and the Phase 4 `/admin/dashboard` endpoint (Dev B).
 
 ## Checks
 
@@ -20,7 +20,7 @@ Mergeable once CI is green and Dev D has compared it with his branch. Admin type
 | 6 | nav.ts uses the Permission union with the real read perms | PASS | admin/src/components/shell/nav.ts:4-18; typo `product:wrote` → `TS2820 ... Did you mean "product:read"?` |
 | 7 | admin/src/types deleted; User, MediaAsset, ErrorEnvelope and Paginated come from @flowtop/types | PASS | `git show --stat 80e0d8f` deletes admin/src/types/index.ts; `grep -rn "@/types" admin/src` → nothing |
 | 8 | Mock users derived from ROLE_PERMISSIONS (compile-checked) | PASS | admin/src/lib/mocks/roles.ts:12 `ROLE_GRANTS: ROLE_PERMISSIONS`; removing `media:read` from product_manager → `TS2322 Type '"media:write"' is not assignable to type '"media:read"'` (exit 2), restored |
-| 9 | eslint-config-next, lint script, vitest, test script, engines node >=24 | PASS | admin/package.json; `npm run lint` → no output (0 problems); `npm test` → `Tests 38 passed (38)` |
+| 9 | eslint-config-next, lint script, vitest, test script, engines node >=24 | PASS | admin/package.json; `npm run lint` → no output (0 problems); `npm test` → `Tests 40 passed (40)` (6 files, after the PM 5 fix) |
 | 10 | Real tests: formatPrice, validateFile, assetName, api() error mapping | PASS | admin/src/__tests__/{formatPrice,media,api}.test.ts; flipping the 403 assertion → `1 failed / 37 passed`, restored |
 | 11 | Mock identities on @example.test, one MOCK_PASSWORD, flowtop123 gone | PASS | `git grep flowtop123 HEAD` → nothing; admin/src/lib/mocks/auth.ts `MOCK_PASSWORD` |
 | 12 | Mocks opt-in, dynamic import, production build refuses mocks | PASS | api.ts:8 `=== 'true'`, api.ts:45 `await import`; `NEXT_PUBLIC_USE_MOCKS=true next build` → `Error: NEXT_PUBLIC_USE_MOCKS=true is not allowed in a production build`; next-config.test.ts |
@@ -39,6 +39,7 @@ Mergeable once CI is green and Dev D has compared it with his branch. Admin type
 | 25 | gitleaks on the branch | PASS | gitleaks 8.30.1 `git --log-opts=98b2037..HEAD` → `7 commits scanned ... no leaks found` |
 | 26 | Root package-lock change is additive only | PASS | package-lock diff against 98b2037: 0 removed, 0 version changes, 95 added (the admin workspace's deps) |
 | 27 | GitGuardian incident for flowtop123 | PARTIAL | flowtop123 is gone from the tree but still in history (`git log -S flowtop123` → 29a3967, 80e0d8f). Marking it as a false positive is pending for the user in the GitGuardian dashboard |
+| 28 | PM 5: product_manager does not see the orders/submissions tables | PASS (was vacuous, now fixed) | src/__tests__/dashboard.test.ts plus the real-API check with a stubbed 200 summary. Both go red with the filter removed (see "PM 5: correction and fix") |
 
 ### Step 3: real API, mocks OFF, headless Playwright (Chromium 156)
 
@@ -46,7 +47,7 @@ Setup: API `localhost:4000` (`backend npm run start:dev`, Postgres 17 on 5433, m
 - The admin ran on port 3011, not 3001. Port 3001 on the shared box was taken by another agent's frontend, so I added 3011 to `CORS_ORIGINS` and `ADMIN_URL` in the gitignored backend/.env.
 - Postgres was installed natively, not through docker compose (no Docker on the box).
 
-Run: 2026-10-24 04:37 IST. Script: /workspace/dev-d-phase1/step3-run.mjs. Log: /workspace/dev-d-phase1/step3-run.log. **33/33 passed.**
+Run: 2026-10-24, about 04:36:10 to 04:37:06 IST, on a freshly started backend (pid 65600, started 04:36:08 IST, "Nest application successfully started" 04:36:09). Script: /workspace/dev-d-phase1/step3-run.mjs. Log: /workspace/dev-d-phase1/step3-run.log. **Reported 33/33. Corrected: 32 real checks + 1 vacuous (PM 5).** PM 5 passed only because `/admin/dashboard` returns 404, and `Dashboard.tsx:54` then renders the error card instead of the tables for every role, super_admin included. So it never tested the permission filter. It is fixed below.
 
 | check | result |
 |---|---|
@@ -64,6 +65,7 @@ Run: 2026-10-24 04:37 IST. Script: /workspace/dev-d-phase1/step3-run.mjs. Log: /
 | PDF filter | `GET /admin/media?perPage=100&search=&type=document → 200`, items `["e2e-spec-sheet.pdf application/pdf"]`, no 422 |
 | product_manager (invite + dev-email reset) | `POST /admin/users/invite 201`, `POST /auth/password-reset 202`, confirm `204` |
 | product_manager menu | `["Dashboard","Products","Categories","Collections","Pages","Media"]` |
+| PM 5: no orders/submissions tables for product_manager | **vacuous in this run**: `table captions: []`, but only because the 404 hid the tables for every role. Fixed and re-proven in "PM 5: correction and fix" |
 | Forced fetch to a forbidden resource | `GET /admin/users 403 FORBIDDEN` "You do not have permission to do this."; /users shows the denied card and the toast |
 | 360px overflow | /media scrollWidth 360 = innerWidth 360; /dashboard 360 = 360 |
 
@@ -76,7 +78,70 @@ All API 4xx seen, with expected or unexpected:
 
 There were no page errors. The only console errors are the browser's own "Failed to load resource" lines for the 4xx above.
 
-The first run found five things, all fixed in `f2353a8`:
+### PM 5: correction and fix
+
+The fix has two parts, and both fail when the filter is removed:
+
+1. **Unit test, runs in CI:** `admin/src/__tests__/dashboard.test.ts`.
+   - It server-renders `Dashboard` inside `UserContext` for the mock super_admin and the mock product_manager. Both users' permissions come from `ROLE_PERMISSIONS`.
+   - It asserts that the super_admin markup contains "Recent orders" and "Recent submissions", and that the product_manager markup contains neither.
+   - `vitest.config.mts` now sets `esbuild.jsx = 'automatic'` so components can render in tests (tsconfig keeps `jsx: preserve` for Next).
+   - Limitation: server rendering runs no effects, so this test pins the gate but not the data rows.
+2. **Real-API check, not in CI:** `/workspace/dev-d-phase1/dashboard-pm5.mjs`.
+   - Login, MFA enrolment, invite and password reset all go through the real API. Only `/admin/dashboard` is stubbed, by Playwright route interception, to a 200 with one order (`FT-STUB-ORDER-1`) and one submission (`Stub Submitter`).
+   - It waits for the stub's "Draft pages" stat, which proves the data arrived, then reads the table captions and row text.
+   - The stub was served to both roles.
+
+Red, with the filter removed (`{canSee(permissions, 'order:read') && (` and the submission one replaced by `{true && (`). Admin rebuilt and restarted:
+
+```
+=== VITEST
+   ✓ ... > super_admin sees Recent orders and Recent submissions
+   × ... > product_manager sees neither table
+AssertionError: expected '<div class="flex flex-col gap-8"><sec…' not to contain 'Recent orders'
+      Tests  1 failed | 1 passed (2)
+=== PLAYWRIGHT (05:23:38 IST)
+PASS PM 5a: super_admin sees both tables with the stubbed rows :: captions=["Recent orders","Recent submissions"] orderRow=1 submissionRow=1
+FAIL PM 5b: product_manager sees neither table though the stub has rows :: captions=["Recent orders","Recent submissions"] orderRow=1 submissionRow=1
+end ...; 1/2 passed   (exit 1)
+```
+
+Green, with the filter restored (`Dashboard.tsx` identical to HEAD). Admin rebuilt and restarted:
+
+```
+=== VITEST
+ ✓ src/__tests__/dashboard.test.ts (2 tests)
+      Tests  2 passed (2)
+=== PLAYWRIGHT (05:25:26 IST)
+PASS PM 5a: super_admin sees both tables with the stubbed rows :: captions=["Recent orders","Recent submissions"] orderRow=1 submissionRow=1
+PASS PM 5b: product_manager sees neither table though the stub has rows :: captions=[] orderRow=0 submissionRow=0
+stub served to: ["super_admin","product_manager"]
+end ...; 2/2 passed   (exit 0)
+```
+
+Logs: /workspace/dev-d-phase1/pm5-vitest-red.log, pm5-red.log, pm5-vitest-green.log and pm5-green.log. Only PM 5 and the admin unit tests were re-run, not the other 32 checks.
+
+### Backend restarts and `pkill` during testing (all times IST, 2026-10-24)
+
+- **About 04:25:30: `pkill -f "nest start"`** (broad).
+  - It ran while I moved the admin to port 3011, right after `kill 42784` (my backend).
+  - The `.env` edit just before it is stamped 04:25:28.
+  - The `ss` check just before it showed only my backend (pid 42784, cwd /workspace/dev-d-phase1/repo/backend) listening on :4000. I did not list `nest` processes right before it, so I can't prove no other agent's `nest` process was killed. A later listing showed only mine, and today nothing else on the box runs `nest`.
+  - It happened before the final run.
+- **About 04:35: `pkill -f "nest start --watch"`** (narrow).
+  - It was meant to clear the in-memory MFA lockout. It matched only my watcher and missed the `dist/main` child, so the stale backend (pid 57382) kept serving, and that run crashed at MFA 3.
+- **About 04:36:05 to 04:37:06: the final run.**
+  - I ran `kill 57382 65084 65085`, started a fresh backend (pid 65600, up at 04:36:09), then started the run at about 04:36:10 IST.
+  - pid 65600 was still serving at 04:56. There were no connection-refused errors, network errors or 5xx in the run; the only API errors were 401/403/404/409.
+  - No check was retried inside the run (single script, stops at the first exception).
+- **Earlier runs of the suite (8 before the final one):**
+  - Five failed on harness bugs: response body lost on navigation; null login response ×2; multipart upload 422 through `route.fetch`; menu comparator reading icon text.
+  - One passed 33/33 on earlier code.
+  - One failed at 32/33 on a real bug: `/media` was 377px wide at 360px, fixed in f2353a8.
+  - One crashed on the MFA lockout.
+  - None of them failed because of a dead backend.
+
+The first runs found five things, all fixed in `f2353a8`:
 - The search input collapsed beside the ui Select.
 - /media at 360px overflowed: scrollWidth 377.
 - The dashboard showed the raw 404 text.
@@ -147,3 +212,7 @@ Not verified:
 - Docs examples (rule 6) were not re-typechecked because no docs examples changed.
 - Backend tests were not run because no backend code changed.
 - The e2e run used port 3011 and a native Postgres, not docker compose on 3001.
+- The real-API PM 5 check is not in CI (CI has no Playwright job). Only the unit test runs there.
+- After the PM 5 fix, only PM 5 and the admin unit tests were re-run, not the other 32 browser checks.
+- The clean-clone root checks were run at f2353a8, not at the PM 5 commit. CI covers the new head.
+- Whether the 04:25:30 IST broad `pkill` killed another agent's process can't be proven either way.
