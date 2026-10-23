@@ -80,6 +80,14 @@ Rules for all of them:
 
 Build against a typed mock in `lib/mocks/` matching the contract exactly, and tag it `TODO: swap for real API`. Never wait on the backend.
 
+Shared shapes (`Paginated`, `ErrorEnvelope`, `ErrorCode`, `MediaAsset`, `User`) come from `@flowtop/types`; never copy them into `lib/`. Type mock data with them so contract drift fails `npm run typecheck`. Build mock errors with `mockApiError` so the envelope and code are checked too:
+
+```ts
+import { mockApiError } from '@/lib/mocks';
+
+throw mockApiError(404, 'NOT_FOUND', 'Product not found');
+```
+
 ## Checklist before opening a PR
 
 - [ ] No hex codes or raw pixel values outside the token file
