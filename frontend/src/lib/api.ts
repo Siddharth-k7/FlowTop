@@ -21,7 +21,6 @@ import type {
   Category,
   Collection,
   Cart,
-  PaginatedResponse,
   SingleResponse,
   NavigationResponse,
   PublicSettingsResponse,
@@ -29,6 +28,7 @@ import type {
   SubmissionResponse,
   SubmissionRequest,
 } from './types-pending';
+import type { ErrorEnvelope, Paginated } from '@flowtop/types';
 
 import {
   resolveMockProducts,
@@ -178,7 +178,7 @@ async function httpRequest<T>(
 
       if (isJson) {
         try {
-          const json = await response.json();
+          const json = (await response.json()) as Partial<ErrorEnvelope> | null;
           if (json?.error) {
             errorCode = json.error.code || errorCode;
             errorMessage = json.error.message || errorMessage;
@@ -238,7 +238,7 @@ export const api = {
     page?: number;
     perPage?: number;
     mockSwitch?: MockSwitch;
-  }): Promise<PaginatedResponse<ProductCard>> {
+  }): Promise<Paginated<ProductCard>> {
     if (isMockMode()) {
       try {
         return await resolveMockProducts(params);
@@ -254,7 +254,7 @@ export const api = {
       }
     }
 
-    return httpRequest<PaginatedResponse<ProductCard>>('GET', '/api/v1/products', {
+    return httpRequest<Paginated<ProductCard>>('GET', '/api/v1/products', {
       params: params as Record<string, string | number | boolean | undefined>,
     });
   },
@@ -441,7 +441,7 @@ export const api = {
   async getJournal(params?: {
     category?: string;
     mockSwitch?: MockSwitch;
-  }): Promise<PaginatedResponse<JournalArticleCard>> {
+  }): Promise<Paginated<JournalArticleCard>> {
     if (isMockMode()) {
       try {
         return await resolveMockJournal(params);
@@ -457,7 +457,7 @@ export const api = {
       }
     }
 
-    return httpRequest<PaginatedResponse<JournalArticleCard>>('GET', '/api/v1/journal', {
+    return httpRequest<Paginated<JournalArticleCard>>('GET', '/api/v1/journal', {
       params: params as Record<string, string | number | boolean | undefined>,
     });
   },

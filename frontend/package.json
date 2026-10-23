@@ -14,6 +14,7 @@
     "test": "node ../packages/ui/scripts/check.mjs"
   },
   "dependencies": {
+    "@flowtop/types": "file:../shared/types",
     "@flowtop/ui": "file:../packages/ui",
     "next": "^15.2.0",
     "react": "^19.0.0",
