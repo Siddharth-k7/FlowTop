@@ -1,8 +1,8 @@
 'use client';
 import { useRef, useState } from 'react';
 import { uploadFile, validateFile } from '@/lib/media';
-import { btnSecondary } from '@/lib/ui-classes';
-import type { MediaAsset } from '@/types';
+import { Button } from '@flowtop/ui';
+import type { MediaAsset } from '@flowtop/types';
 
 interface Item { key: string; name: string; pct: number; error?: string }
 
@@ -29,9 +29,9 @@ export function UploadZone({ onUploaded }: { onUploaded: (a: MediaAsset) => void
     <div>
       <div onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); start(e.dataTransfer.files); }}
-        className={`flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-6 text-center ${over ? 'border-purple-deep bg-purple-pale' : 'border-grey-500 bg-white'}`}>
+        className={`flex flex-col items-center gap-3 rounded-card border-2 border-dashed p-6 text-center ${over ? 'border-purple-deep bg-purple-pale' : 'border-grey-500 bg-white'}`}>
         <p className="text-sm">Drag images or PDFs here, or</p>
-        <button type="button" className={btnSecondary} onClick={() => input.current?.click()}>Browse files</button>
+        <Button variant="secondary" onClick={() => input.current?.click()}>Browse files</Button>
         <p className="text-xs text-grey-500">JPG, PNG, WebP, AVIF or PDF, up to 10 MB each</p>
         <input ref={input} type="file" multiple hidden aria-label="Choose files to upload" onChange={(e) => start(e.target.files)} />
       </div>

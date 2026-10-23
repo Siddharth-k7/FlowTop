@@ -1,32 +1,27 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { Button, Card, Table } from '@flowtop/ui';
 import { api, ApiError } from '@/lib/api';
 import { formatPrice } from '@/lib/utils/formatPrice';
-import { btnSecondary, cardCls } from '@/lib/ui-classes';
-import type { DashboardSummary } from '@/types';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { canSee } from '@/components/shell/nav';
+import type { DashboardSummary } from '@/lib/dashboard';
+import { visibleTiles } from './tiles';
 
-const TILES = [
-  { href: '/products/new', label: 'Add Product', icon: '▣' },
-  { href: '/pages/new', label: 'Create Page', icon: '▤' },
-  { href: '/collections/new', label: 'Add Collection', icon: '❖' },
-  { href: '/journal/new', label: 'Write Journal', icon: '✎' },
-  { href: '/media', label: 'Upload Media', icon: '▨' },
-  { href: '/orders', label: 'View Orders', icon: '☷' },
-  { href: '/submissions', label: 'View Submissions', icon: '✉' },
-  { href: '/navigation', label: 'Navigation', icon: '⇄' },
-];
+const tileCls = 'flex min-h-touch flex-col items-start gap-2 rounded-card bg-white p-4 shadow-card hover:bg-purple-pale';
 
-function Card({ href, title, children }: { href: string; title: string; children: React.ReactNode }) {
+function Stat({ href, title, value }: { href: string; title: string; value: number }) {
   return (
-    <Link href={href} className={`${cardCls} block hover:bg-purple-pale`}>
+    <Link href={href} className="block rounded-card bg-white p-4 shadow-card hover:bg-purple-pale">
       <h3 className="text-sm text-grey-700">{title}</h3>
-      {children}
+      <p className="text-2xl font-semibold">{value}</p>
     </Link>
   );
 }
 
 export function Dashboard() {
+  const { permissions } = useCurrentUser();
   const [data, setData] = useState<DashboardSummary>();
   const [error, setError] = useState<string>();
   const load = useCallback(() => {
@@ -40,9 +35,9 @@ export function Dashboard() {
       <section aria-labelledby="quick">
         <h2 id="quick" className="mb-3 text-lg font-semibold">Quick actions</h2>
         <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {TILES.map((t) => (
+          {visibleTiles(permissions).map((t) => (
             <li key={t.label}>
-              <Link href={t.href} className={`${cardCls} flex min-h-touch flex-col items-start gap-2 hover:bg-purple-pale`}>
+              <Link href={t.href} className={tileCls}>
                 <span aria-hidden className="text-xl text-purple-deep">{t.icon}</span>
                 <span className="text-sm font-medium">{t.label}</span>
               </Link>
@@ -54,29 +49,39 @@ export function Dashboard() {
       <section aria-labelledby="attn">
         <h2 id="attn" className="mb-3 text-lg font-semibold">Needs your attention</h2>
         {error ? (
-          <div role="alert" className={cardCls}>
+          <Card role="alert"><Card.Body>
             <p className="text-sm text-error">{error}</p>
-            <button className={`${btnSecondary} mt-3`} onClick={load}>Try again</button>
-          </div>
-        ) : !data ? (
-          <div className="grid gap-3 md:grid-cols-3" aria-busy="true">
-            {[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-grey-200" />)}
-          </div>
+            <Button variant="secondary" className="mt-3" onClick={load}>Try again</Button>
+          </Card.Body></Card>
         ) : (
-          <div className="grid gap-3 md:grid-cols-3">
-            <Card href="/pages?status=draft" title="Draft pages"><p className="text-2xl font-semibold">{data.draftPages}</p></Card>
-            <Card href="/products?missing=images" title="Products missing images"><p className="text-2xl font-semibold">{data.productsMissingImages}</p></Card>
-            <Card href="/products?missing=specs" title="Products missing specifications"><p className="text-2xl font-semibold">{data.productsMissingSpecs}</p></Card>
-            <Card href="/orders" title="Recent orders">
-              {data.recentOrders.length === 0 ? <p className="text-sm">No orders yet.</p> : (
-                <ul className="mt-1 text-sm">{data.recentOrders.map((o) => <li key={o.id}>{o.reference} · {formatPrice(o.total)} · {o.status}</li>)}</ul>
+          <div className="flex flex-col gap-3">
+            {data && (
+              <div className="grid gap-3 md:grid-cols-3">
+                <Stat href="/pages?status=draft" title="Draft pages" value={data.draftPages} />
+                <Stat href="/products?missing=images" title="Products missing images" value={data.productsMissingImages} />
+                <Stat href="/products?missing=specs" title="Products missing specifications" value={data.productsMissingSpecs} />
+              </div>
+            )}
+            {/* COSMETIC ONLY: the same permission filter as the nav and the tiles. */}
+            <div className="grid gap-3 lg:grid-cols-2">
+              {canSee(permissions, 'order:read') && (
+                <Table caption="Recent orders" loading={!data} skeletonRowCount={2} data={data?.recentOrders ?? []} rowKey={(o) => o.id}
+                  emptyState="No orders yet."
+                  columns={[
+                    { id: 'reference', header: 'Order', accessor: (o) => <Link href="/orders" className="underline">{o.reference}</Link> },
+                    { id: 'total', header: 'Total', align: 'right', accessor: (o) => formatPrice(o.total) },
+                    { id: 'status', header: 'Status' },
+                  ]} />
               )}
-            </Card>
-            <Card href="/submissions" title="Recent submissions">
-              {data.recentSubmissions.length === 0 ? <p className="text-sm">No submissions yet.</p> : (
-                <ul className="mt-1 text-sm">{data.recentSubmissions.map((s) => <li key={s.id} className={s.read ? '' : 'font-semibold'}>{s.name} · {s.type}{s.read ? '' : ' (new)'}</li>)}</ul>
+              {canSee(permissions, 'submission:read') && (
+                <Table caption="Recent submissions" loading={!data} skeletonRowCount={2} data={data?.recentSubmissions ?? []} rowKey={(s) => s.id}
+                  emptyState="No submissions yet."
+                  columns={[
+                    { id: 'name', header: 'From', accessor: (s) => <span className={s.read ? '' : 'font-semibold'}>{s.name}{s.read ? '' : ' (new)'}</span> },
+                    { id: 'type', header: 'Type' },
+                  ]} />
               )}
-            </Card>
+            </div>
           </div>
         )}
       </section>

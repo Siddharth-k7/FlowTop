@@ -2,10 +2,9 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Button, Input } from '@flowtop/ui';
 import { ApiError } from '@/lib/api';
 import { confirmPasswordReset } from '@/lib/auth';
-import { btnPrimary, inputCls } from '@/lib/ui-classes';
-import { FormField } from '@/components/FormField';
 import { AuthCard } from './AuthCard';
 
 export function ResetPasswordForm() {
@@ -29,10 +28,9 @@ export function ResetPasswordForm() {
         <p role="status" className="text-sm">Your password has been changed. <Link href="/login" className="text-purple-deep underline">Log in</Link></p>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <FormField id="password" label="New password" hint="At least 8 characters" error={error?.fields.password ?? (error && !error.fields.password ? error.message : undefined)}>
-            {(p) => <input {...p} name="password" type="password" className={inputCls} autoComplete="new-password" required />}
-          </FormField>
-          <button className={btnPrimary} disabled={busy}>{busy ? 'Saving…' : 'Change password'}</button>
+          <Input id="password" label="New password" hint="At least 12 characters" name="password" type="password" autoComplete="new-password" required
+            error={error ? error.fields.password ?? error.message : undefined} />
+          <Button type="submit" loading={busy}>Change password</Button>
         </form>
       )}
     </AuthCard>

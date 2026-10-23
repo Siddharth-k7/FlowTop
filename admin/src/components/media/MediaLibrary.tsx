@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { MediaAsset } from '@/types';
+import type { MediaAsset } from '@flowtop/types';
 import { MediaBrowser } from './MediaBrowser';
 import { MediaDetail } from './MediaDetail';
 
@@ -12,7 +12,7 @@ export function MediaLibrary() {
     <div className="grid gap-4 lg:grid-cols-[1fr_var(--panel-w)]">
       <MediaBrowser key={version} onSelect={setSel} selectedId={sel?.id} />
       {sel && (
-        <MediaDetail asset={sel} onClose={() => setSel(undefined)}
+        <MediaDetail key={sel.id} asset={sel} onClose={() => setSel(undefined)}
           onChanged={(a) => { setSel(a); setVersion((v) => v + 1); }}
           onDeleted={() => { setSel(undefined); setVersion((v) => v + 1); }} />
       )}
