@@ -1,30 +1,18 @@
 import type { Config } from 'tailwindcss';
+import preset from '@flowtop/ui/tailwind-preset';
 
-// TODO: swap for @flowtop/ui tokens when Dev C ships them. Values mirror frontend/AGENTS.md.
+// Dev C's preset supplies the colours, the token scales (under theme.extend, so Tailwind's
+// defaults stay) and the screens: xs 360, sm 640 (Tailwind), md 768, lg 1024, xl 1440.
+// Only admin-specific layout sizes live here.
 const config: Config = {
-  content: ['./src/**/*.{ts,tsx}'],
+  presets: [preset],
+  // packages/ui is scanned so its components get their CSS generated in this app.
+  content: ['./src/**/*.{ts,tsx}', '../packages/ui/src/**/*.{ts,tsx}'],
   theme: {
-    screens: { sm: '360px', md: '768px', lg: '1024px', xl: '1440px' },
-    colors: {
-      transparent: 'transparent',
-      current: 'currentColor',
-      white: 'var(--white)',
-      ink: 'var(--ink)',
-      purple: { deep: 'var(--purple-deep)', light: 'var(--purple-light)', pale: 'var(--purple-pale)' },
-      grey: { 100: 'var(--grey-100)', 200: 'var(--grey-200)', 500: 'var(--grey-500)', 700: 'var(--grey-700)' },
-      success: 'var(--success)',
-      warning: 'var(--warning)',
-      error: 'var(--error)',
-      info: 'var(--info)',
-    },
-    spacing: {
-      0: '0', 1: 'var(--space-1)', 2: 'var(--space-2)', 3: 'var(--space-3)', 4: 'var(--space-4)',
-      5: 'var(--space-5)', 6: 'var(--space-6)', 8: 'var(--space-8)', 10: 'var(--space-10)',
-      12: 'var(--space-12)', touch: 'var(--touch)', sidebar: 'var(--sidebar-w)', rail: 'var(--rail-w)',
-      dialog: 'var(--dialog-w)', panel: 'var(--panel-w)',
-    },
     extend: {
-      borderRadius: { DEFAULT: 'var(--radius)', lg: 'var(--radius-lg)' },
+      spacing: { sidebar: 'var(--sidebar-w)', rail: 'var(--rail-w)', dialog: 'var(--dialog-w)', panel: 'var(--panel-w)' },
+      // rounded-lg is the preset's 40px token. Admin cards and menus use rounded-card (14px).
+      borderRadius: { DEFAULT: 'var(--admin-radius)', card: 'var(--admin-radius-card)' },
       fontSize: { xs: 'var(--text-xs)', sm: 'var(--text-sm)', base: 'var(--text-base)', lg: 'var(--text-lg)', xl: 'var(--text-xl)', '2xl': 'var(--text-2xl)' },
       maxWidth: { content: 'var(--content-w)' },
       boxShadow: { card: 'var(--shadow-card)' },
