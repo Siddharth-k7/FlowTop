@@ -1,0 +1,18 @@
+@import "@flowtop/ui/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Admin-only layout sizes. Colours, spacing, radii and screens come from @flowtop/ui. */
+/* Do not redefine a token name from tokens.css here: it would override packages/ui components. */
+:root {
+  --sidebar-w: 15rem; --rail-w: 4rem; --dialog-w: 52rem; --panel-w: 22rem; --content-w: 80rem;
+  --admin-radius: 0.5rem; --admin-radius-card: 0.875rem;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem; --text-lg: 1.125rem;
+  --text-xl: 1.375rem; --text-2xl: 1.75rem;
+  --shadow-card: 0 1px 3px rgb(22 18 28 / 0.12);
+}
+body { background: var(--color-grey-100); color: var(--color-ink); font-family: system-ui, sans-serif; }
+:focus-visible { outline: 3px solid var(--color-purple-deep); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
