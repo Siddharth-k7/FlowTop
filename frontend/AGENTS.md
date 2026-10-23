@@ -2,7 +2,7 @@
 
 The public Flowtop website. Next.js App Router. Owned by Dev C.
 
-Dev C also owns `packages/ui/`, which `admin/` imports. Changing a component there affects Dev D, so treat it as a shared contract rather than private code.
+Dev C also owns `packages/ui/`, which `admin/` imports. Changing a component there affects Dev D, so treat it as a shared contract rather than private code. See [`packages/ui/COMPONENTS.md`](../packages/ui/COMPONENTS.md) for the complete component specifications, props tables, and usage examples.
 
 ## Brand
 
