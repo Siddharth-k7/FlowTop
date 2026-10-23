@@ -39,6 +39,8 @@ export class ListMediaQuery extends PaginationQueryDto {
 /** The MediaAsset object from docs/03-api-contract.md. */
 export interface MediaAssetResponse {
   id: string;
+  /** Cleaned original upload name, for display. Never the storage key. */
+  filename: string;
   /** Public bucket: a permanent CDN URL. Private bucket: a signed URL that expires in 15 minutes. */
   url: string;
   alt: string;
@@ -46,6 +48,8 @@ export interface MediaAssetResponse {
   height: number | null;
   sizeBytes: number;
   mimeType: string;
+  /** ISO 8601 UTC. */
+  createdAt: string;
   /** Resized versions, filled in by background processing (task 2.1). Empty until then. */
   variants: { thumb?: string; medium?: string; large?: string };
 }

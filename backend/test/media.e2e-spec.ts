@@ -25,6 +25,12 @@ const MEDIA = '/api/v1/admin/media';
 const MEDIA_DIR = process.env.MEDIA_LOCAL_DIR ?? '';
 const MB = 1024 * 1024;
 
+/** ISO 8601 UTC that Date can parse. A bare string is not enough. */
+function expectIsoUtc(value: string): void {
+  expect(value).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  expect(Number.isNaN(Date.parse(value))).toBe(false);
+}
+
 type Uploaded = { data: MediaAssetResponse };
 
 describe('Media (e2e)', () => {
@@ -95,9 +101,35 @@ describe('Media (e2e)', () => {
       const res = await upload(png, 'opel-mixer.png', 'public', 'marketing_admin', 'image/png').expect(201);
       const { data } = res.body as Uploaded;
 
-      expect(Object.keys(data).sort()).toEqual(['alt', 'height', 'id', 'mimeType', 'sizeBytes', 'url', 'variants', 'width']);
-      expect(data).toMatchObject({ alt: '', width: 4, height: 3, sizeBytes: png.length, mimeType: 'image/png', variants: {} });
+      expect(Object.keys(data).sort()).toEqual([
+        'alt',
+        'createdAt',
+        'filename',
+        'height',
+        'id',
+        'mimeType',
+        'sizeBytes',
+        'url',
+        'variants',
+        'width',
+      ]);
+      expect(data).toMatchObject({
+        alt: '',
+        filename: 'opel-mixer.png',
+        width: 4,
+        height: 3,
+        sizeBytes: png.length,
+        mimeType: 'image/png',
+        variants: {},
+      });
+      expectIsoUtc(data.createdAt);
       expect(data.url).toMatch(/^http:\/\/localhost:4000\/api\/v1\/files\/public\/[0-9a-f-]{36}\.png$/);
+
+      const fetched = await http().get(`${MEDIA}/${data.id}`).set('Cookie', cookies.marketing_admin ?? '').expect(200);
+      const got = (fetched.body as Uploaded).data;
+      expect(got.filename).toBe('opel-mixer.png');
+      expectIsoUtc(got.createdAt);
+      expect(got.createdAt).toBe(data.createdAt);
 
       const served = await http().get(pathOf(data.url)).buffer(true).expect(200);
       expect(Buffer.compare(served.body as Buffer, png)).toBe(0);
@@ -242,6 +274,11 @@ describe('Media (e2e)', () => {
       expect(body.data).toHaveLength(2);
       expect(body.meta).toEqual({ page: 1, perPage: 2, total: 3, totalPages: 2 });
       expect(body.data[0].mimeType).toBe('application/pdf');
+      expect(body.data[0].filename).toBe('opel-installation-manual.pdf');
+      expect(body.data[1].filename).toBe('kitchen-faucet.jpg');
+      expectIsoUtc(body.data[0].createdAt);
+      expectIsoUtc(body.data[1].createdAt);
+      expect(Date.parse(body.data[0].createdAt)).toBeGreaterThanOrEqual(Date.parse(body.data[1].createdAt));
     });
 
     it('filters by search and by type', async () => {

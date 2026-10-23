@@ -5,7 +5,8 @@
   "workspaces": [
     "frontend",
     "admin",
-    "packages/*"
+    "packages/*",
+    "shared/types"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
