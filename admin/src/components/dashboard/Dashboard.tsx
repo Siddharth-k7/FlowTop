@@ -26,7 +26,10 @@ export function Dashboard() {
   const [error, setError] = useState<string>();
   const load = useCallback(() => {
     setError(undefined);
-    api<DashboardSummary>('/admin/dashboard').then(setData).catch((e) => setError(e instanceof ApiError ? e.message : 'Could not load.'));
+    api<DashboardSummary>('/admin/dashboard').then(setData).catch((e) => setError(
+      // The summary endpoint is Phase 4 (Dev B). Until it exists the API answers 404 with a raw route message.
+      e instanceof ApiError && e.status === 404 ? 'The dashboard summary is not available yet.'
+        : e instanceof ApiError ? e.message : 'Could not load.'));
   }, []);
   useEffect(load, [load]);
 

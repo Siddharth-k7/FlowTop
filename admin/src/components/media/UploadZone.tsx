@@ -32,7 +32,7 @@ export function UploadZone({ onUploaded }: { onUploaded: (a: MediaAsset) => void
         className={`flex flex-col items-center gap-3 rounded-card border-2 border-dashed p-6 text-center ${over ? 'border-purple-deep bg-purple-pale' : 'border-grey-500 bg-white'}`}>
         <p className="text-sm">Drag images or PDFs here, or</p>
         <Button variant="secondary" onClick={() => input.current?.click()}>Browse files</Button>
-        <p className="text-xs text-grey-500">JPG, PNG, WebP, AVIF or PDF, up to 10 MB each</p>
+        <p className="text-xs text-grey-500">JPG, PNG, WebP or AVIF up to 15 MB, PDF up to 25 MB</p>
         <input ref={input} type="file" multiple hidden aria-label="Choose files to upload" onChange={(e) => start(e.target.files)} />
       </div>
       <ul className="mt-3 flex flex-col gap-2" aria-live="polite">

@@ -48,7 +48,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3">Skip to content</a>
       <div className="flex min-h-screen">
         <aside className="hidden shrink-0 border-r border-grey-200 bg-white md:block md:w-rail lg:w-sidebar">
-          <p className="p-4 text-sm font-semibold uppercase tracking-widest text-purple-deep md:sr-only lg:not-sr-only">Flowtop</p>
+          {/* Padding sits on the wrapper: lg:not-sr-only resets padding on the element itself. */}
+          <div className="p-4 md:p-0 lg:p-4"><p className="text-sm font-semibold uppercase tracking-widest text-purple-deep md:sr-only lg:not-sr-only">Flowtop</p></div>
           <Sidebar />
         </aside>
         {drawer && (

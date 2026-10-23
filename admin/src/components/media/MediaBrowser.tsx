@@ -34,11 +34,15 @@ export function MediaBrowser({ onSelect, selectedId }: { onSelect: (a: MediaAsse
   return (
     <div className="flex flex-col gap-4">
       <UploadZone onUploaded={(a) => setItems((l) => (l ? [a, ...l] : [a]))} />
-      <div className="flex flex-col gap-2 xs:flex-row xs:items-end">
-        <Input containerClassName="flex-1" type="search" aria-label="Search files" placeholder="Search by file name"
-          value={search} onChange={(e) => setSearch(e.target.value)} />
-        <Select aria-label="File type" options={TYPE_OPTIONS} value={type} onChange={(e) => setType(e.target.value as MediaTypeFilter)} />
-        <Button variant="secondary" aria-pressed={view === 'list'} onClick={() => setView(view === 'grid' ? 'list' : 'grid')}>
+      <div className="flex flex-col gap-2 md:flex-row md:items-end">
+        <div className="min-w-0 flex-1">
+          <Input type="search" aria-label="Search files" placeholder="Search by file name"
+            value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="md:w-48">
+          <Select aria-label="File type" options={TYPE_OPTIONS} value={type} onChange={(e) => setType(e.target.value as MediaTypeFilter)} />
+        </div>
+        <Button variant="secondary" className="whitespace-nowrap" aria-pressed={view === 'list'} onClick={() => setView(view === 'grid' ? 'list' : 'grid')}>
           {view === 'grid' ? 'List view' : 'Grid view'}
         </Button>
       </div>
