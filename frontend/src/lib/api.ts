@@ -3,8 +3,13 @@
  *
  * Requirements:
  * 1. Base URL from NEXT_PUBLIC_API_BASE_URL.
- * 2. Credentials included on every request (httpOnly session cookies).
- * 3. Works in server and client components; forwards cookies on server.
+ * 2. Public reads (catalog, navigation, settings, journal) never read or send
+ *    cookies and are cached with ISR (PUBLIC_REVALIDATE_SECONDS), so public
+ *    routes render statically. Session calls (cart) send the browser's cookies
+ *    and are never cached. On the server, a route that genuinely needs the
+ *    visitor's session passes headers from lib/api-session.ts, the only file
+ *    allowed to call cookies() (enforced by scripts/check-static-routes.mjs).
+ * 3. Works in server and client components. Never imports next/headers.
  * 4. Error envelope parsing: throws typed ApiError with status, code, message, fields.
  * 5. Also exports NetworkError and TimeoutError.
  * 6. 8 second timeout.
@@ -84,7 +89,42 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
   mockSwitch?: MockSwitch;
 }
 
+/** Headers from lib/api-session.ts for a server-side session call. */
+export interface SessionInit {
+  headers?: HeadersInit;
+}
+
 const TIMEOUT_MS = 8000;
+
+/**
+ * ISR window for public reads. Every public page is prerendered at build time
+ * and regenerated in the background at most this often.
+ */
+export const PUBLIC_REVALIDATE_SECONDS = 300;
+
+/** Cache tags for on-demand revalidation (revalidateTag) once the CMS can call it. */
+export const CACHE_TAGS = {
+  products: 'products',
+  categories: 'categories',
+  collections: 'collections',
+  navigation: 'navigation',
+  settings: 'settings',
+  journal: 'journal',
+} as const;
+
+/** A cookie-free, ISR-cached public GET. */
+function publicRead(tag: string): Pick<RequestOptions, 'credentials' | 'next'> {
+  return {
+    credentials: 'omit',
+    next: { revalidate: PUBLIC_REVALIDATE_SECONDS, tags: [tag] },
+  };
+}
+
+/** A session call: the browser sends its cookies, nothing is cached. */
+const SESSION_CALL: Pick<RequestOptions, 'credentials' | 'cache'> = {
+  credentials: 'include',
+  cache: 'no-store',
+};
 
 function isMockMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_MOCKS === 'true';
@@ -96,7 +136,8 @@ function getBaseUrl(): string {
 }
 
 /**
- * Low-level HTTP transport with timeout, server cookie forwarding, and retry policy.
+ * Low-level HTTP transport with timeout and retry policy. It never reads cookies:
+ * session headers, when a route needs them, come in through options.headers.
  */
 async function httpRequest<T>(
   method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' | 'HEAD',
@@ -121,24 +162,8 @@ async function httpRequest<T>(
     }
   }
 
-  // Server-side cookie forwarding
-  let cookieHeader = '';
-  if (typeof window === 'undefined') {
-    try {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      cookieHeader = cookieStore.toString();
-    } catch {
-      // Not in request execution context (e.g. static prerender)
-    }
-  }
-
   const headers = new Headers(options.headers);
   headers.set('Accept', 'application/json');
-
-  if (cookieHeader) {
-    headers.set('Cookie', cookieHeader);
-  }
 
   let bodyContent: string | undefined;
   if (options.body !== undefined && method !== 'GET' && method !== 'HEAD') {
@@ -158,7 +183,7 @@ async function httpRequest<T>(
       method,
       headers,
       body: bodyContent,
-      credentials: 'include',
+      credentials: options.credentials ?? 'include',
       signal: controller.signal,
       cache: options.cache,
       next: options.next,
@@ -255,6 +280,7 @@ export const api = {
     }
 
     return httpRequest<Paginated<ProductCard>>('GET', '/api/v1/products', {
+      ...publicRead(CACHE_TAGS.products),
       params: params as Record<string, string | number | boolean | undefined>,
     });
   },
@@ -281,7 +307,7 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<ProductDetail>>('GET', `/api/v1/products/${slug}`);
+    return httpRequest<SingleResponse<ProductDetail>>('GET', `/api/v1/products/${slug}`, publicRead(CACHE_TAGS.products));
   },
 
   /**
@@ -303,7 +329,7 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<Category[]>>('GET', '/api/v1/categories');
+    return httpRequest<SingleResponse<Category[]>>('GET', '/api/v1/categories', publicRead(CACHE_TAGS.categories));
   },
 
   /**
@@ -325,13 +351,16 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<Collection[]>>('GET', '/api/v1/collections');
+    return httpRequest<SingleResponse<Collection[]>>('GET', '/api/v1/collections', publicRead(CACHE_TAGS.collections));
   },
 
   /**
    * Commerce: Get Cart
    */
-  async getCart(mockSwitch?: MockSwitch): Promise<SingleResponse<Cart>> {
+  async getCart(
+    mockSwitch?: MockSwitch,
+    session?: SessionInit
+  ): Promise<SingleResponse<Cart>> {
     if (isMockMode()) {
       try {
         return await resolveMockCart(mockSwitch);
@@ -347,7 +376,7 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<Cart>>('GET', '/api/v1/cart');
+    return httpRequest<SingleResponse<Cart>>('GET', '/api/v1/cart', { ...SESSION_CALL, ...session });
   },
 
   /**
@@ -362,7 +391,7 @@ export const api = {
       return resolveMockCart();
     }
 
-    return httpRequest<SingleResponse<Cart>>('POST', '/api/v1/cart/items', { body });
+    return httpRequest<SingleResponse<Cart>>('POST', '/api/v1/cart/items', { ...SESSION_CALL, body });
   },
 
   /**
@@ -374,6 +403,7 @@ export const api = {
     }
 
     return httpRequest<SingleResponse<Cart>>('PATCH', `/api/v1/cart/items/${id}`, {
+      ...SESSION_CALL,
       body: { quantity },
     });
   },
@@ -386,7 +416,7 @@ export const api = {
       return resolveMockCart();
     }
 
-    return httpRequest<SingleResponse<Cart>>('DELETE', `/api/v1/cart/items/${id}`);
+    return httpRequest<SingleResponse<Cart>>('DELETE', `/api/v1/cart/items/${id}`, SESSION_CALL);
   },
 
   /**
@@ -408,7 +438,7 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<NavigationResponse>>('GET', '/api/v1/navigation');
+    return httpRequest<SingleResponse<NavigationResponse>>('GET', '/api/v1/navigation', publicRead(CACHE_TAGS.navigation));
   },
 
   /**
@@ -432,7 +462,7 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<PublicSettingsResponse>>('GET', '/api/v1/settings/public');
+    return httpRequest<SingleResponse<PublicSettingsResponse>>('GET', '/api/v1/settings/public', publicRead(CACHE_TAGS.settings));
   },
 
   /**
@@ -458,6 +488,7 @@ export const api = {
     }
 
     return httpRequest<Paginated<JournalArticleCard>>('GET', '/api/v1/journal', {
+      ...publicRead(CACHE_TAGS.journal),
       params: params as Record<string, string | number | boolean | undefined>,
     });
   },
@@ -484,6 +515,6 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<SubmissionResponse>>('POST', '/api/v1/submissions', { body });
+    return httpRequest<SingleResponse<SubmissionResponse>>('POST', '/api/v1/submissions', { ...SESSION_CALL, body });
   },
 };

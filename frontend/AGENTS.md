@@ -88,6 +88,27 @@ import { mockApiError } from '@/lib/mocks';
 throw mockApiError(404, 'NOT_FOUND', 'Product not found');
 ```
 
+## Public pages stay static
+
+Every public page renders at build time and refreshes in the background every 5 minutes (ISR, `PUBLIC_REVALIDATE_SECONDS` in `lib/api.ts`, matched by `export const revalidate` in `app/layout.tsx`). The public reads in `lib/api.ts` never read or send cookies, so they keep pages static. Calling `cookies()` or `headers()`, or fetching with `cache: 'no-store'`, makes the whole route render on every request, and every visitor then waits on the API.
+
+Only `lib/api-session.ts` may call `cookies()`. Only a route that truly needs the visitor's session may import it, and that route must be added to `ALLOWED_DYNAMIC_ROUTES` in `scripts/check-static-routes.mjs` with a reason. `npm test` fails on a stray `cookies()` or `next/headers` import. `npm run build` (postbuild) fails if any page that is not on the allowlist renders dynamically. The browser cart talks to the API directly with `credentials: 'include'` and does not need any of this.
+
+```ts
+import { api } from '@/lib/api';
+import { sessionInit } from '@/lib/api-session';
+
+// Public data: cookie-free and cached, so the page stays static.
+export async function loadCollections() {
+  return api.getCollections();
+}
+
+// Session data on the server: only in a route listed in ALLOWED_DYNAMIC_ROUTES.
+export async function loadServerCart() {
+  return api.getCart(undefined, await sessionInit());
+}
+```
+
 ## Checklist before opening a PR
 
 - [ ] No hex codes or raw pixel values outside the token file
@@ -97,3 +118,4 @@ throw mockApiError(404, 'NOT_FOUND', 'Product not found');
 - [ ] No money arithmetic in JavaScript
 - [ ] Empty optional fields render cleanly
 - [ ] Error states tested, not just the happy path
+- [ ] `npm run build` route table shows every public page as ○ or ●, not ƒ
