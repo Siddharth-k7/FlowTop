@@ -166,7 +166,8 @@ export const Menu: React.FC<MenuProps> = ({
     id: triggerId,
     'aria-haspopup': 'menu',
     'aria-expanded': isOpen,
-    'aria-controls': menuId,
+    // Only point at the menu while it is rendered, so the id always resolves.
+    'aria-controls': isOpen ? menuId : undefined,
     ref: (node: HTMLElement | null) => {
       triggerRef.current = node;
     },

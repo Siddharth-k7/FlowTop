@@ -56,7 +56,7 @@ export function Table<T>({
       aria-label={caption || 'Data table'}
       className={`w-full overflow-x-auto rounded-md border border-border bg-surface-solid ${className}`}
     >
-      <table className="w-full text-left border-collapse text-small">
+      <table className="w-full text-left border-collapse text-small" aria-busy={loading || undefined}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
           <tr className="border-b border-border bg-surface/60">
