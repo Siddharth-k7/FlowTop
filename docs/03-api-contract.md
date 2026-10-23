@@ -87,8 +87,11 @@ User {
   "email": "priya@flowtop.in",
   "role": "marketing_admin",
   "permissions": ["page:write", "section:write", "journal:write"],
-  "mfaEnabled": false
+  "mfaEnabled": false,
+  "mfaSetupRequired": false
 }
+
+`role` is null only for a user with no role assigned yet. `mfaSetupRequired` is true for a super admin who has not finished MFA enrolment: that session reaches only `POST /auth/mfa/setup` and `POST /auth/mfa/verify` until it is false. It is recomputed from the database on every request.
 ```
 
 `permissions` is for showing and hiding UI only. The server checks again on every call.
@@ -484,6 +487,8 @@ DELETE /admin/media/:id             Requires media:delete. 204. 409 if still ref
   }
 }
 ```
+
+`width` and `height` are null for anything that is not an image, such as a PDF. `variants` is `{}` until background image processing ships (task 2.1); do not assume thumb, medium or large are present.
 
 `filename` is the cleaned original upload name, for display. It is not the last segment of `url`. That segment is the storage key. `createdAt` is ISO 8601 UTC. The list is newest `createdAt` first.
 

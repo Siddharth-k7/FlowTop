@@ -1,5 +1,10 @@
 import { ALL_PERMISSIONS, ROLE_PERMISSIONS, ROLES, type Permission as BackendPermission } from './permissions';
-import type { Permission as SharedPermission, ROLE_PERMISSIONS as SharedRolePermissions } from '../../../shared/types/src/index';
+import type { AuthUser } from './auth-user';
+import type {
+  Permission as SharedPermission,
+  ROLE_PERMISSIONS as SharedRolePermissions,
+  User as SharedUser,
+} from '../../../shared/types/src/index';
 
 /**
  * shared/types is type-only, so the role grants cannot be imported as a value.
@@ -90,13 +95,26 @@ type _sharedMatchesMirror = Expect<Equal<typeof SHARED_ROLE_PERMISSIONS, SharedR
 type _permissionUnionsMatch = Expect<Equal<SharedPermission, BackendPermission>>;
 type _superAdminIsEveryPermission = Expect<Equal<(typeof SHARED_ROLE_PERMISSIONS.super_admin)[number], SharedPermission>>;
 
-const typeChecks: [_sharedMatchesMirror, _permissionUnionsMatch, _superAdminIsEveryPermission] = [true, true, true];
+/**
+ * GET /auth/me returns AuthUser verbatim, so the shared User must carry the
+ * same fields. Shared narrows role and permissions to the unions above, so
+ * this compares keys, not value types. Adding a field on either side without
+ * the other fails to compile.
+ */
+type _userKeysMatch = Expect<Equal<keyof AuthUser, keyof SharedUser>>;
+
+const typeChecks: [_sharedMatchesMirror, _permissionUnionsMatch, _superAdminIsEveryPermission, _userKeysMatch] = [
+  true,
+  true,
+  true,
+  true,
+];
 
 const sorted = (values: readonly string[]): string[] => [...values].sort();
 
 describe('shared/types permission drift', () => {
   it('typechecks the shared unions against permissions.ts', () => {
-    expect(typeChecks).toEqual([true, true, true]);
+    expect(typeChecks).toEqual([true, true, true, true]);
   });
 
   it('matches the permission keys in permissions.ts in both directions', () => {
