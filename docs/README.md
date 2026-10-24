@@ -11,6 +11,7 @@
 | [08-local-backend.md](08-local-backend.md) | Run Postgres, migrations, seed, and a super admin with MFA | Dev D, and anyone hitting the API locally |
 | [09-session-cookie.md](09-session-cookie.md) | Why a Lax session cookie breaks on onrender.com, and the two fixes | Dev A, before the staging admin is hosted |
 | [10-review-standards.md](10-review-standards.md) | Rules for writing a review, and for reporting that work is done | All four, before a review or a done report |
+| [11-working-rules.md](11-working-rules.md) | Six rules for how to build, each tied to a Phase 1 failure; the companion to 10-review-standards.md | All four, before starting any task |
 | [reviews/README.md](reviews/README.md) | `docs/reviews/`: review files, their names, and the structure every review uses | All four, when filing a review |
 | [prompts/dev-a-platform.md](prompts/dev-a-platform.md) | Starter prompt for Dev A's coding agent | A |
 | [prompts/dev-b-catalogue.md](prompts/dev-b-catalogue.md) | Starter prompt for Dev B's coding agent | B |
