@@ -142,14 +142,14 @@ export async function seedContent(prisma: SeedClient, log: (line: string) => voi
 
     await tx.navigationItem.deleteMany({});
     const headerItems = [
-      { label: 'Products', linkType: 'external' as const, destination: '/products', position: 0 },
-      { label: 'Collections', linkType: 'external' as const, destination: '/collections', position: 1 },
-      { label: 'Journal', linkType: 'external' as const, destination: '/journal', position: 2 },
+      { label: 'Products', linkType: 'external' as const, destination: 'https://flowtop.in/products', position: 0 },
+      { label: 'Collections', linkType: 'external' as const, destination: 'https://flowtop.in/collections', position: 1 },
+      { label: 'Journal', linkType: 'external' as const, destination: 'https://flowtop.in/journal', position: 2 },
     ];
     for (const item of headerItems) await tx.navigationItem.create({ data: { ...item, menu: 'header' } });
     await tx.navigationItem.createMany({ data: [
-      { menu: 'footer', label: 'About Flowtop', linkType: 'external', destination: '/about', position: 0 },
-      { menu: 'footer', label: 'Contact', linkType: 'external', destination: '/contact', position: 1 },
+      { menu: 'footer', label: 'About Flowtop', linkType: 'external', destination: 'https://flowtop.in/about', position: 0 },
+      { menu: 'footer', label: 'Contact', linkType: 'external', destination: 'https://flowtop.in/contact', position: 1 },
       { menu: 'footer', label: 'Instagram', linkType: 'external', destination: 'https://instagram.com/flowtop', openInNewTab: true, position: 2 },
     ] });
 
