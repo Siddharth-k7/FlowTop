@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     MediaModule,
     SettingsModule,
     UsersModule,
+    ProductsModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },
