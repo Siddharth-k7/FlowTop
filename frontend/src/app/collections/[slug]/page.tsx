@@ -8,6 +8,7 @@ import { CollectionCard } from '../../../components/Collection/CollectionCard';
 import { StoryFadeIn } from '../../../components/Collection/StoryFadeIn';
 import { FinishStrip } from '../../../components/Collection/FinishStrip';
 import { ProductCard } from '../../../components/Product/ProductCard';
+import { createBreadcrumbsJsonLd, safeJsonLd } from '../../../lib/structured-data';
 
 export const revalidate = 60;
 
@@ -137,18 +138,27 @@ export default async function CollectionDetailPage({ params }: PageProps) {
     finishCodes = Array.from(new Set(products.flatMap((p) => p.finishes || [])));
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://flowtop.in';
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Collections', href: '/collections' },
+    { label: collection.name, href: `/collections/${collection.slug}` },
+  ];
+  const breadcrumbsJsonLd = createBreadcrumbsJsonLd(breadcrumbItems, siteUrl);
+
   return (
-    <div className="flex flex-col gap-space-12 md:gap-space-16 pb-space-16">
-      {/* ─── Top Breadcrumbs ────────────────────────────────────────── */}
-      <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 pt-space-4">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Collections', href: '/collections' },
-            { label: collection.name, href: `/collections/${collection.slug}` },
-          ]}
-        />
-      </div>
+    <>
+      {/* BreadcrumbList Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbsJsonLd) }}
+      />
+
+      <div className="flex flex-col gap-space-12 md:gap-space-16 pb-space-16">
+        {/* ─── Top Breadcrumbs ────────────────────────────────────────── */}
+        <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 pt-space-4">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
 
       {/* ─── Hero Frame ────────────────────────────────────────────── */}
       {/* Deliberate object: full-bleed image inside rounded-lg frame with margin */}
@@ -304,5 +314,6 @@ export default async function CollectionDetailPage({ params }: PageProps) {
         </section>
       )}
     </div>
+    </>
   );
 }

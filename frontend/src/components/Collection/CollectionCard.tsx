@@ -18,7 +18,6 @@ export function CollectionCard({ collection, priority = false }: CollectionCardP
     <Link
       href={`/collections/${collection.slug}`}
       className="group relative flex flex-col bg-surface-solid rounded-lg border border-border overflow-hidden transition-all duration-300 hover:shadow-md focus-ring"
-      aria-label={`${collection.name} Collection, ${productCountText}`}
     >
       {/* Calm hover image container: scale 1.03 inside overflow hidden, transform only */}
       <div className="relative w-full aspect-[16/10] overflow-hidden bg-surface">

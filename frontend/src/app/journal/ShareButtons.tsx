@@ -112,7 +112,7 @@ export function ShareButtons({
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={link.label}
+            aria-label={`${link.name}: ${link.label}`}
             className="inline-flex items-center justify-center min-h-[44px] px-space-3 py-space-2 text-small font-medium text-fg hover:text-primary bg-surface border border-border hover:border-primary/40 rounded-sm focus-ring transition-colors duration-fast"
           >
             <span>{link.name}</span>
@@ -124,7 +124,7 @@ export function ShareButtons({
             variant="ghost"
             size="sm"
             onClick={handleCopyLink}
-            aria-label="Copy article link to clipboard"
+            aria-label="Copy link to clipboard"
           >
             <svg className="w-4 h-4 mr-space-1 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

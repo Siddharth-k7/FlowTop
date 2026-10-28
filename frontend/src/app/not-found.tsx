@@ -40,10 +40,10 @@ export default function NotFound() {
               Explore Collections &rarr;
             </Link>
             <Link
-              href="/trade"
+              href="/journal"
               className="p-space-2 rounded-sm bg-surface-solid border border-border hover:border-primary hover:text-primary transition-colors focus-ring"
             >
-              Architect & Trade Portal &rarr;
+              Design Journal &amp; Guides &rarr;
             </Link>
             <Link
               href="/contact"

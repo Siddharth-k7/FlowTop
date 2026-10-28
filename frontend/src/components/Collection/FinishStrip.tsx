@@ -20,9 +20,9 @@ export function FinishStrip({ finishCodes }: FinishStripProps) {
   return (
     <div className="bg-surface rounded-lg p-space-6 border border-border flex flex-col md:flex-row md:items-center justify-between gap-space-4">
       <div>
-        <h3 className="text-small font-medium uppercase tracking-wide text-fg mb-space-1">
+        <h2 className="text-small font-medium uppercase tracking-wide text-fg mb-space-1">
           Architectural Finishes in this Series
-        </h3>
+        </h2>
         <p className="text-caption text-fg-muted">
           All pieces in this collection are surface-bonded with physical vapor deposition (PVD) or mirror chrome.
         </p>

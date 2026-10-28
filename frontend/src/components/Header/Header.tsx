@@ -2,7 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import type { NavigationItem } from '../../lib/types-pending';
+import { useOptionalCart } from '../Cart';
+
+// Code split search overlay so search index & fuzzing logic load only on-demand
+const SiteSearchOverlay = dynamic(
+  () => import('../Search').then((mod) => mod.SiteSearchOverlay),
+  { ssr: false }
+);
 
 export interface HeaderProps {
   items: NavigationItem[];
@@ -10,16 +18,33 @@ export interface HeaderProps {
 }
 
 export function Header({ items, cartCount = 0 }: HeaderProps) {
+  const cartContext = useOptionalCart();
+  const liveCount = cartContext ? cartContext.itemCount : cartCount;
+  const openCartFn = cartContext?.openCart;
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMobileItem, setExpandedMobileItem] = useState<string | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const hamburgerRef = useRef<HTMLButtonElement | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Global Cmd+K / Ctrl+K keyboard shortcut to open search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // 1. IntersectionObserver for sticky background change (No scroll listener)
   useEffect(() => {
@@ -281,7 +306,8 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
             {/* Search Icon Button */}
             <button
               type="button"
-              aria-label="Search catalogue"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Search catalogue (Cmd+K)"
               className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
@@ -303,7 +329,13 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
             {/* Cart Icon Button with Count Badge */}
             <Link
               href="/cart"
-              aria-label={cartCount > 0 ? `Shopping cart, ${cartCount} items` : 'Shopping cart'}
+              onClick={(e) => {
+                if (openCartFn) {
+                  e.preventDefault();
+                  openCartFn();
+                }
+              }}
+              aria-label={liveCount > 0 ? `Shopping cart, ${liveCount} items` : 'Shopping cart'}
               className="min-w-touch min-h-touch relative flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
@@ -323,12 +355,12 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
               </svg>
 
               {/* Count badge: hidden at 0 */}
-              {cartCount > 0 && (
+              {liveCount > 0 && (
                 <span
                   aria-hidden="true"
                   className="absolute top-space-1 right-space-1 min-w-[18px] h-[18px] px-1 rounded-pill bg-primary text-on-primary text-[10px] font-semibold flex items-center justify-center leading-none"
                 >
-                  {cartCount}
+                  {liveCount}
                 </span>
               )}
             </Link>
@@ -471,6 +503,12 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
           </div>
         </div>
       )}
+
+      {/* Site Search Overlay */}
+      <SiteSearchOverlay
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </>
   );
 }

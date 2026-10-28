@@ -53,20 +53,28 @@ export function CtaSection({
   const isButtonMode = config.mode === 'button' && Boolean(config.cta && safeButtonUrl);
   const isDownloadMode = config.mode === 'download' && Boolean(documentAsset && documentAsset.url);
 
+  const isDarkBg = config.layout?.background === 'black' || config.layout?.background === 'deep';
+
   return (
     <SectionShell layout={config.layout} headingId={headingId} className={className}>
       <div className="flex flex-col items-center text-center max-w-2xl mx-auto w-full">
         {/* Section Heading */}
         <h2
           id={headingId}
-          className="font-display font-light text-headline md:text-display tracking-tight text-fg mb-space-3 leading-tight"
+          className={`font-display font-light text-headline md:text-display tracking-tight mb-space-3 leading-tight ${
+            isDarkBg ? 'text-white' : 'text-fg'
+          }`}
         >
           {config.heading}
         </h2>
 
         {/* Optional Body */}
         {config.body && (
-          <p className="text-body text-fg-muted leading-relaxed max-w-measure mb-space-6">
+          <p
+            className={`text-body leading-relaxed max-w-measure mb-space-6 ${
+              isDarkBg ? 'text-white/90' : 'text-fg-muted'
+            }`}
+          >
             {config.body}
           </p>
         )}

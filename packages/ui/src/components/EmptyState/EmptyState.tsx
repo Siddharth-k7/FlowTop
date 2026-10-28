@@ -8,10 +8,24 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: React.ReactNode;
   action?: React.ReactNode;
   secondaryAction?: React.ReactNode;
+  headingLevel?: 'h2' | 'h3' | 'h4' | 'p';
 }
 
 export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
-  ({ title, description, icon, action, secondaryAction, className = '', ...props }, ref) => {
+  (
+    {
+      title,
+      description,
+      icon,
+      action,
+      secondaryAction,
+      headingLevel = 'h2',
+      className = '',
+      ...props
+    },
+    ref
+  ) => {
+    const HeadingTag = headingLevel;
     const defaultIcon = (
       <svg
         className="w-space-6 h-space-6 text-purple-deep"
@@ -42,7 +56,7 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           {icon || defaultIcon}
         </div>
 
-        <h3 className="text-title font-medium text-fg">{title}</h3>
+        <HeadingTag className="text-title font-medium text-fg">{title}</HeadingTag>
 
         <div className="text-small text-fg-muted mt-space-2 max-w-sm">
           {description}

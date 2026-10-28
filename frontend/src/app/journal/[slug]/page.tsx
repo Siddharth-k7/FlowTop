@@ -1,11 +1,14 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { api, ApiError } from '../../../lib/api';
 import { sanitizeArticleHtml } from '../../../lib/sanitize';
+import { PRODUCT_BLUR_DATA_URL } from '../../../lib/image-constants';
 import { Breadcrumbs, Badge } from '@flowtop/ui';
 import { ProductCard } from '../../../components/Product/ProductCard';
 import { ShareButtons } from '../ShareButtons';
+import { createBreadcrumbsJsonLd, safeJsonLd } from '../../../lib/structured-data';
 import '../article.css';
 
 export const revalidate = 30;
@@ -118,6 +121,14 @@ export default async function JournalArticlePage({ params }: ArticlePageProps) {
 
   const safeJsonLdString = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Journal', href: '/journal' },
+    { label: article.category, href: `/journal?category=${categorySlug}` },
+    { label: article.title },
+  ];
+  const breadcrumbsJsonLd = createBreadcrumbsJsonLd(breadcrumbItems, siteUrl);
+
   return (
     <article className="w-full flex flex-col py-space-6 md:py-space-8 max-w-full overflow-x-hidden">
       {/* Article Schema.org JSON-LD */}
@@ -126,16 +137,15 @@ export default async function JournalArticlePage({ params }: ArticlePageProps) {
         dangerouslySetInnerHTML={{ __html: safeJsonLdString }}
       />
 
+      {/* BreadcrumbList Schema.org JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbsJsonLd) }}
+      />
+
       <div className="container-page flex flex-col gap-space-6 md:gap-space-8 w-full">
         {/* Breadcrumb Navigation */}
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Journal', href: '/journal' },
-            { label: article.category, href: `/journal?category=${categorySlug}` },
-            { label: article.title },
-          ]}
-        />
+        <Breadcrumbs items={breadcrumbItems} />
 
         {/* Article Header & Headline (Solitary h1 on page) */}
         <header className="max-w-measure mx-auto w-full flex flex-col gap-space-4 pt-space-2 text-left">
@@ -159,12 +169,16 @@ export default async function JournalArticlePage({ params }: ArticlePageProps) {
 
         {/* Hero Image */}
         {article.coverImage && (
-          <div className="max-w-4xl mx-auto w-full overflow-hidden rounded-lg shadow-sm border border-border bg-surface-solid aspect-[16/9]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative max-w-4xl mx-auto w-full overflow-hidden rounded-lg shadow-sm border border-border bg-surface-solid aspect-[16/9]">
+            <Image
               src={article.coverImage}
               alt={article.title}
-              className="w-full h-full object-cover"
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 896px"
+              placeholder="blur"
+              blurDataURL={PRODUCT_BLUR_DATA_URL}
+              className="object-cover"
             />
           </div>
         )}

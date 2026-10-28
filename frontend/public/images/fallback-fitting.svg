@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" fill="none">
+  <rect width="800" height="800" fill="#F4EEFA"/>
+  <circle cx="400" cy="400" r="260" fill="#FFFFFF" stroke="#E3DBED" stroke-width="2"/>
+  <!-- Minimalist Architectural Fitting Silhouette -->
+  <path d="M400 240V360M400 360H490V400H470V380H400M400 360V560M360 560H440" stroke="#5A2D82" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Knurled Lever Detail -->
+  <line x1="390" y1="240" x2="410" y2="240" stroke="#9B6FC4" stroke-width="14" stroke-linecap="round"/>
+  <!-- Subdued Monogram / Brand mark -->
+  <text x="400" y="620" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" letter-spacing="4" fill="#5A2D82" text-transform="uppercase">FLOWTOP</text>
+  <text x="400" y="650" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="400" letter-spacing="1" fill="#7A7889">Architectural Brassware</text>
+</svg>

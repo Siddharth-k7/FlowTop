@@ -92,12 +92,21 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
         {/* Legal Line & Credits */}
         <div className="border-t border-border pt-space-6 flex flex-col sm:flex-row items-center justify-between gap-space-3 text-caption text-fg-muted">
           <p>{legalNotice}</p>
-          <div className="flex items-center gap-space-4">
+          <div className="flex flex-wrap items-center gap-space-4">
             <Link href="/privacy" className="hover:text-primary transition-colors focus-ring rounded-sm">
               Privacy Policy
             </Link>
             <Link href="/terms" className="hover:text-primary transition-colors focus-ring rounded-sm">
               Terms of Service
+            </Link>
+            <Link href="/shipping" className="hover:text-primary transition-colors focus-ring rounded-sm">
+              Shipping Policy
+            </Link>
+            <Link href="/refunds" className="hover:text-primary transition-colors focus-ring rounded-sm">
+              Returns &amp; Refunds
+            </Link>
+            <Link href="/support" className="hover:text-primary transition-colors focus-ring rounded-sm">
+              Support &amp; FAQs
             </Link>
             <Link href="/sitemap.xml" className="hover:text-primary transition-colors focus-ring rounded-sm">
               Sitemap

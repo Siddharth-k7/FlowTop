@@ -4,10 +4,22 @@ import { SectionRenderer } from '@flowtop/ui';
 import { getPage, resolveSectionData } from '../../lib/pages';
 import { isReservedSlug } from '../../lib/reserved-slugs';
 
+import { LegalPageView } from '../../components/Legal/LegalPageView';
+import { createBreadcrumbsJsonLd, safeJsonLd } from '../../lib/structured-data';
+
 export const revalidate = 30;
 
 export async function generateStaticParams() {
-  return [{ slug: 'opel-launch' }];
+  return [
+    { slug: 'opel-launch' },
+    { slug: 'about' },
+    { slug: 'manufacturing' },
+    { slug: 'quality' },
+    { slug: 'privacy' },
+    { slug: 'terms' },
+    { slug: 'shipping' },
+    { slug: 'refunds' },
+  ];
 }
 
 interface CampaignPageProps {
@@ -70,10 +82,26 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
 
   const page = await getPage(slug);
   const data = await resolveSectionData(page.sections);
+  const isLegal = page.template === 'legal' || ((!page.sections || page.sections.length === 0) && Boolean(page.content));
+
+  const breadcrumbsJsonLd = createBreadcrumbsJsonLd([
+    { label: 'Home', href: 'https://flowtop.in' },
+    { label: page.title, href: `https://flowtop.in/${slug}` },
+  ]);
 
   return (
-    <div className="w-full flex flex-col max-w-full overflow-x-hidden">
-      <SectionRenderer sections={page.sections} data={data} />
-    </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbsJsonLd) }}
+      />
+      <div className="w-full flex flex-col max-w-full overflow-x-hidden">
+        {isLegal ? (
+          <LegalPageView page={page} />
+        ) : (
+          <SectionRenderer sections={page.sections} data={data} />
+        )}
+      </div>
+    </>
   );
 }

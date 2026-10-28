@@ -27,6 +27,10 @@ import type {
   Collection,
   CollectionDetail,
   Cart,
+  CheckoutRequest,
+  CheckoutResponse,
+  OrderStatusResponse,
+  OrderDetailResponse,
   SingleResponse,
   NavigationResponse,
   PublicSettingsResponse,
@@ -36,8 +40,13 @@ import type {
   SubmissionRequest,
   PageResponse,
   PlacementResponse,
+  AnalyticsEventRequest,
+  SiteSearchResults,
+  SitemapDataResponse,
+  SupportDataResponse,
 } from './types-pending';
 import type { ErrorEnvelope, Paginated } from '@flowtop/types';
+import { searchMockSite } from './mocks/search';
 
 import {
   resolveMockProducts,
@@ -47,6 +56,9 @@ import {
   resolveMockCollections,
   resolveMockCollectionBySlug,
   resolveMockCart,
+  resolveMockAddToCart,
+  resolveMockUpdateCartItem,
+  resolveMockRemoveCartItem,
   resolveMockNavigation,
   resolveMockSettings,
   resolveMockJournal,
@@ -54,6 +66,11 @@ import {
   resolveMockSubmission,
   resolveMockPage,
   resolveMockPlacement,
+  resolveMockCheckout,
+  resolveMockOrderStatus,
+  resolveMockOrderDetail,
+  resolveMockSitemapData,
+  resolveMockSupportData,
   type MockSwitch,
 } from './mocks/index';
 
@@ -455,6 +472,11 @@ export const api = {
 
   /**
    * Commerce: Add to Cart (POST: Never retried)
+   *
+   * SECURITY RULE: Never send a price.
+   * Product ID, variant ID and quantity are the ONLY inputs accepted.
+   * Any client-supplied price is a security attack vector (client tampering / price manipulation)
+   * and must never be transmitted. Prices and line totals are strictly calculated server-side.
    */
   async addToCart(body: {
     productId: string;
@@ -462,7 +484,7 @@ export const api = {
     quantity: number;
   }): Promise<SingleResponse<Cart>> {
     if (isMockMode()) {
-      return resolveMockCart();
+      return resolveMockAddToCart(body);
     }
 
     return httpRequest<SingleResponse<Cart>>('POST', '/api/v1/cart/items', { ...SESSION_CALL, body });
@@ -473,7 +495,7 @@ export const api = {
    */
   async updateCartItem(id: string, quantity: number): Promise<SingleResponse<Cart>> {
     if (isMockMode()) {
-      return resolveMockCart();
+      return resolveMockUpdateCartItem(id, quantity);
     }
 
     return httpRequest<SingleResponse<Cart>>('PATCH', `/api/v1/cart/items/${id}`, {
@@ -487,10 +509,65 @@ export const api = {
    */
   async removeCartItem(id: string): Promise<SingleResponse<Cart>> {
     if (isMockMode()) {
-      return resolveMockCart();
+      return resolveMockRemoveCartItem(id);
     }
 
     return httpRequest<SingleResponse<Cart>>('DELETE', `/api/v1/cart/items/${id}`, SESSION_CALL);
+  },
+
+  /**
+   * Commerce: Create Checkout Session
+   *
+   * Submits contact and delivery details and returns gateway handoff payload.
+   */
+  async createCheckout(body: CheckoutRequest): Promise<SingleResponse<CheckoutResponse>> {
+    if (isMockMode()) {
+      return resolveMockCheckout(body);
+    }
+
+    return httpRequest<SingleResponse<CheckoutResponse>>('POST', '/api/v1/checkout', {
+      ...SESSION_CALL,
+      body,
+    });
+  },
+
+  /**
+   * Commerce: Poll Order Payment Status
+   *
+   * CRITICAL SECURITY RULE:
+   * Only the server paymentStatus is trusted. URL redirect parameters mean nothing.
+   */
+  async getOrderStatus(reference: string): Promise<SingleResponse<OrderStatusResponse>> {
+    if (isMockMode()) {
+      return resolveMockOrderStatus(reference);
+    }
+
+    return httpRequest<SingleResponse<OrderStatusResponse>>(
+      'GET',
+      `/api/v1/orders/${encodeURIComponent(reference)}/status`,
+      { cache: 'no-store' }
+    );
+  },
+
+  /**
+   * Commerce: Get Order Details (for confirmation screen)
+   */
+  async getOrderDetail(
+    reference: string,
+    email?: string
+  ): Promise<SingleResponse<OrderDetailResponse>> {
+    if (isMockMode()) {
+      return resolveMockOrderDetail(reference);
+    }
+
+    return httpRequest<SingleResponse<OrderDetailResponse>>(
+      'GET',
+      `/api/v1/orders/${encodeURIComponent(reference)}`,
+      {
+        params: email ? { email } : undefined,
+        cache: 'no-store',
+      }
+    );
   },
 
   /**
@@ -692,5 +769,82 @@ export const api = {
         tags: [CACHE_TAGS.placements, `placement:${locationType}:${locationId}`],
       },
     });
+  },
+
+  /**
+   * Analytics: Fire event (Dev B contract)
+   * A whatsapp_click is a click event. It is NEVER recorded as a lead.
+   */
+  async trackAnalyticsEvent(
+    body: AnalyticsEventRequest
+  ): Promise<{ success: boolean }> {
+    if (isMockMode()) {
+      return { success: true };
+    }
+
+    try {
+      return await httpRequest<{ success: boolean }>(
+        'POST',
+        '/api/v1/analytics/events',
+        {
+          credentials: 'omit',
+          body,
+        }
+      );
+    } catch {
+      // Analytics is non-blocking and never crashes user flows
+      return { success: false };
+    }
+  },
+
+  /**
+   * Search: Debounced search across products, collections, and articles
+   */
+  async searchSite(
+    query: string,
+    _mockSwitch?: MockSwitch
+  ): Promise<SingleResponse<SiteSearchResults>> {
+    if (isMockMode()) {
+      return { data: searchMockSite(query) };
+    }
+
+    return httpRequest<SingleResponse<SiteSearchResults>>(
+      'GET',
+      `/api/v1/search?q=${encodeURIComponent(query)}`,
+      { credentials: 'omit' }
+    );
+  },
+
+  /**
+   * Sitemap: Dynamic sitemap data feed from Dev B (Prompt 4.3)
+   * Excludes drafts and archived content.
+   */
+  async getSitemapData(): Promise<SingleResponse<SitemapDataResponse>> {
+    if (isMockMode()) {
+      return resolveMockSitemapData();
+    }
+
+    // TODO: swap for real API when Dev B merges /sitemap-data
+    return httpRequest<SingleResponse<SitemapDataResponse>>(
+      'GET',
+      '/sitemap-data',
+      publicRead(CACHE_TAGS.products)
+    );
+  },
+
+  /**
+   * Support: CMS-managed FAQs, downloadable care manuals, and warranty details
+   */
+  async getSupportData(): Promise<SingleResponse<SupportDataResponse>> {
+    if (isMockMode()) {
+      return resolveMockSupportData();
+    }
+
+    // TODO: swap for real API when Dev B merges /support
+    return httpRequest<SingleResponse<SupportDataResponse>>(
+      'GET',
+      '/support',
+      publicRead(CACHE_TAGS.products)
+    );
   },
 };

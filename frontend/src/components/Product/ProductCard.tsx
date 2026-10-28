@@ -5,7 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ProductCard as ProductCardType } from '../../lib/types-pending';
 import { formatPaise, isValidHex } from '../../lib/format';
+import { PRODUCT_BLUR_DATA_URL } from '../../lib/image-constants';
 import { Badge } from '@flowtop/ui';
+import { ProductWhatsAppButton } from '../WhatsApp';
 
 export type ProductCardStyle = 'standard' | 'compact' | 'editorial';
 
@@ -42,6 +44,9 @@ export function ProductCard({
   const hoverImgUrl =
     typeof hoverImage === 'string' ? hoverImage : (hoverImage as { url: string })?.url;
 
+  const [imgSrc, setImgSrc] = React.useState(primaryImgUrl || '/images/fallback-fitting.svg');
+  const [hoverSrc, setHoverSrc] = React.useState<string | undefined>(hoverImgUrl);
+
   const isEditorial = style === 'editorial';
 
   return (
@@ -59,30 +64,38 @@ export function ProductCard({
         </div>
       )}
 
-      {/* Image Container with Hover Swap */}
+      {/* Image Container with Hover Swap & Resilient Fallback */}
       <Link
         href={`/products/${slug}`}
         className="relative block w-full aspect-square overflow-hidden rounded-sm bg-surface mb-space-3"
         aria-label={`View details for ${name}`}
       >
-        {primaryImgUrl && (
+        {imgSrc && (
           <Image
-            src={primaryImgUrl}
+            src={imgSrc}
             alt={name}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
             priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
+            placeholder="blur"
+            blurDataURL={PRODUCT_BLUR_DATA_URL}
+            onError={() => setImgSrc('/images/fallback-fitting.svg')}
             className={`object-cover transition-opacity duration-base ${
-              hoverImgUrl ? 'group-hover:opacity-0' : ''
+              hoverSrc ? 'group-hover:opacity-0' : ''
             }`}
           />
         )}
-        {hoverImgUrl && (
+        {hoverSrc && (
           <Image
-            src={hoverImgUrl}
+            src={hoverSrc}
             alt={`${name} - alternate view`}
             fill
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL={PRODUCT_BLUR_DATA_URL}
+            onError={() => setHoverSrc(undefined)}
             className="object-cover opacity-0 transition-opacity duration-base group-hover:opacity-100"
           />
         )}
@@ -119,21 +132,33 @@ export function ProductCard({
           <Link href={`/products/${slug}`}>{name}</Link>
         </h3>
 
-        {/* Price display with strikethrough salePrice */}
-        <div className="flex items-baseline gap-space-2 mb-space-1">
-          <span className="font-semibold text-body text-fg">
-            {formatPaise(salePrice ? salePrice : price)}
-          </span>
-          {salePrice && salePrice < price && (
-            <span className="text-small text-text-muted line-through">
-              {formatPaise(price)}
+        {/* Price display with strikethrough salePrice & WhatsApp inquiry button */}
+        <div className="flex items-center justify-between gap-space-2 mt-auto pt-space-2">
+          <div className="flex items-baseline gap-space-2">
+            <span className="font-semibold text-body text-fg">
+              {formatPaise(salePrice ? salePrice : price)}
             </span>
-          )}
+            {salePrice && salePrice < price && (
+              <span className="text-small text-text-muted line-through">
+                {formatPaise(price)}
+              </span>
+            )}
+          </div>
+
+          <ProductWhatsAppButton
+            product={{
+              productName: name,
+              sku: product.sku,
+              finish: swatches?.[0]?.name,
+              url: `/products/${slug}`,
+            }}
+            variant="compact"
+          />
         </div>
 
         {/* Availability note if out of stock */}
         {!isAvailable && availabilityMessage && (
-          <p className="text-caption text-warning mt-auto">{availabilityMessage}</p>
+          <p className="text-caption text-warning mt-space-1">{availabilityMessage}</p>
         )}
       </div>
     </article>

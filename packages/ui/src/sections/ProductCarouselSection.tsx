@@ -123,7 +123,7 @@ export function ProductCarouselSection({
       <div
         role="region"
         aria-roledescription="carousel"
-        aria-labelledby={headingId}
+        aria-label={`${config.heading} showcase`}
         aria-live={hasAutoplay && !isPaused && !isHovered ? 'off' : 'polite'}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -194,6 +194,11 @@ export function ProductCarouselSection({
           </div>
         </div>
 
+        {/* Visually hidden live announcement for active slide */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          Slide {activeIndex + 1} of {items.length}
+        </div>
+
         {/* Scroll-Snap Track: swipe works without JS */}
         <div
           ref={trackRef}
@@ -206,6 +211,9 @@ export function ProductCarouselSection({
                 slideRefs.current[idx] = el;
               }}
               data-index={idx}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`${idx + 1} of ${items.length}`}
               className="snap-start shrink-0 w-[260px] sm:w-[280px] md:w-[320px] lg:w-[340px]"
             >
               <ProductCard

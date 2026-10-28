@@ -10,6 +10,7 @@ import {
 } from '../../../lib/filters';
 import { ListingShell } from '../../../components/Listing/ListingShell';
 import { Breadcrumbs } from '@flowtop/ui';
+import { createBreadcrumbsJsonLd, safeJsonLd } from '../../../lib/structured-data';
 
 export const revalidate = 60;
 
@@ -123,18 +124,27 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     finishNameMap[f.code] = f.name;
   });
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://flowtop.in';
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Catalogue', href: '/products' },
+    { label: category.name, href: `/category/${category.slug}` },
+  ];
+  const breadcrumbsJsonLd = createBreadcrumbsJsonLd(breadcrumbItems, siteUrl);
+
   return (
-    <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 py-space-6 md:py-space-8">
-      {/* Category Breadcrumbs */}
-      <div className="mb-space-6">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Catalogue', href: '/products' },
-            { label: category.name, href: `/category/${category.slug}` },
-          ]}
-        />
-      </div>
+    <>
+      {/* Category Breadcrumbs Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbsJsonLd) }}
+      />
+
+      <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 py-space-6 md:py-space-8">
+        {/* Category Breadcrumbs */}
+        <div className="mb-space-6">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
 
       <ListingShell
         products={products}
@@ -154,5 +164,6 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         emptyDescription="We are continually introducing new designs to our collections. Check back soon or explore our full architectural catalogue."
       />
     </div>
+    </>
   );
 }

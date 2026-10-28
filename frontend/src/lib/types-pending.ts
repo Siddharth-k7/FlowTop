@@ -94,6 +94,7 @@ export interface ProductCard {
   isAvailable: boolean;
   availabilityMessage?: string | null;
   finishes: string[]; // e.g. ['chrome', 'brushed-gold', 'matte-black']
+  status?: string;
 }
 
 export interface ProductDetail extends ProductCard {
@@ -140,17 +141,35 @@ export interface CollectionDetail extends Collection {
 }
 
 // ─── Cart & Commerce ─────────────────────────────────────────────────────────
+export interface CartWarning {
+  itemId?: string;
+  code: string;
+  message: string;
+}
+
 export interface CartItem {
   id: string;
   productId: string;
   productName: string;
   sku: string;
   slug: string;
-  finishName: string;
+  finishName?: string;
   unitPrice: number; // integer paise
   quantity: number;
   lineTotal: number; // integer paise
-  imageUrl: string;
+  imageUrl?: string;
+  product?: {
+    id: string;
+    name: string;
+    slug: string;
+    sku?: string;
+    primaryImage?: string;
+  };
+  variant?: {
+    id: string;
+    name: string;
+    skuSuffix?: string;
+  };
 }
 
 export interface Cart {
@@ -161,23 +180,115 @@ export interface Cart {
   shipping: number; // integer paise
   total: number; // integer paise
   itemCount: number;
+  warnings?: CartWarning[];
 }
 
 export interface CartSummary {
   itemCount: number;
 }
 
+// ─── Checkout & Orders ───────────────────────────────────────────────────────
+export interface CheckoutContact {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface CheckoutDelivery {
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pin: string; // 6-digit Indian PIN code
+  landmark?: string;
+  notes?: string;
+}
+
+export interface CheckoutRequest {
+  contact: CheckoutContact;
+  delivery: CheckoutDelivery;
+}
+
+export interface GatewayHandoff {
+  provider: string;
+  orderId: string;
+  amount: number; // integer paise
+  key: string;
+  redirectUrl?: string;
+}
+
+export interface CheckoutResponse {
+  orderId: string;
+  reference: string;
+  gateway: GatewayHandoff;
+}
+
+export interface OrderStatusResponse {
+  paymentStatus: 'pending' | 'paid' | 'failed';
+}
+
+export interface OrderDetailItem {
+  id: string;
+  productId: string;
+  variantId?: string | null;
+  productName: string;
+  sku: string;
+  finishName?: string | null;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+  imageUrl?: string | null;
+}
+
+export interface OrderDetailResponse {
+  id: string;
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  deliveryAddressLine1: string;
+  deliveryAddressLine2?: string | null;
+  deliveryCity: string;
+  deliveryState: string;
+  deliveryPin: string;
+  deliveryLandmark?: string | null;
+  deliveryNotes?: string | null;
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  orderStatus: 'received' | 'confirmed' | 'dispatched' | 'delivered' | 'cancelled';
+  createdAt: string;
+  items: OrderDetailItem[];
+}
+
 // ─── Submissions ─────────────────────────────────────────────────────────────
+export interface ContactPayload {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+  website?: string; // honeypot
+}
+
+export interface DealerPayload {
+  name: string;
+  company: string;
+  role: string;
+  city: string;
+  projectType: string;
+  requirement: string;
+  message: string;
+  website?: string; // honeypot
+}
+
+export type SubmissionPayload = ContactPayload | DealerPayload;
+
 export interface SubmissionRequest {
   type: 'contact' | 'dealer';
-  payload: {
-    name: string;
-    email: string;
-    phone: string;
-    city?: string;
-    firmName?: string;
-    message: string;
-  };
+  payload: Record<string, unknown>;
 }
 
 export interface SubmissionResponse {
@@ -185,6 +296,62 @@ export interface SubmissionResponse {
   saved: boolean;
   emailSent: boolean;
   message: string;
+}
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+export type AnalyticsEventType =
+  | 'page_view'
+  | 'product_view'
+  | 'search'
+  | 'filter_applied'
+  | 'add_to_cart'
+  | 'remove_from_cart'
+  | 'begin_checkout'
+  | 'purchase'
+  | 'whatsapp_click'
+  | 'form_submit'
+  | 'document_download'
+  | 'journal_view'
+  | 'collection_view';
+
+export interface AnalyticsEventRequest {
+  type: AnalyticsEventType;
+  payload?: Record<string, unknown>;
+}
+
+// ─── Site Search ─────────────────────────────────────────────────────────────
+export interface SearchProductItem {
+  id: string;
+  name: string;
+  slug: string;
+  sku: string;
+  price: number;
+  salePrice?: number | null;
+  imageUrl?: string;
+  categoryName?: string;
+}
+
+export interface SearchCollectionItem {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  heroImage?: string;
+}
+
+export interface SearchArticleItem {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  excerpt: string;
+  readTimeMinutes?: number;
+}
+
+export interface SiteSearchResults {
+  products: SearchProductItem[];
+  collections: SearchCollectionItem[];
+  articles: SearchArticleItem[];
 }
 
 // ─── Journal ─────────────────────────────────────────────────────────────────
@@ -243,13 +410,60 @@ export interface PageResponse {
   title: string;
   slug: string;
   status: string;
+  template?: string | null;
+  content?: string | null;
+  updatedAt?: string | null;
   sections: import('@flowtop/ui').Section[];
   seo?: PageSeo | null;
+}
+
+// ─── Support & Customer Care ────────────────────────────────────────────────
+export interface FaqItem {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+}
+
+export interface ManualItem {
+  id: string;
+  title: string;
+  productType: string;
+  fileSize: string;
+  fileType: string;
+  downloadUrl: string;
+}
+
+export interface SupportDataResponse {
+  faqs: FaqItem[];
+  categories: string[];
+  manuals: ManualItem[];
+  manualProductTypes: string[];
+  warrantyNotice: {
+    title: string;
+    description: string;
+    standardDurationYears: number;
+    comingSoonMessage: string;
+  };
 }
 
 export interface PlacementResponse {
   locationType: string;
   locationId: string;
   products: ProductCard[];
+}
+
+// ─── Sitemap Data (Dev B contract Prompt 4.3) ───────────────────────────────
+export type SitemapItemType = 'product' | 'category' | 'collection' | 'page' | 'article';
+
+export interface SitemapItem {
+  slug: string;
+  type: SitemapItemType;
+  updatedAt: string;
+}
+
+export interface SitemapDataResponse {
+  items: SitemapItem[];
+  total: number;
 }
 

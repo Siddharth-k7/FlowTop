@@ -2,7 +2,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Lightbox } from '@flowtop/ui';
+import dynamic from 'next/dynamic';
+import { PRODUCT_BLUR_DATA_URL } from '../../lib/image-constants';
+
+const Lightbox = dynamic(() => import('@flowtop/ui').then((m) => m.Lightbox), {
+  ssr: false,
+});
 
 export interface GalleryImage {
   id: string;
@@ -38,6 +43,15 @@ export function ProductGallery({
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
+
+  const handleImgError = (url: string) => {
+    setFailedUrls((prev) => ({ ...prev, [url]: true }));
+  };
+
+  const getSafeUrl = (url: string) => {
+    return failedUrls[url] ? '/images/fallback-fitting.svg' : url;
+  };
 
   const mobileCarouselRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -131,11 +145,18 @@ export function ProductGallery({
   return (
     <div className="flex flex-col gap-space-4 w-full">
       {/* ─── Mobile View: Full-width Swipeable Gallery (CSS scroll-snap, works without JS) ─── */}
-      <div className="md:hidden relative w-full">
+      <div
+        className="md:hidden relative w-full"
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={`${productName} image gallery`}
+      >
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          Image {activeIndex + 1} of {displayImages.length}
+        </div>
         <div
           ref={mobileCarouselRef}
           className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-lg bg-surface border border-border [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          aria-label="Mobile image gallery"
         >
           {displayImages.map((img, idx) => (
             <div
@@ -144,14 +165,21 @@ export function ProductGallery({
                 slideRefs.current[idx] = el;
               }}
               data-index={idx}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`Image ${idx + 1} of ${displayImages.length}`}
               className="w-full flex-shrink-0 snap-center relative aspect-square"
             >
               <Image
-                src={img.url}
+                src={getSafeUrl(img.url)}
                 alt={img.alt || `${productName} view ${idx + 1}`}
                 fill
                 priority={idx === 0}
+                loading={idx === 0 ? 'eager' : 'lazy'}
+                placeholder="blur"
+                blurDataURL={PRODUCT_BLUR_DATA_URL}
                 sizes="100vw"
+                onError={() => handleImgError(img.url)}
                 className="object-cover"
               />
             </div>
@@ -161,7 +189,7 @@ export function ProductGallery({
         {/* Mobile Indicator Dots */}
         {displayImages.length > 1 && (
           <div
-            className="flex justify-center items-center gap-space-2 mt-space-3"
+            className="flex justify-center items-center gap-space-1 mt-space-3"
             aria-label="Slide indicators"
           >
             {displayImages.map((_, idx) => (
@@ -174,12 +202,16 @@ export function ProductGallery({
                 }}
                 aria-label={`Go to slide ${idx + 1}`}
                 aria-current={idx === activeIndex ? 'true' : undefined}
-                className={`w-2.5 h-2.5 rounded-full transition-all focus-ring ${
-                  idx === activeIndex
-                    ? 'bg-primary w-6'
-                    : 'bg-border-input hover:bg-fg-muted'
-                }`}
-              />
+                className="min-w-touch min-h-touch inline-flex items-center justify-center focus-ring rounded-full"
+              >
+                <span
+                  className={`block rounded-full transition-all duration-base ${
+                    idx === activeIndex
+                      ? 'bg-primary w-6 h-2'
+                      : 'bg-border-input hover:bg-fg-muted w-2 h-2'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         )}
@@ -189,12 +221,15 @@ export function ProductGallery({
       <div className="hidden md:block relative w-full aspect-square rounded-lg overflow-hidden bg-surface border border-border group shadow-sm">
         {activeImage && (
           <Image
-            src={activeImage.url}
+            src={getSafeUrl(activeImage.url)}
             alt={activeImage.alt || `${productName} main view`}
             width={activeImage.width || 800}
             height={activeImage.height || 800}
             priority
+            placeholder="blur"
+            blurDataURL={PRODUCT_BLUR_DATA_URL}
             sizes="(max-width: 1024px) 50vw, 45vw"
+            onError={() => handleImgError(activeImage.url)}
             className="w-full h-full object-cover transition-transform duration-base group-hover:scale-[1.02]"
           />
         )}
@@ -257,10 +292,14 @@ export function ProductGallery({
                 }`}
               >
                 <Image
-                  src={img.url}
+                  src={getSafeUrl(img.url)}
                   alt={img.alt || `${productName} thumbnail ${idx + 1}`}
                   fill
                   sizes="80px"
+                  loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={PRODUCT_BLUR_DATA_URL}
+                  onError={() => handleImgError(img.url)}
                   className="object-cover"
                 />
               </button>

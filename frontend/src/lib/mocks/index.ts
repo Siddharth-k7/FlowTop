@@ -12,10 +12,22 @@ import { mockCategories } from './categories';
 import { mockCollections } from './collections';
 import { mockNavigationData } from './navigation';
 import { mockSettingsData } from './settings';
-import { mockCart } from './cart';
 import { mockJournalArticles } from './journal';
+import {
+  getMockCart,
+  addMockCartItem,
+  updateMockCartQuantity,
+  removeMockCartItem,
+} from './cart';
 import { getMockPage } from './pages';
 import { getMockPlacement } from './placements';
+import {
+  createMockCheckout,
+  getMockOrderStatus,
+  getMockOrderDetail,
+} from './checkout';
+import { submitMockForm } from './submissions';
+import { resolveMockSitemapData } from './sitemap';
 import type {
   ProductCard,
   ProductDetail,
@@ -23,6 +35,10 @@ import type {
   Collection,
   CollectionDetail,
   Cart,
+  CheckoutRequest,
+  CheckoutResponse,
+  OrderStatusResponse,
+  OrderDetailResponse,
   SingleResponse,
   NavigationResponse,
   PublicSettingsResponse,
@@ -312,7 +328,29 @@ export async function resolveMockCollectionBySlug(
 
 export async function resolveMockCart(mockSwitch?: MockSwitch): Promise<SingleResponse<Cart>> {
   await simulateNetwork(mockSwitch);
-  return { data: mockCart };
+  return { data: getMockCart() };
+}
+
+export async function resolveMockAddToCart(body: {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+}): Promise<SingleResponse<Cart>> {
+  await simulateNetwork();
+  return { data: addMockCartItem(body) };
+}
+
+export async function resolveMockUpdateCartItem(
+  id: string,
+  quantity: number
+): Promise<SingleResponse<Cart>> {
+  await simulateNetwork();
+  return { data: updateMockCartQuantity(id, quantity) };
+}
+
+export async function resolveMockRemoveCartItem(id: string): Promise<SingleResponse<Cart>> {
+  await simulateNetwork();
+  return { data: removeMockCartItem(id) };
 }
 
 export async function resolveMockNavigation(
@@ -387,19 +425,21 @@ export async function resolveMockJournalArticleBySlug(
 }
 
 export async function resolveMockSubmission(
-  _payload: unknown,
+  payload: unknown,
   mockSwitch?: MockSwitch
 ): Promise<SingleResponse<SubmissionResponse>> {
   await simulateNetwork(mockSwitch);
 
-  return {
-    data: {
-      reference: `CT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      saved: true,
-      emailSent: true,
-      message: 'Your enquiry has been received. Our architectural advisor will contact you within 24 hours.',
-    },
-  };
+  try {
+    const data = submitMockForm(payload);
+    return { data };
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err && 'status' in err) {
+      const e = err as { status: number; code: ErrorCode; message: string };
+      throw mockApiError(e.status, e.code, e.message);
+    }
+    throw err;
+  }
 }
 
 export async function resolveMockPage(
@@ -425,3 +465,31 @@ export async function resolveMockPlacement(
 
   return getMockPlacement(locationType, locationId);
 }
+
+export async function resolveMockCheckout(
+  body: CheckoutRequest,
+  mockSwitch?: MockSwitch
+): Promise<SingleResponse<CheckoutResponse>> {
+  await simulateNetwork(mockSwitch);
+  return { data: createMockCheckout(body, getMockCart()) };
+}
+
+export async function resolveMockOrderStatus(
+  reference: string,
+  mockSwitch?: MockSwitch
+): Promise<SingleResponse<OrderStatusResponse>> {
+  await simulateNetwork(mockSwitch);
+  return { data: getMockOrderStatus(reference) };
+}
+
+export async function resolveMockOrderDetail(
+  reference: string,
+  mockSwitch?: MockSwitch
+): Promise<SingleResponse<OrderDetailResponse>> {
+  await simulateNetwork(mockSwitch);
+  return { data: getMockOrderDetail(reference) };
+}
+
+import { resolveMockSupportData } from './support';
+
+export { resolveMockSitemapData, resolveMockSupportData };

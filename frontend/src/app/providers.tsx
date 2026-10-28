@@ -2,8 +2,26 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { getImageProps } from 'next/image';
+import Image, { getImageProps } from 'next/image';
+import dynamic from 'next/dynamic';
 import { UiProvider, type PictureProps } from '@flowtop/ui';
+import { CartProvider } from '../components/Cart';
+
+// Code split non-critical components to reduce initial JavaScript payload
+const CartDrawer = dynamic(
+  () => import('../components/Cart').then((mod) => mod.CartDrawer),
+  { ssr: false }
+);
+
+const FloatingWhatsAppButton = dynamic(
+  () => import('../components/WhatsApp').then((mod) => mod.FloatingWhatsAppButton),
+  { ssr: false }
+);
+
+const CookieConsentBanner = dynamic(
+  () => import('../components/Consent/CookieConsentBanner').then((mod) => mod.CookieConsentBanner),
+  { ssr: false }
+);
 
 export function NextPicture({
   desktopSrc,
@@ -41,28 +59,42 @@ export function NextPicture({
       <picture className="contents">
         <source media="(max-width: 767px)" srcSet={mobileSrcSet} />
         <source media="(min-width: 768px)" srcSet={desktopSrcSet} />
-        <img {...rest} alt={safeAlt} className={className} />
+        <img
+          {...rest}
+          alt={safeAlt}
+          width={width}
+          height={height}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding={priority ? 'sync' : 'async'}
+          className={className}
+        />
       </picture>
     );
   }
 
-  const {
-    props: { ...rest },
-  } = getImageProps({
-    ...common,
-    width: width || 1600,
-    height: height || 900,
-    src: desktopSrc,
-  });
-
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img {...rest} alt={safeAlt} className={className} />;
+  return (
+    <Image
+      src={desktopSrc}
+      alt={safeAlt}
+      width={width || 1600}
+      height={height || 900}
+      sizes={sizes}
+      priority={priority}
+      loading={priority ? 'eager' : 'lazy'}
+      className={className}
+    />
+  );
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <UiProvider Picture={NextPicture} Link={Link}>
-      {children}
+      <CartProvider>
+        {children}
+        <CartDrawer />
+        <FloatingWhatsAppButton />
+        <CookieConsentBanner />
+      </CartProvider>
     </UiProvider>
   );
 }

@@ -1,8 +1,10 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { api } from '../../lib/api';
+import { PRODUCT_BLUR_DATA_URL } from '../../lib/image-constants';
 import {
   parseJournalParams,
   buildJournalHref,
@@ -159,11 +161,15 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
                   <Card variant="raised" className="flex flex-col h-full overflow-hidden hover:shadow-md transition-shadow duration-fast">
                     {/* Cover Image */}
                     <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-solid">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={art.coverImage}
                         alt={art.title}
-                        className="w-full h-full object-cover transition-transform duration-slow group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL={PRODUCT_BLUR_DATA_URL}
+                        className="object-cover transition-transform duration-slow group-hover:scale-105"
                       />
                     </div>
 
@@ -177,7 +183,7 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
                     </Card.Header>
 
                     <Card.Body className="flex-1 flex flex-col gap-space-2">
-                      <Card.Title className="line-clamp-2 group-hover:text-primary transition-colors duration-fast">
+                      <Card.Title as="h2" className="line-clamp-2 group-hover:text-primary transition-colors duration-fast">
                         {art.title}
                       </Card.Title>
                       <p className="text-small text-fg-muted line-clamp-3 leading-relaxed">

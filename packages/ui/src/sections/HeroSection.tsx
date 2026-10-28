@@ -73,7 +73,9 @@ export function HeroSection({
   return (
     <SectionShell layout={config.layout} headingId={headingId} className={className}>
       <div
-        className={`${frameClasses} min-h-[440px] md:min-h-[560px] lg:min-h-[640px] flex ${textPositionClass} p-space-6 md:p-space-10 lg:p-space-12 bg-surface`}
+        className={`${frameClasses} min-h-[440px] md:min-h-[560px] lg:min-h-[640px] flex ${textPositionClass} p-space-6 md:p-space-10 lg:p-space-12 ${
+          hasMedia ? 'bg-surface-inverse' : 'bg-surface'
+        }`}
       >
         {/* Media Background */}
         {hasMedia && (
@@ -126,7 +128,7 @@ export function HeroSection({
           {config.subheading && (
             <p
               className={`text-body md:text-title font-light leading-relaxed mb-space-6 max-w-measure ${
-                isOverlayNone && hasMedia ? 'text-fg-muted' : hasMedia ? 'text-white/90' : 'text-fg-muted'
+                isOverlayNone && hasMedia ? 'text-fg-muted' : hasMedia ? 'text-white' : 'text-fg-muted'
               }`}
             >
               {config.subheading}

@@ -132,7 +132,6 @@ export function ListingShell({
           <button
             type="button"
             onClick={() => setIsMobileDrawerOpen(true)}
-            aria-label="Open filter and sorting options"
             className="lg:hidden min-h-touch min-w-touch px-space-4 py-space-2 rounded-sm border border-border-input bg-surface-solid text-fg text-small font-medium flex items-center gap-space-2 focus-ring shadow-sm"
           >
             <svg

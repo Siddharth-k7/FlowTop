@@ -10,6 +10,7 @@ import { ProductDescription } from '../../../components/Product/ProductDescripti
 import { ProductSpecsTable } from '../../../components/Product/ProductSpecsTable';
 import { ProductDocuments } from '../../../components/Product/ProductDocuments';
 import { ProductCard } from '../../../components/Product/ProductCard';
+import { createBreadcrumbsJsonLd, safeJsonLd } from '../../../lib/structured-data';
 
 /**
  * Revalidate every 60 seconds (ISR).
@@ -145,6 +146,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
     { label: product.name },
   ];
 
+  const breadcrumbsJsonLd = createBreadcrumbsJsonLd(breadcrumbItems, siteUrl);
+  const isArchived =
+    product.status === 'archived' ||
+    Boolean((product as unknown as { isArchived?: boolean }).isArchived);
+
   // Safe Product JSON-LD generation
   const isEnquiryOnly = Boolean((product as unknown as { enquiryOnly?: boolean }).enquiryOnly);
   const canonicalUrl = `${siteUrl}/products/${product.slug}`;
@@ -162,8 +168,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     },
   };
 
-  // For enquiry-only products, emit the Product without offers.
-  if (!isEnquiryOnly) {
+  // For enquiry-only or archived products, emit the Product without offers.
+  if (!isEnquiryOnly && !isArchived) {
     jsonLd.offers = {
       '@type': 'Offer',
       priceCurrency: 'INR',
@@ -189,9 +195,30 @@ export default async function ProductDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: jsonLdScript }}
       />
 
+      {/* Breadcrumbs JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbsJsonLd) }}
+      />
+
       <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 py-space-6 md:py-space-8 flex flex-col gap-space-8">
         {/* Breadcrumb Navigation */}
         <Breadcrumbs items={breadcrumbItems} />
+
+        {/* Archival Banner */}
+        {isArchived && (
+          <div
+            role="status"
+            className="w-full p-space-4 rounded-md bg-warning-tint border border-warning/40 text-fg flex items-start gap-space-3"
+          >
+            <span className="text-warning font-bold text-title" aria-hidden="true">ⓘ</span>
+            <div className="flex-1 text-small">
+              <strong className="font-semibold block text-fg">Archived Architectural Piece</strong>
+              This fitting belongs to an archival production run and is no longer actively manufactured.
+              Explore our contemporary collection below or contact our architectural concierge for restoration and specification support.
+            </div>
+          </div>
+        )}
 
         {/* Top Product Hero: Gallery + Buy Panel */}
         <ProductHero

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { api } from '../../lib/api';
 import { CollectionCard } from '../../components/Collection/CollectionCard';
 import { Breadcrumbs } from '@flowtop/ui';
+import { createBreadcrumbsJsonLd, safeJsonLd } from '../../lib/structured-data';
 
 export const revalidate = 60;
 
@@ -29,20 +30,26 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CollectionsIndexPage() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://flowtop.in';
   const res = await api.getCollections().catch(() => ({ data: [] }));
   const collections = res.data || [];
+  const breadcrumbItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Collections', href: '/collections' },
+  ];
+  const breadcrumbsJsonLd = createBreadcrumbsJsonLd(breadcrumbItems, siteUrl);
 
   return (
-    <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 py-space-6 md:py-space-8">
-      {/* Breadcrumbs */}
-      <div className="mb-space-6">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Collections', href: '/collections' },
-          ]}
-        />
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbsJsonLd) }}
+      />
+      <div className="container-page mx-auto px-space-4 md:px-space-6 lg:px-space-8 py-space-6 md:py-space-8">
+        {/* Breadcrumbs */}
+        <div className="mb-space-6">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
 
       {/* Header */}
       <div className="max-w-measure mb-space-8 md:mb-space-12">
@@ -69,5 +76,6 @@ export default async function CollectionsIndexPage() {
         ))}
       </div>
     </div>
+    </>
   );
 }

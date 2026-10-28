@@ -5,6 +5,9 @@ import type { ProductDetail } from '../../lib/types-pending';
 import { api, ApiError } from '../../lib/api';
 import { formatPaise, isValidHex } from '../../lib/format';
 import { Button } from '@flowtop/ui';
+import { useOptionalCart } from '../Cart';
+import { ProductWhatsAppButton } from '../WhatsApp';
+import { analytics } from '../../lib/analytics';
 
 export interface NormalizedVariant {
   id: string;
@@ -30,8 +33,6 @@ export interface ProductBuyPanelProps {
 
 export function ProductBuyPanel({
   product,
-  whatsappNumber = '+919876543210',
-  whatsappTemplate = "Hi, I'm interested in {productName} (SKU: {sku}) in {finish}. {url}",
   onVariantChange,
   onMainButtonRefReady,
 }: ProductBuyPanelProps) {
@@ -124,6 +125,16 @@ export function ProductBuyPanel({
     }
   }, [variants, onVariantChange]);
 
+  // Track product_view analytics event (product events carry strictly id, name, category, price)
+  useEffect(() => {
+    analytics.productView({
+      id: product.id,
+      name: product.name,
+      category: product.categorySlug || 'general',
+      price: product.price,
+    });
+  }, [product.id, product.name, product.categorySlug, product.price]);
+
   const activeVariant: NormalizedVariant = useMemo(() => {
     return variants.find((v) => v.code === selectedCode) || variants[0] || fallbackVariant;
   }, [variants, selectedCode, fallbackVariant]);
@@ -151,6 +162,8 @@ export function ProductBuyPanel({
     onVariantChange?.(v);
   };
 
+  const cartContext = useOptionalCart();
+
   // 4. Add to cart handler
   const handleAddToCart = async () => {
     if (!product.isPurchasable || !activeVariant.isAvailable || isAddingToCart) {
@@ -163,17 +176,36 @@ export function ProductBuyPanel({
 
     try {
       /**
-       * Rule: Never trust the client with price or money calculations.
-       * Product ID, variant ID and quantity are the only inputs sent;
-       * prices, totals, tax, and discounts are computed strictly server-side by the commerce engine.
+       * CRITICAL SECURITY RULE: NEVER SEND A PRICE TO THE API.
+       * Product ID, variant ID and quantity are the ONLY inputs sent.
+       * A client-supplied price is a real attack vector (price manipulation / client tampering)
+       * and must never exist in this request. All pricing and money calculations are performed
+       * strictly server-side by the commerce engine.
        */
-      await api.addToCart({
-        productId: product.id,
-        variantId: activeVariant.id !== 'default' ? activeVariant.id : undefined,
-        quantity,
-      });
+      if (cartContext) {
+        await cartContext.addToCart({
+          productId: product.id,
+          variantId: activeVariant.id !== 'default' ? activeVariant.id : undefined,
+          quantity,
+        });
+        cartContext.openCart();
+      } else {
+        await api.addToCart({
+          productId: product.id,
+          variantId: activeVariant.id !== 'default' ? activeVariant.id : undefined,
+          quantity,
+        });
+      }
 
       setCartSuccess(true);
+      // Fire typed addToCart analytics (strictly id, name, category, price)
+      analytics.addToCart({
+        id: product.id,
+        name: product.name,
+        category: product.categorySlug || 'general',
+        price: activeVariant.price || product.price,
+      });
+      setTimeout(() => setCartSuccess(false), 2400);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setCartError(err.message);
@@ -187,18 +219,11 @@ export function ProductBuyPanel({
     }
   };
 
-  // 5. WhatsApp enquiry link generator
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const whatsappText = whatsappTemplate
-    .replace('{productName}', product.name)
-    .replace('{sku}', activeVariant.sku)
-    .replace('{finish}', activeVariant.name)
-    .replace('{url}', currentUrl);
-  const cleanPhone = whatsappNumber.replace(/[^0-9]/g, '');
-  const whatsappHref = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappText)}`;
-
+  const isArchived =
+    product.status === 'archived' ||
+    Boolean((product as unknown as { isArchived?: boolean }).isArchived);
   const isEnquiryOnly = Boolean((product as unknown as { enquiryOnly?: boolean }).enquiryOnly);
-  const isPurchasable = product.isPurchasable && activeVariant.isAvailable && !isEnquiryOnly;
+  const isPurchasable = !isArchived && product.isPurchasable && activeVariant.isAvailable && !isEnquiryOnly;
   const activePrice = activeVariant.salePrice ? activeVariant.salePrice : activeVariant.price;
   const hasSale = Boolean(activeVariant.salePrice && activeVariant.salePrice < activeVariant.price);
 
@@ -349,23 +374,32 @@ export function ProductBuyPanel({
           </div>
         )}
 
+        {/* Archival State Notice */}
+        {isArchived && (
+          <div
+            role="status"
+            className="p-space-3 rounded-sm bg-warning-tint border border-warning/30 text-fg text-small flex items-start gap-space-2 mb-space-3"
+          >
+            <span className="text-warning font-semibold" aria-hidden="true">ⓘ</span>
+            <span>
+              This fitting has been archived and is no longer in production. It cannot be added to a new bag.
+            </span>
+          </div>
+        )}
+
         {/* Primary CTA Button */}
         {isEnquiryOnly ? (
           /* Enquiry-Only: WhatsApp is the prominent primary action */
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center font-medium rounded-pill focus-ring touch-target transition-colors select-none text-center bg-primary text-on-primary hover:bg-primary-dark shadow-sm border border-transparent min-h-touch px-space-6 py-space-3 text-body gap-space-3"
-          >
-            <span>Inquire on WhatsApp</span>
-            <span
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 ml-space-1"
-              aria-hidden="true"
-            >
-              →
-            </span>
-          </a>
+          <ProductWhatsAppButton
+            product={{
+              productName: product.name,
+              sku: activeVariant.sku || product.sku,
+              finish: activeVariant.name,
+              url: typeof window !== 'undefined' ? window.location.href : `/products/${product.slug}`,
+            }}
+            variant="primary"
+            label="Inquire on WhatsApp"
+          />
         ) : (
           /* Standard Product: Add to Cart button with attached round arrow */
           <Button
@@ -378,37 +412,37 @@ export function ProductBuyPanel({
             className="w-full"
           >
             <span>
-              {!product.isPurchasable || !activeVariant.isAvailable
+              {cartSuccess
+                ? 'Added to Bag'
+                : isArchived
+                ? 'Archived Piece'
+                : !product.isPurchasable || !activeVariant.isAvailable
                 ? 'Unavailable'
                 : 'Add to Cart'}
             </span>
-            <span
-              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 ml-space-1"
-              aria-hidden="true"
-            >
-              →
-            </span>
+            {!isArchived && isPurchasable && (
+              <span
+                className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/20 ml-space-1"
+                aria-hidden="true"
+              >
+                →
+              </span>
+            )}
           </Button>
         )}
 
         {/* Secondary WhatsApp Enquiry (rendered if not enquiry-only) */}
         {!isEnquiryOnly && (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full inline-flex items-center justify-center font-medium rounded-pill focus-ring touch-target transition-colors select-none text-center bg-surface-solid text-fg border border-border-input hover:bg-surface shadow-sm min-h-touch px-space-4 py-space-2 text-small gap-space-2"
-          >
-            <svg
-              className="w-4 h-4 text-success"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
-            </svg>
-            <span>Ask a Specialist via WhatsApp</span>
-          </a>
+          <ProductWhatsAppButton
+            product={{
+              productName: product.name,
+              sku: activeVariant.sku || product.sku,
+              finish: activeVariant.name,
+              url: typeof window !== 'undefined' ? window.location.href : `/products/${product.slug}`,
+            }}
+            variant="outline"
+            label="Ask a Specialist via WhatsApp"
+          />
         )}
 
         {/* Success Confirmation Notice */}

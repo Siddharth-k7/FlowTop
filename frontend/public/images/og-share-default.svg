@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#16121C"/>
+  <rect x="60" y="60" width="1080" height="510" rx="16" fill="#1E1926" stroke="#3D324C" stroke-width="2"/>
+  <text x="120" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" letter-spacing="6" fill="#9B6FC4">FLOWTOP</text>
+  <text x="120" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="300" letter-spacing="-1" fill="#FFFFFF">Architectural Bath Brassware</text>
+  <text x="120" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="300" fill="#A49FB3">Precision engineered in India from lead-free CuZn39Pb3 brass.</text>
+  <rect x="120" y="440" width="180" height="4" fill="#5A2D82"/>
+</svg>

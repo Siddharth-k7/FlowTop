@@ -1,7 +1,7 @@
 // TODO(mock): replace on swap day
-import type { Cart } from '../types-pending';
+import type { Cart, CartItem } from '../types-pending';
 
-export const mockCart = {
+let currentMockCart: Cart = {
   id: 'cart-session-01',
   items: [
     {
@@ -34,4 +34,87 @@ export const mockCart = {
   shipping: 0, // Complimentary white-glove shipping
   total: 4035600, // ₹40,356 (paise)
   itemCount: 3,
-} satisfies Cart;
+  warnings: [],
+};
+
+function recalculateMockCart(cart: Cart): Cart {
+  let subtotal = 0;
+  let itemCount = 0;
+  for (const item of cart.items) {
+    item.lineTotal = item.unitPrice * item.quantity;
+    subtotal += item.lineTotal;
+    itemCount += item.quantity;
+  }
+  const tax = Math.round(subtotal * 0.18);
+  const shipping = subtotal > 500000 || subtotal === 0 ? 0 : 15000;
+  const total = subtotal + tax + shipping;
+
+  return {
+    ...cart,
+    subtotal,
+    tax,
+    shipping,
+    total,
+    itemCount,
+  };
+}
+
+export function getMockCart(): Cart {
+  return JSON.parse(JSON.stringify(currentMockCart));
+}
+
+export function addMockCartItem(body: { productId: string; variantId?: string; quantity: number }): Cart {
+  if (body.productId.includes('archived')) {
+    const error = new Error('This architectural fitting has been archived and is no longer available.') as Error & { status: number; code: string };
+    error.status = 400;
+    error.code = 'BAD_REQUEST';
+    throw error;
+  }
+
+  const existing = currentMockCart.items.find(
+    (item) => item.productId === body.productId && (!body.variantId || item.id.includes(body.variantId))
+  );
+
+  if (existing) {
+    existing.quantity += body.quantity;
+  } else {
+    const unitPrice = 1450000;
+    const newItem: CartItem = {
+      id: `cart-item-${Date.now()}`,
+      productId: body.productId,
+      productName: 'Aura Architectural Fitting',
+      sku: 'FT-AUR-SPEC',
+      slug: 'aura-tall-basin-mixer',
+      finishName: 'Polished Mirror Chrome',
+      unitPrice,
+      quantity: body.quantity,
+      lineTotal: unitPrice * body.quantity,
+      imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80',
+    };
+    currentMockCart.items.push(newItem);
+  }
+
+  currentMockCart = recalculateMockCart(currentMockCart);
+  return getMockCart();
+}
+
+export function updateMockCartQuantity(itemId: string, quantity: number): Cart {
+  const item = currentMockCart.items.find((i) => i.id === itemId);
+  if (item) {
+    if (quantity <= 0) {
+      currentMockCart.items = currentMockCart.items.filter((i) => i.id !== itemId);
+    } else {
+      item.quantity = quantity;
+    }
+  }
+  currentMockCart = recalculateMockCart(currentMockCart);
+  return getMockCart();
+}
+
+export function removeMockCartItem(itemId: string): Cart {
+  currentMockCart.items = currentMockCart.items.filter((i) => i.id !== itemId);
+  currentMockCart = recalculateMockCart(currentMockCart);
+  return getMockCart();
+}
+
+export const mockCart = currentMockCart;
