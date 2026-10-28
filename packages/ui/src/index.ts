@@ -44,3 +44,27 @@ export * from './components/Switch';
 export * from './components/Tooltip';
 export * from './components/Pagination';
 export * from './components/Avatar';
+export * from './components/Lightbox';
+export * from './components/ProductCard';
+
+// Context & Provider
+export * from './components/UiProvider/UiProvider';
+
+// Section types, normalization, and fixtures (Phase 2 CMS Contract)
+export * from './sections/types';
+export * from './sections/normalize';
+export * from './sections/fixtures';
+
+// Section Foundation & Components
+export * from './sections/presets';
+export * from './sections/safeHref';
+export * from './sections/SectionShell';
+export * from './sections/HeroSection';
+export * from './sections/HeroVideo';
+export * from './sections/ImageTextSection';
+export * from './sections/CtaSection';
+export * from './sections/ProductCarouselSection';
+export * from './sections/CollectionShowcaseSection';
+export * from './sections/GallerySection';
+export * from './sections/SectionRenderer';
+

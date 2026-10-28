@@ -152,6 +152,7 @@
   --container-lg: 100%;
   --container-xl: 90rem;     /* 1440px */
   --container-wide: 105rem;  /* 1680px, for layout.width "wide" */
+  --measure: 68ch;           /* Reading measure for long-form editorial typography */
   --gutter-xs: var(--space-4);
   --gutter-md: var(--space-6);
   --gutter-lg: var(--space-7);

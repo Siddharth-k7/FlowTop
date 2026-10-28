@@ -29,6 +29,25 @@ import {
   Avatar,
   Field,
   useToast,
+  HeroSection,
+  ImageTextSection,
+  CtaSection,
+  Lightbox,
+  ProductCard,
+  ProductCarouselSection,
+  CollectionShowcaseSection,
+  GallerySection,
+  HERO_FIXTURES,
+  IMAGE_TEXT_FIXTURES,
+  CTA_FIXTURES,
+  CAROUSEL_FIXTURES,
+  COLLECTION_SHOWCASE_FIXTURES,
+  GALLERY_FIXTURES,
+  mockProducts,
+  mockGalleryImages,
+  normalizeHeroSectionConfig,
+  normalizeImageTextSectionConfig,
+  normalizeCtaSectionConfig,
 } from '@flowtop/ui';
 
 type InventoryRow = {
@@ -72,11 +91,13 @@ function ShowcaseContent() {
   const [radioVal, setRadioVal] = useState('gold');
   const [switchVal, setSwitchVal] = useState(true);
 
-  // Modal & Drawer
+  // Modal & Drawer & Lightbox
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalBusy, setModalBusy] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerSide, setDrawerSide] = useState<'left' | 'right' | 'bottom'>('right');
+  const [isLightboxOpenDemo, setIsLightboxOpenDemo] = useState(false);
+  const [lightboxDemoIndex, setLightboxDemoIndex] = useState(0);
 
   // ProgressBar & Pagination
   const [progressVal, setProgressVal] = useState(65);
@@ -1229,6 +1250,527 @@ function ShowcaseContent() {
               />
             )}
           </Field>
+        </div>
+      </section>
+
+      {/* 23. HeroSection */}
+      <section id="demo-hero-section" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">23. HeroSection</h3>
+          <p className="text-caption text-fg-muted">
+            Full-bleed or framed hero with 9-point alignment grid, responsive art-directed media, LCP priority, and safe CTAs.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-space-8">
+          {/* Variant: Full */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Full (Image, Subheading, 2 CTAs, Frame, Center Align)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <HeroSection
+                config={HERO_FIXTURES.full}
+                desktopImageUrl="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1600&q=80"
+                mobileImageUrl="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=768&q=80"
+                imageAlt="Flowtop Aura Series luxury bathroom brassware"
+              />
+            </div>
+          </div>
+
+          {/* Variant: Minimal */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Minimal (Headline Only, Contained, Bottom-Left, No Subheading/CTA gaps)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <HeroSection
+                config={HERO_FIXTURES.minimal}
+                desktopImageUrl="https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1600&q=80"
+                imageAlt="Minimalist architecture showcase"
+              />
+            </div>
+          </div>
+
+          {/* Variant: With Optional Absent */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: With Optional Absent (No Image, No Subheading, No CTAs - Renders Text Without Gaps)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <HeroSection config={HERO_FIXTURES.withOptionalAbsent} />
+            </div>
+          </div>
+
+          {/* Variant: With Unknown Enum */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: With Unknown Enum (Runtime Normalization & Safe Presets Fallback)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <HeroSection
+                config={normalizeHeroSectionConfig(HERO_FIXTURES.rawWithUnknownEnum) || HERO_FIXTURES.minimal}
+                desktopImageUrl="https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?auto=format&fit=crop&w=1600&q=80"
+                imageAlt="Unknown enum fallback showcase"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 24. ImageTextSection */}
+      <section id="demo-image-text-section" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">24. ImageTextSection</h3>
+          <p className="text-caption text-fg-muted">
+            12-column asymmetric layout with configurable ratios, image side, mobile stacking order, and sanitized plain text paragraphs.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-space-8">
+          {/* Variant: Full */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Full (60-40 Ratio, Image Right, Text-First on Mobile, CTA)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ImageTextSection
+                config={IMAGE_TEXT_FIXTURES.full}
+                imageUrl="https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?auto=format&fit=crop&w=1200&q=80"
+                imageAlt="Sedal ceramic cartridge engineering"
+              />
+            </div>
+          </div>
+
+          {/* Variant: Minimal */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Minimal (50-50 Ratio, Image Left, Image-First, No CTA)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ImageTextSection
+                config={IMAGE_TEXT_FIXTURES.minimal}
+                imageUrl="https://images.unsplash.com/photo-1584622781564-1d987f7333c1?auto=format&fit=crop&w=1200&q=80"
+                imageAlt="Architectural brassware construction"
+              />
+            </div>
+          </div>
+
+          {/* Variant: With Optional Absent */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: With Optional Absent (No Mobile Image, No CTA, Default Spacing)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ImageTextSection
+                config={IMAGE_TEXT_FIXTURES.withOptionalAbsent}
+                imageUrl="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80"
+                imageAlt="Hydraulic water pressure testing"
+              />
+            </div>
+          </div>
+
+          {/* Variant: With Unknown Enum */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: With Unknown Enum (Runtime Normalization & Safe Presets Fallback)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ImageTextSection
+                config={normalizeImageTextSectionConfig(IMAGE_TEXT_FIXTURES.rawWithUnknownEnum) || IMAGE_TEXT_FIXTURES.minimal}
+                imageUrl="https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1200&q=80"
+                imageAlt="Tactile diamond knurling detail"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 25. CtaSection */}
+      <section id="demo-cta-section" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">25. CtaSection</h3>
+          <p className="text-caption text-fg-muted">
+            Call-to-action layout supporting primary action buttons, verified technical document downloads, or text-only layouts without dead buttons.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-space-8">
+          {/* Variant: Full */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Full (Download Mode with File Name, Type, and Size Badge)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CtaSection
+                config={CTA_FIXTURES.full}
+                documentAsset={{
+                  filename: 'Flowtop-Architectural-Binder-2026.pdf',
+                  mimeType: 'application/pdf',
+                  sizeBytes: 14857620,
+                  url: '/documents/flowtop-binder.pdf',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Variant: Minimal */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Minimal (Button Mode, Contained Width, Left Aligned)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CtaSection config={CTA_FIXTURES.minimal} />
+            </div>
+          </div>
+
+          {/* Variant: With Optional Absent */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: With Optional Absent (No Body Text, Direct Action Button)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CtaSection config={CTA_FIXTURES.withOptionalAbsent} />
+            </div>
+          </div>
+
+          {/* Variant: With Unknown Enum */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: With Unknown Enum (Runtime Normalization & Safe Presets Fallback)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CtaSection config={normalizeCtaSectionConfig(CTA_FIXTURES.rawWithUnknownEnum) || CTA_FIXTURES.minimal} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 26. Lightbox */}
+      <section id="demo-lightbox" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">26. Lightbox</h3>
+          <p className="text-caption text-fg-muted">
+            Accessible full-screen image viewer built on the native HTML5 &lt;dialog&gt; primitive with Escape key, ArrowLeft/ArrowRight keyboard navigation, touch swipe support, caption display, and focus restoration to the opener button.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-space-4">
+          <Button
+            variant="primary"
+            onClick={() => {
+              setLightboxDemoIndex(0);
+              setIsLightboxOpenDemo(true);
+            }}
+          >
+            Open Lightbox ({mockGalleryImages.length} images)
+          </Button>
+
+          <Lightbox
+            open={isLightboxOpenDemo}
+            onClose={() => setIsLightboxOpenDemo(false)}
+            items={mockGalleryImages}
+            currentIndex={lightboxDemoIndex}
+            onIndexChange={setLightboxDemoIndex}
+            ariaLabel="Style Guide Lightbox Demo"
+          />
+        </div>
+      </section>
+
+      {/* 27. ProductCard */}
+      <section id="demo-product-card" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">27. ProductCard</h3>
+          <p className="text-caption text-fg-muted">
+            Luxury product card displaying primary/secondary imagery, direct placement badge, finish swatches, price formatting, and optional highlight outline.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-6">
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Style: Standard</span>
+            <ProductCard product={mockProducts[0]!} cardStyle="standard" />
+          </div>
+
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Style: Compact</span>
+            <ProductCard product={mockProducts[1]!} cardStyle="compact" />
+          </div>
+
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">Style: Editorial</span>
+            <ProductCard product={mockProducts[2]!} cardStyle="editorial" />
+          </div>
+
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">State: Highlighted (Preview)</span>
+            <ProductCard product={mockProducts[3]!} cardStyle="standard" highlight />
+          </div>
+        </div>
+      </section>
+
+      {/* 28. ProductCarouselSection */}
+      <section id="demo-product-carousel-section" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">28. ProductCarouselSection</h3>
+          <p className="text-caption text-fg-muted">
+            Scroll-snap carousel with 44px arrow buttons and indicator dots, mobile touch swipe, active slide tracking via IntersectionObserver, and autoplay pause controls.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-space-8">
+          {/* Full Carousel */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: Full (8 Products, Autoplay Pause Controls, 44px Buttons & Dots)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ProductCarouselSection
+                config={CAROUSEL_FIXTURES.full.config}
+                products={CAROUSEL_FIXTURES.full.products}
+              />
+            </div>
+          </div>
+
+          {/* 2 of 8 Products (Zero Empty Slots) */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: 2 Products When Count is 8 (No Empty Slots Rendered)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ProductCarouselSection
+                config={CAROUSEL_FIXTURES.twoOfEight.config}
+                products={CAROUSEL_FIXTURES.twoOfEight.products}
+              />
+            </div>
+          </div>
+
+          {/* One Product */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: One Product
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ProductCarouselSection
+                config={CAROUSEL_FIXTURES.oneProduct.config}
+                products={CAROUSEL_FIXTURES.oneProduct.products}
+              />
+            </div>
+          </div>
+
+          {/* Zero Products (Renders Nothing) */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: Zero Products (Renders Nothing, No Empty Heading)
+            </span>
+            <div className="border border-dashed border-border rounded-lg p-space-4 text-center text-caption text-fg-muted">
+              {(() => {
+                const rendered = (
+                  <ProductCarouselSection
+                    config={CAROUSEL_FIXTURES.zeroProducts.config}
+                    products={CAROUSEL_FIXTURES.zeroProducts.products}
+                  />
+                );
+                return rendered === null
+                  ? '✓ Verified: ProductCarouselSection with zero products returned null (rendered nothing).'
+                  : rendered;
+              })()}
+            </div>
+          </div>
+
+          {/* Highlight Product ID Preview */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: With Highlight Product ID (Dev D Preview Ring)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <ProductCarouselSection
+                config={CAROUSEL_FIXTURES.withHighlight.config}
+                products={CAROUSEL_FIXTURES.withHighlight.products}
+                highlightProductId={CAROUSEL_FIXTURES.withHighlight.highlightProductId}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 29. CollectionShowcaseSection */}
+      <section id="demo-collection-showcase-section" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">29. CollectionShowcaseSection</h3>
+          <p className="text-caption text-fg-muted">
+            Curated collection showcase supporting split, stacked, and overlay compositions with hero video and selected products row.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-space-8">
+          {/* Variant: Split */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Split (Image-Led Editorial Two-Column with Products Row)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CollectionShowcaseSection
+                config={COLLECTION_SHOWCASE_FIXTURES.split.config}
+                collection={COLLECTION_SHOWCASE_FIXTURES.split.collection}
+                products={COLLECTION_SHOWCASE_FIXTURES.split.products}
+              />
+            </div>
+          </div>
+
+          {/* Variant: Stacked */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Stacked (Full-Width Hero Cover with Products Below)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CollectionShowcaseSection
+                config={COLLECTION_SHOWCASE_FIXTURES.stacked.config}
+                collection={COLLECTION_SHOWCASE_FIXTURES.stacked.collection}
+                products={COLLECTION_SHOWCASE_FIXTURES.stacked.products}
+              />
+            </div>
+          </div>
+
+          {/* Variant: Overlay */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Overlay (Glassmorphism Frosted Scrim with Selected Products)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CollectionShowcaseSection
+                config={COLLECTION_SHOWCASE_FIXTURES.overlay.config}
+                collection={COLLECTION_SHOWCASE_FIXTURES.overlay.collection}
+                products={COLLECTION_SHOWCASE_FIXTURES.overlay.products}
+              />
+            </div>
+          </div>
+
+          {/* Fixture: One Product */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: One Product in Showcase
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CollectionShowcaseSection
+                config={COLLECTION_SHOWCASE_FIXTURES.oneProduct.config}
+                collection={COLLECTION_SHOWCASE_FIXTURES.oneProduct.collection}
+                products={COLLECTION_SHOWCASE_FIXTURES.oneProduct.products}
+              />
+            </div>
+          </div>
+
+          {/* Fixture: Zero Products (Products row omitted) */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: Zero Selected Products (Products Row Omitted)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <CollectionShowcaseSection
+                config={COLLECTION_SHOWCASE_FIXTURES.zeroProducts.config}
+                collection={COLLECTION_SHOWCASE_FIXTURES.zeroProducts.collection}
+                products={COLLECTION_SHOWCASE_FIXTURES.zeroProducts.products}
+              />
+            </div>
+          </div>
+
+          {/* Fixture: Missing Collection (Section skipped completely) */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: Missing Collection (Renders Nothing)
+            </span>
+            <div className="border border-dashed border-border rounded-lg p-space-4 text-center text-caption text-fg-muted">
+              {(() => {
+                const rendered = (
+                  <CollectionShowcaseSection
+                    config={COLLECTION_SHOWCASE_FIXTURES.missingCollection.config}
+                    collection={COLLECTION_SHOWCASE_FIXTURES.missingCollection.collection}
+                    products={COLLECTION_SHOWCASE_FIXTURES.missingCollection.products}
+                  />
+                );
+                return rendered === null
+                  ? '✓ Verified: CollectionShowcaseSection with missing collection returned null (skipped).'
+                  : rendered;
+              })()}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 30. GallerySection */}
+      <section id="demo-gallery-section" className="flex flex-col gap-space-6">
+        <div className="border-b border-border pb-space-2">
+          <h3 className="text-title font-semibold text-fg">30. GallerySection</h3>
+          <p className="text-caption text-fg-muted">
+            Curated image gallery supporting CSS grid, CSS multi-column masonry, and scroll-snap slider with full native dialog Lightbox integration.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-space-8">
+          {/* Variant: Grid */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Grid (3 Columns, Dropping to 2 on Mobile, with Captions)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <GallerySection
+                config={GALLERY_FIXTURES.grid.config}
+                images={GALLERY_FIXTURES.grid.images}
+              />
+            </div>
+          </div>
+
+          {/* Variant: Masonry */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Masonry (Pure CSS Columns, Reading Order Runs Down Each Column)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <GallerySection
+                config={GALLERY_FIXTURES.masonry.config}
+                images={GALLERY_FIXTURES.masonry.images}
+              />
+            </div>
+          </div>
+
+          {/* Variant: Slider */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Variant: Slider (Scroll-Snap Track with 44px Touch Targets)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <GallerySection
+                config={GALLERY_FIXTURES.slider.config}
+                images={GALLERY_FIXTURES.slider.images}
+              />
+            </div>
+          </div>
+
+          {/* Fixture: 30 Gallery Images Stress Test */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: 30 Gallery Images Stress Test (Masonry Layout)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <GallerySection
+                config={GALLERY_FIXTURES.thirtyImages.config}
+                images={GALLERY_FIXTURES.thirtyImages.images}
+              />
+            </div>
+          </div>
+
+          {/* Fixture: Missing Captions */}
+          <div className="flex flex-col gap-space-2">
+            <span className="text-caption font-semibold text-fg uppercase tracking-wider">
+              Fixture: Missing Captions (Zero Layout Shifts, Aspect-Ratio Box)
+            </span>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <GallerySection
+                config={GALLERY_FIXTURES.missingCaptions.config}
+                images={GALLERY_FIXTURES.missingCaptions.images}
+              />
+            </div>
+          </div>
         </div>
       </section>
     </div>

@@ -16,7 +16,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = path.join(root, 'src');
 
 /** Page routes allowed to render per request. Add one only with a reason. */
-const ALLOWED_DYNAMIC_ROUTES = [];
+const ALLOWED_DYNAMIC_ROUTES = [
+  // Product catalogue listing reads searchParams (filters, sort, pagination) per request
+  '/products',
+  // Category product listing reads searchParams (filters, sort, pagination) per request
+  '/category/[slug]',
+  // Journal listing reads searchParams (category, pagination) per request
+  '/journal',
+];
 /** Files (relative to src/) allowed to import lib/api-session. */
 const ALLOWED_SESSION_IMPORTERS = [];
 const SESSION_FILE = 'lib/api-session.ts';

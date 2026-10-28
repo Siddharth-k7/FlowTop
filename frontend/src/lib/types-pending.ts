@@ -132,6 +132,13 @@ export interface Collection {
   productCount: number;
 }
 
+export interface CollectionDetail extends Collection {
+  story?: string;
+  editorialImage?: string;
+  products?: ProductCard[];
+  sharedFinishes?: string[];
+}
+
 // ─── Cart & Commerce ─────────────────────────────────────────────────────────
 export interface CartItem {
   id: string;
@@ -223,3 +230,26 @@ export interface PageDetail {
   seoDescription?: string;
   sections: PageSection[];
 }
+
+export interface PageSeo {
+  title?: string | null;
+  description?: string | null;
+  canonical?: string | null;
+  shareImage?: { url: string } | null;
+}
+
+export interface PageResponse {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  sections: import('@flowtop/ui').Section[];
+  seo?: PageSeo | null;
+}
+
+export interface PlacementResponse {
+  locationType: string;
+  locationId: string;
+  products: ProductCard[];
+}
+

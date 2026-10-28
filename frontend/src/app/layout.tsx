@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 // the seed fixtures, so a backend outage at build time heals within the window.
 // Must be a literal (Next reads it statically) and equal PUBLIC_REVALIDATE_SECONDS
 // in lib/api.ts; scripts/check-static-routes.mjs checks both.
-export const revalidate = 300;
+export const revalidate = 30;
 
 export const viewport: Viewport = {
   width: 'device-width',

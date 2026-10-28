@@ -1132,6 +1132,532 @@ export function AvatarExample() {
 
 ---
 
+## 23. SectionShell
+
+Standardized container shell shared across all six CMS page sections. Applies background color tokens, vertical top/bottom spacing presets, content width constraints (`contained`, `wide`, `full`), and horizontal alignment. Automatically sets `aria-labelledby` or `aria-label` on the root `<section>`.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `layout` | `SectionLayout` | `undefined` | Optional | Shared layout block (`background`, `spacingTop`, `spacingBottom`, `width`, `align`). Falls back to `white`, `medium`, `contained`, `left`. |
+| `headingId` | `string` | `undefined` | Optional | ID of heading element inside section for `aria-labelledby`. |
+| `ariaLabel` | `string` | `undefined` | Optional | Screen-reader label when no visible heading ID exists. |
+| `className` | `string` | `''` | Optional | Outer `<section>` wrapper classes. |
+| `innerClassName` | `string` | `''` | Optional | Inner width-constrained container classes. |
+| `children` | `React.ReactNode` | `undefined` | Required | Content rendered inside the shell. |
+
+```tsx
+import { SectionShell, type SectionLayout } from '@flowtop/ui';
+
+export function SectionShellExample() {
+  const layout: SectionLayout = {
+    background: 'pale',
+    spacingTop: 'large',
+    spacingBottom: 'large',
+    width: 'contained',
+    align: 'center',
+  };
+
+  return (
+    <SectionShell layout={layout} headingId="custom-section-heading">
+      <h2 id="custom-section-heading" className="text-display font-light text-fg">
+        Architectural Precision
+      </h2>
+      <p className="text-body text-fg-muted mt-space-3">
+        Machined from solid brass billets with ceramic tolerances.
+      </p>
+    </SectionShell>
+  );
+}
+```
+
+---
+
+## 24. HeroSection
+
+Full-width or framed hero section supporting art-directed responsive imagery (desktop and mobile below 768px) or looping background video.
+Features a 9-point alignment grid, fixed overlay presets (`bg-ink/30`, `bg-ink/55`, `bg-ink/75`) reaching 4.5:1 contrast or frosted glass backing on `overlay="none"`, LCP optimization when `isFirst={true}`, and safe CTA rendering.
+Headline renders as an `h1` when `isFirst={true}`, otherwise as an `h2` to enforce the strict single-`h1`-per-page standard.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `config` | `HeroSectionConfig` | - | Required | Validated CMS configuration object. |
+| `isFirst` | `boolean` | `false` | Optional | When `true`, renders `h1`, loads image eagerly (`priority={true}`), and skips fade-in animations for LCP. |
+| `desktopImageUrl` | `string \| null` | `null` | Optional | Resolved URL for desktop viewport (>= 768px). |
+| `mobileImageUrl` | `string \| null` | `null` | Optional | Resolved URL for mobile viewport (< 768px). |
+| `imageAlt` | `string` | `''` | Optional | Alt text for hero media. Missing alt falls back to decorative `alt=""` with a console warning. |
+| `posterUrl` | `string \| null` | `null` | Optional | Poster image URL required for video heroes. Falls back to `desktopImageUrl`. |
+| `className` | `string` | `''` | Optional | Additional Tailwind classes for the section container. |
+
+```tsx
+import { HeroSection, type HeroSectionConfig } from '@flowtop/ui';
+
+export function HeroSectionExample() {
+  const heroConfig: HeroSectionConfig = {
+    headline: 'The Aura Series',
+    subheading: 'Forged from lead-free CuZn39Pb3 brass with Sedal ceramic tolerances.',
+    mediaType: 'image',
+    desktopImageId: 'med-hero-desktop-01',
+    mobileImageId: 'med-hero-mobile-01',
+    videoUrl: null,
+    overlay: 'strong',
+    textPosition: 'center',
+    ctas: [
+      { label: 'Explore Catalogue', href: '/products', style: 'primary' },
+      { label: 'Architectural Specs', href: '/specs', style: 'ghost' },
+    ],
+    layout: {
+      background: 'white',
+      spacingTop: 'none',
+      spacingBottom: 'none',
+      width: 'full',
+      align: 'center',
+    },
+  };
+
+  return (
+    <HeroSection
+      config={heroConfig}
+      isFirst={true}
+      desktopImageUrl="/images/hero-desktop.webp"
+      mobileImageUrl="/images/hero-mobile.webp"
+      imageAlt="Aura Series luxury bathroom fittings"
+    />
+  );
+}
+```
+
+---
+
+## 25. ImageTextSection
+
+12-column asymmetric layout with configurable ratios (`50-50`, `60-40`, `40-60`), configurable image side (`left` or `right`), mobile stacking order (`image-first` or `text-first`), and plain text body copy safely parsed into semantic `<p>` paragraphs. The image container maintains aspect ratio without layout shift.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `config` | `ImageTextSectionConfig` | - | Required | Validated CMS configuration object. |
+| `imageUrl` | `string \| null` | `null` | Optional | Resolved desktop image URL. |
+| `mobileImageUrl` | `string \| null` | `null` | Optional | Resolved mobile image URL (< 768px). |
+| `imageAlt` | `string` | `''` | Optional | Alt text for the editorial image. |
+| `className` | `string` | `''` | Optional | Additional Tailwind classes. |
+
+```tsx
+import { ImageTextSection, type ImageTextSectionConfig } from '@flowtop/ui';
+
+export function ImageTextSectionExample() {
+  const config: ImageTextSectionConfig = {
+    heading: 'Sedal Ceramic Tolerances',
+    body: 'Engineered with Spanish Sedal disc cartridges tested to 500,000 cycles without pressure drop or leakage.\n\nEvery valve is hydrostatically tested at 16 bar before assembly.',
+    imageId: 'med-cartridge-01',
+    mobileImageId: null,
+    imageSide: 'right',
+    ratio: '60-40',
+    mobileOrder: 'text-first',
+    cta: { label: 'Explore Engineering', href: '/engineering', style: 'primary' },
+    layout: {
+      background: 'white',
+      spacingTop: 'large',
+      spacingBottom: 'large',
+      width: 'contained',
+      align: 'left',
+    },
+  };
+
+  return (
+    <ImageTextSection
+      config={config}
+      imageUrl="/images/engineering-sedal.webp"
+      imageAlt="Internal view of Sedal ceramic cartridge mechanism"
+    />
+  );
+}
+```
+
+---
+
+## 26. CtaSection
+
+Call-to-action layout supporting primary action buttons, verified technical document downloads, or text-only layouts without dead buttons. Download mode renders a real `<a>` link with the `download` attribute, file name, MIME type, size badge, and `rel="noopener"`. When neither button nor document is configured, it renders text only.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `config` | `CtaSectionConfig` | - | Required | Validated CMS configuration object. |
+| `documentAsset` | `DocumentAsset \| null` | `null` | Optional | File metadata (`filename`, `mimeType`, `sizeBytes`, `url`) required for `download` mode. |
+| `className` | `string` | `''` | Optional | Additional Tailwind classes. |
+
+```tsx
+import { CtaSection, type CtaSectionConfig } from '@flowtop/ui';
+
+export function CtaSectionExample() {
+  const config: CtaSectionConfig = {
+    heading: 'Download Technical Architectural Binder',
+    body: 'Complete BIM files, dimensional CAD drawings, and warranty specifications for interior designers and architects.',
+    mode: 'download',
+    cta: null,
+    documentId: 'doc-architectural-binder-2026',
+    layout: {
+      background: 'pale',
+      spacingTop: 'large',
+      spacingBottom: 'large',
+      width: 'contained',
+      align: 'center',
+    },
+  };
+
+  const documentAsset = {
+    filename: 'Flowtop-Architectural-Binder-2026.pdf',
+    mimeType: 'application/pdf',
+    sizeBytes: 14857620,
+    url: '/documents/flowtop-binder.pdf',
+  };
+
+  return <CtaSection config={config} documentAsset={documentAsset} />;
+}
+```
+
+---
+
+## 27. Lightbox
+
+Accessible full-screen image viewer built on the native HTML5 `<dialog>` primitive.
+Supports Escape key dismissal, ArrowLeft / ArrowRight keyboard navigation, focus preservation and restoration (`openerRef.current?.focus()`), mobile touch swipe gestures, optional captions, and "3 of 12" counter text.
+Reused identically across the product details page (PDP) and CMS galleries.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `open` | `boolean` | - | Required | Controls dialog open state via native `showModal()` / `close()`. |
+| `onClose` | `() => void` | - | Required | Callback triggered on Escape, close button click, or backdrop cancel. |
+| `items` | `LightboxItem[]` | `[]` | Required | Array of image items with `url`, `alt`, optional `caption`, and explicit dimensions. |
+| `currentIndex` | `number` | `0` | Optional | Active image index for controlled mode. |
+| `onIndexChange` | `(index: number) => void` | `undefined` | Optional | Callback fired when slide index updates via arrows, swipe, or keys. |
+| `ariaLabel` | `string` | `'Image lightbox'` | Optional | Accessible label for the modal dialog. |
+| `className` | `string` | `''` | Optional | Additional Tailwind utility classes. |
+
+```tsx
+import { useState } from 'react';
+import { Lightbox, type LightboxItem } from '@flowtop/ui';
+
+export function LightboxExample() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+
+  const items: LightboxItem[] = [
+    {
+      url: '/images/gallery-1.webp',
+      alt: 'Aura Basin Mixer in travertine bathroom',
+      caption: 'Travertine master bath installation in Bengaluru',
+      width: 1200,
+      height: 800,
+    },
+    {
+      url: '/images/gallery-2.webp',
+      alt: 'Cascade bath spout in matte black',
+      caption: 'Cascade spout with acoustic water deceleration',
+      width: 1200,
+      height: 900,
+    },
+  ];
+
+  return (
+    <div>
+      <button type="button" onClick={() => setIsOpen(true)}>
+        Open Gallery Lightbox
+      </button>
+
+      <Lightbox
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        items={items}
+        currentIndex={index}
+        onIndexChange={setIndex}
+        ariaLabel="Product image lightbox"
+      />
+    </div>
+  );
+}
+```
+
+---
+
+## 28. ProductCard
+
+Framework-agnostic luxury product card. Uses `usePicture()` and `useLink()` from `UiProvider` so it runs identically in Next.js public web and Dev D's admin CMS.
+Displays primary and secondary hover imagery, finish swatches, price formatting in INR paise, direct placement badge (never derived), and an optional focus-ring outline for CMS placement previews.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `product` | `ProductCardView` | - | Required | Resolved product data view model. |
+| `cardStyle` | `'standard' \| 'compact' \| 'editorial'` | `'standard'` | Optional | Visual card style preset. |
+| `highlight` | `boolean` | `false` | Optional | Focus-ring outline for Dev D placement preview inspection. |
+| `className` | `string` | `''` | Optional | Additional Tailwind utility classes. |
+
+```tsx
+import { ProductCard, type ProductCardView } from '@flowtop/ui';
+
+export function ProductCardExample() {
+  const product: ProductCardView = {
+    id: 'prod-01',
+    slug: 'aura-tall-basin-mixer',
+    name: 'Aura Tall Basin Mixer',
+    badge: 'Architect Choice',
+    price: 1850000,
+    originalPrice: 2200000,
+    primaryImage: {
+      url: '/images/aura-mixer.webp',
+      alt: 'Aura Tall Basin Mixer in Brushed Brass',
+      width: 800,
+      height: 800,
+    },
+    secondaryImage: {
+      url: '/images/aura-mixer-alt.webp',
+      alt: 'Aura Tall Basin Mixer side perspective',
+      width: 800,
+      height: 800,
+    },
+    finishes: [
+      { code: 'CP', label: 'Chrome Plated', hex: '#E5E7EB' },
+      { code: 'BN', label: 'Brushed Nickel', hex: '#9CA3AF' },
+    ],
+    isPurchasable: true,
+    enquiryOnly: false,
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-4">
+      <ProductCard product={product} cardStyle="standard" />
+      <ProductCard product={product} cardStyle="compact" />
+      <ProductCard product={product} cardStyle="editorial" highlight />
+    </div>
+  );
+}
+```
+
+---
+
+## 29. ProductCarouselSection
+
+CMS-driven product carousel taking resolved products from `SectionDataMap`.
+Renders products up to `count`. 2 products when count is 8 means 2 cards and no empty slots. Zero products renders nothing (`null`), omitting the heading over an empty row.
+Features CSS scroll-snap track (swipe works without JavaScript), 44px real buttons for arrows and dots, disabled at ends, and active dot synchronization via `IntersectionObserver`. Autoplay pauses on hover/focus, includes a visible pause button, disables under `prefers-reduced-motion`, and silences the live region while running.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `config` | `ProductCarouselSectionConfig` | - | Required | Validated CMS configuration object. |
+| `products` | `ProductCardView[]` | `[]` | Optional | Resolved product items from the data map. |
+| `highlightProductId` | `string \| null` | `null` | Optional | Highlights a specific card for Dev D's placement preview. |
+| `className` | `string` | `''` | Optional | Additional Tailwind utility classes. |
+
+```tsx
+import {
+  ProductCarouselSection,
+  type ProductCarouselSectionConfig,
+  type ProductCardView,
+} from '@flowtop/ui';
+
+export function ProductCarouselSectionExample() {
+  const config: ProductCarouselSectionConfig = {
+    heading: 'Curated Architectural Fittings',
+    source: 'manual',
+    placementLocation: null,
+    productIds: ['prod-01', 'prod-02'],
+    rule: null,
+    count: 8,
+    cardStyle: 'standard',
+    viewAllHref: '/products',
+    layout: {
+      background: 'white',
+      spacingTop: 'medium',
+      spacingBottom: 'medium',
+      width: 'contained',
+      align: 'left',
+    },
+  };
+
+  const products: ProductCardView[] = [
+    {
+      id: 'prod-01',
+      slug: 'aura-tall-basin-mixer',
+      name: 'Aura Tall Basin Mixer',
+      badge: 'Featured',
+      price: 1850000,
+      primaryImage: { url: '/images/aura.webp', alt: 'Aura Mixer', width: 800, height: 800 },
+      isPurchasable: true,
+    },
+    {
+      id: 'prod-02',
+      slug: 'cascade-spout',
+      name: 'Cascade Wall-Mounted Spout',
+      badge: null,
+      price: 2450000,
+      primaryImage: { url: '/images/cascade.webp', alt: 'Cascade Spout', width: 800, height: 800 },
+      isPurchasable: true,
+    },
+  ];
+
+  return (
+    <ProductCarouselSection
+      config={config}
+      products={products}
+      highlightProductId="prod-02"
+    />
+  );
+}
+```
+
+---
+
+## 30. CollectionShowcaseSection
+
+CMS collection showcase supporting three distinct compositions: `split` (image-led editorial layout), `stacked` (hero cover with products below), and `overlay` (frosted glass panel over cover media).
+Takes resolved collection and products from `SectionDataMap`. A missing collection causes the entire section to render nothing (`null`). Zero selected products omits the product row while preserving the editorial collection story. Includes background video playback adhering to strict hero video rules (muted, playsInline, loop, no autoplay under reduced motion).
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `config` | `CollectionShowcaseSectionConfig` | - | Required | Validated CMS configuration object. |
+| `collection` | `CollectionShowcaseView \| null` | `null` | Optional | Resolved collection entity from data map. |
+| `products` | `ProductCardView[]` | `[]` | Optional | Resolved curated products for the collection. |
+| `className` | `string` | `''` | Optional | Additional Tailwind utility classes. |
+
+```tsx
+import {
+  CollectionShowcaseSection,
+  type CollectionShowcaseSectionConfig,
+  type CollectionShowcaseView,
+  type ProductCardView,
+} from '@flowtop/ui';
+
+export function CollectionShowcaseSectionExample() {
+  const config: CollectionShowcaseSectionConfig = {
+    collectionId: 'col-aura',
+    coverImageId: 'med-aura-cover',
+    description: 'Forged from lead-free brass billets with ceramic disc tolerance.',
+    productIds: ['prod-01'],
+    variant: 'split',
+    layout: {
+      background: 'pale',
+      spacingTop: 'large',
+      spacingBottom: 'large',
+      width: 'contained',
+      align: 'left',
+    },
+  };
+
+  const collection: CollectionShowcaseView = {
+    id: 'col-aura',
+    slug: 'aura-collection',
+    name: 'The Aura Collection',
+    description: 'Forged from lead-free brass billets with ceramic disc tolerance.',
+    coverImage: {
+      url: '/images/collection-aura.webp',
+      alt: 'The Aura Bath Fittings Showcase',
+      width: 1600,
+      height: 1000,
+    },
+    videoUrl: null,
+  };
+
+  const products: ProductCardView[] = [
+    {
+      id: 'prod-01',
+      slug: 'aura-tall-basin-mixer',
+      name: 'Aura Tall Basin Mixer',
+      price: 1850000,
+      primaryImage: { url: '/images/aura.webp', alt: 'Aura Basin Mixer', width: 800, height: 800 },
+    },
+  ];
+
+  return (
+    <CollectionShowcaseSection
+      config={config}
+      collection={collection}
+      products={products}
+    />
+  );
+}
+```
+
+---
+
+## 31. GallerySection
+
+Curated image gallery supporting three layout variants:
+- `grid`: CSS grid with configured columns (2, 3, 4), dropping to 2 columns on mobile.
+- `masonry`: Pure CSS columns (`columns-2 md:columns-3 ...`, no external library). Note that reading order runs down each column.
+- `slider`: CSS scroll-snap slider with 44px arrow buttons and indicator dots.
+
+Extracts and integrates the native HTML5 `<dialog>` `Lightbox` for high-resolution inspection. Images are lazy loaded with explicit dimensions or aspect-ratio boxes preventing layout shifts. Captions are optional.
+
+### Props
+
+| Prop | Type / Allowed Values | Default | Required / Optional | Description |
+|---|---|---|---|---|
+| `config` | `GallerySectionConfig` | - | Required | Validated CMS configuration object. |
+| `images` | `GalleryImage[]` | `[]` | Optional | Resolved gallery image items. |
+| `className` | `string` | `''` | Optional | Additional Tailwind utility classes. |
+
+```tsx
+import {
+  GallerySection,
+  type GallerySectionConfig,
+  type GalleryImage,
+} from '@flowtop/ui';
+
+export function GallerySectionExample() {
+  const config: GallerySectionConfig = {
+    heading: 'Architectural Installations',
+    imageIds: ['gal-01', 'gal-02'],
+    variant: 'masonry',
+    columns: 3,
+    showCaptions: true,
+    layout: {
+      background: 'white',
+      spacingTop: 'medium',
+      spacingBottom: 'medium',
+      width: 'contained',
+      align: 'left',
+    },
+  };
+
+  const images: GalleryImage[] = [
+    {
+      id: 'gal-01',
+      url: '/images/installation-1.webp',
+      alt: 'Minimalist travertine master bath with Cascade wall-mounted spout',
+      caption: 'Private residence in Bangalore, featuring Aura Basin Mixers.',
+      width: 1200,
+      height: 800,
+    },
+    {
+      id: 'gal-02',
+      url: '/images/installation-2.webp',
+      alt: 'Obsidian thermostatic shower mixer with micro-knurling',
+      caption: 'Tactile micro-knurled temperature selector in Matte Black.',
+      width: 1200,
+      height: 1200,
+    },
+  ];
+
+  return <GallerySection config={config} images={images} />;
+}
+```
+
+---
+
 ## What the preset replaces
 
 `tailwind-preset.cjs` puts Flowtop token scales on `theme.extend`, so consumers keep Tailwind's default utilities (`w-56`, `z-10`, `font-mono`, the `sm` screen, and the rest). One scale is still replaced outright.

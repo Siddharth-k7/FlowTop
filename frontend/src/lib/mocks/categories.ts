@@ -44,4 +44,11 @@ export const mockCategories = [
     description: 'Minimalist solid brass towel rails, toilet roll holders, robe hooks, and drain waste couplings.',
     productCount: 5,
   },
+  {
+    id: 'cat-bidets',
+    name: 'Bidets & Hand Showers',
+    slug: 'bidets',
+    description: 'Floor-standing and wall-hung architectural bidets with integrated spray controls.',
+    productCount: 0,
+  },
 ] satisfies Category[];

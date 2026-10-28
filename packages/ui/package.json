@@ -23,9 +23,12 @@
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && node scripts/check.mjs",
-    "test": "node scripts/check.mjs && node --test test/components.test.mjs test/aria.test.mjs",
+    "test": "node scripts/check.mjs && node --test test/components.test.mjs test/aria.test.mjs test/sections.test.mjs test/safeHref.test.mjs test/sections-render.test.mjs",
     "test:components": "node --test test/components.test.mjs",
     "test:aria": "node --test test/aria.test.mjs",
+    "test:sections": "node --test test/sections.test.mjs",
+    "test:safeHref": "node --test test/safeHref.test.mjs",
+    "test:render": "node --test test/sections-render.test.mjs",
     "check": "node scripts/check.mjs"
   },
   "peerDependencies": {

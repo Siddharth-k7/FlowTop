@@ -9,6 +9,12 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@flowtop/ui'],
   outputFileTracingRoot: path.resolve(__dirname, '..'),
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
+    ],
+  },
 };
 
 export default nextConfig;

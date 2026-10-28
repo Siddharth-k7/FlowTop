@@ -1,5 +1,5 @@
 // TODO(mock): replace on swap day
-import type { Collection } from '../types-pending';
+import type { CollectionDetail } from '../types-pending';
 
 export const mockCollections = [
   {
@@ -9,8 +9,10 @@ export const mockCollections = [
     tagline: 'Minimalist cylindrical silhouettes with diamond-knurled tactile detail.',
     description: 'Forged from lead-free architectural brass, Aura represents the purest reduction of cylindrical form, complemented by tactile diamond knurling.',
     heroImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1600&q=80',
+    editorialImage: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?auto=format&fit=crop&w=1200&q=80',
+    story: 'The Aura series was born from a desire to reduce brassware to its elemental cylinder, eliminating all superfluous visual noise while heightening tactile sensation.\n\nEvery junction is machined with microscopic precision from lead-free CuZn39Pb3 architectural brass billets. The characteristic diamond knurling around the control valve is not merely decorative; it provides an intuitive mechanical purchase that transforms the simple act of regulating water flow into an intentional, tactile ritual.\n\nDeveloped over two years in collaboration with master machinists, each fixture is polished by hand before receiving its vacuum-deposited PVD finish.',
     featured: true,
-    productCount: 12,
+    productCount: 11,
   },
   {
     id: 'col-cascade',
@@ -19,8 +21,10 @@ export const mockCollections = [
     tagline: 'Fluted architectural surfaces inspired by classical Roman aqueduct fluting.',
     description: 'A tribute to classical masonry architecture, Cascade Luxe pairs fluted tactile levers with whisper-quiet laminar water delivery.',
     heroImage: 'https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1600&q=80',
+    editorialImage: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?auto=format&fit=crop&w=1200&q=80',
+    story: 'Cascade Luxe translates the architectural fluting of classical Roman stone columns into the medium of warm, precision-machined brass.\n\nThe rhythmic fluted facets catch dynamic light throughout the day, creating delicate cast shadows across the fixture surface. Inside, an aerated Neoperl laminar channel calms turbulent city water pressure into a whisper-quiet, crystal-clear curtain of water.\n\nIt is brassware designed to ground the bathroom as a sanctuary of quiet luxury.',
     featured: true,
-    productCount: 10,
+    productCount: 8,
   },
   {
     id: 'col-obsidian',
@@ -29,8 +33,10 @@ export const mockCollections = [
     tagline: 'Deep matte obsidian finish with underlying warm brushed brass accents.',
     description: 'Dual-baked PVD surface bonding creates an ultra-durable, velvety obsidian finish that resists fingerprint marks and water droplet stains.',
     heroImage: 'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?auto=format&fit=crop&w=1600&q=80',
+    editorialImage: 'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=1200&q=80',
+    story: 'Obsidian Noir explores the profound depth of volcanic stone textures through multi-stage physical vapor deposition.\n\nRather than a flat painted powder coat, Obsidian bonds atomized carbon titanium at high temperatures to produce an impenetrable, silky-matte skin that naturally repels water spots and fingerprints.\n\nAccented with subtle brushed brass margins, each piece delivers an unmistakable presence that commands contemporary minimalist environments.',
     featured: true,
-    productCount: 8,
+    productCount: 7,
   },
   {
     id: 'col-neo',
@@ -39,7 +45,9 @@ export const mockCollections = [
     tagline: 'Geometric planar precision engineered for uncompromising modernist interiors.',
     description: 'Crisp 90-degree planar angles machined with sub-millimeter CNC accuracy from solid extruded brass billets.',
     heroImage: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?auto=format&fit=crop&w=1600&q=80',
+    editorialImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1200&q=80',
+    story: 'Neo Architectural is an uncompromising celebration of Euclidean planes and sharp 90-degree geometry.\n\nMachined from extruded rectangular profiles, the spout surface forms a perfectly planar horizon from which water emerges in an unbroken sheet.\n\nDesigned for spaces where every millimeter must justify its presence, Neo proves that severe geometric discipline can yield profound organic serenity.',
     featured: false,
-    productCount: 10,
+    productCount: 7,
   },
-] satisfies Collection[];
+] satisfies CollectionDetail[];

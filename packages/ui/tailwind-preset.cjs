@@ -211,6 +211,10 @@ module.exports = {
         sheet: 'var(--max-h-sheet)',
         modal: 'var(--max-h-dialog)',
       },
+
+      maxWidth: {
+        measure: 'var(--measure)',
+      },
     },
   },
   plugins: [

@@ -9,7 +9,7 @@
 export interface ComponentEntry {
   id: string;
   name: string;
-  category: 'Actions' | 'Forms' | 'Layout' | 'Feedback' | 'Navigation' | 'Data Display';
+  category: 'Actions' | 'Forms' | 'Layout' | 'Feedback' | 'Navigation' | 'Data Display' | 'Sections';
   description: string;
   requiredVariants?: string[];
   requiredStates?: string[];
@@ -199,5 +199,56 @@ export const COMPONENT_REGISTRY: ComponentEntry[] = [
     name: 'Tooltip',
     category: 'Feedback',
     description: 'Advisory popup on hover and focus. Never holds essential info.',
+  },
+  {
+    id: 'lightbox',
+    name: 'Lightbox',
+    category: 'Layout',
+    description: 'Full-screen accessible image viewer built on native HTML5 <dialog> with Escape, swipe, and focus restoration.',
+  },
+  {
+    id: 'product-card',
+    name: 'ProductCard',
+    category: 'Data Display',
+    description: 'Framework-agnostic luxury product card with swatches, direct placement badge, and hover animation.',
+  },
+  {
+    id: 'hero-section',
+    name: 'HeroSection',
+    category: 'Sections',
+    description: 'CMS hero section supporting art-directed picture, video, 9-point grid, and safe CTAs.',
+    requiredVariants: ['minimal', 'full', 'withOptionalAbsent', 'withUnknownEnum'],
+  },
+  {
+    id: 'image-text-section',
+    name: 'ImageTextSection',
+    category: 'Sections',
+    description: 'CMS image text section with 12-col asymmetric grid, column ratios, and plain-text paragraphs.',
+    requiredVariants: ['minimal', 'full', 'withOptionalAbsent', 'withUnknownEnum'],
+  },
+  {
+    id: 'cta-section',
+    name: 'CtaSection',
+    category: 'Sections',
+    description: 'CMS call-to-action section supporting button, document download, or text-only.',
+    requiredVariants: ['minimal', 'full', 'withOptionalAbsent', 'withUnknownEnum'],
+  },
+  {
+    id: 'product-carousel-section',
+    name: 'ProductCarouselSection',
+    category: 'Sections',
+    description: 'CMS product carousel with scroll-snap, 44px touch targets, IntersectionObserver dots, and autoplay controls.',
+  },
+  {
+    id: 'collection-showcase-section',
+    name: 'CollectionShowcaseSection',
+    category: 'Sections',
+    description: 'CMS collection showcase with split, stacked, and overlay variants, video integration, and product rows.',
+  },
+  {
+    id: 'gallery-section',
+    name: 'GallerySection',
+    category: 'Sections',
+    description: 'CMS gallery with grid, CSS column masonry, slider, and integrated native dialog Lightbox.',
   },
 ];

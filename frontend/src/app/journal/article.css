@@ -1,0 +1,76 @@
+/*
+ * Long-Form Reading Typography for Journal Articles
+ *
+ * Requirements:
+ * - Descendant styling using @apply with token classes
+ * - Line height 1.7 or more
+ * - Headings in font-display
+ * - Blockquotes as quiet pull quotes with a purple-light rule
+ * - Images with rounded-md corners and captions
+ * - Article measure: max-w-measure (68ch)
+ */
+
+.article-content {
+  @apply text-body text-fg leading-[1.8] max-w-measure mx-auto;
+}
+
+.article-content p {
+  @apply mb-space-5 leading-[1.8] text-fg;
+}
+
+.article-content h2 {
+  @apply font-display text-title md:text-headline font-normal tracking-tight text-fg mt-space-8 mb-space-4;
+}
+
+.article-content h3 {
+  @apply font-display text-title font-medium tracking-tight text-fg mt-space-6 mb-space-3;
+}
+
+.article-content h4 {
+  @apply font-display text-small font-semibold tracking-wide uppercase text-fg-muted mt-space-5 mb-space-2;
+}
+
+.article-content blockquote {
+  @apply my-space-6 pl-space-4 border-l-2 border-purple-light italic text-fg-muted text-body leading-[1.75];
+}
+
+.article-content ul {
+  @apply list-disc list-outside pl-space-5 mb-space-5 space-y-space-2 text-fg;
+}
+
+.article-content ol {
+  @apply list-decimal list-outside pl-space-5 mb-space-5 space-y-space-2 text-fg;
+}
+
+.article-content li {
+  @apply leading-[1.75] pl-space-1;
+}
+
+.article-content a {
+  @apply text-primary underline underline-offset-4 decoration-primary/40 hover:text-primary-dark hover:decoration-primary transition-colors duration-fast;
+}
+
+.article-content strong {
+  @apply font-semibold text-fg;
+}
+
+.article-content em {
+  @apply italic text-fg;
+}
+
+.article-content hr {
+  @apply my-space-8 border-t border-border;
+}
+
+.article-content figure {
+  @apply my-space-8 w-full;
+}
+
+.article-content figure img,
+.article-content img {
+  @apply w-full h-auto rounded-md shadow-sm border border-border;
+}
+
+.article-content figcaption {
+  @apply text-caption text-fg-muted text-center mt-space-2 italic;
+}

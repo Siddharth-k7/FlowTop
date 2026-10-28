@@ -25,26 +25,35 @@ import type {
   ProductDetail,
   Category,
   Collection,
+  CollectionDetail,
   Cart,
   SingleResponse,
   NavigationResponse,
   PublicSettingsResponse,
   JournalArticleCard,
+  JournalArticleDetail,
   SubmissionResponse,
   SubmissionRequest,
+  PageResponse,
+  PlacementResponse,
 } from './types-pending';
 import type { ErrorEnvelope, Paginated } from '@flowtop/types';
 
 import {
   resolveMockProducts,
   resolveMockProductBySlug,
+  resolveMockRelatedProducts,
   resolveMockCategories,
   resolveMockCollections,
+  resolveMockCollectionBySlug,
   resolveMockCart,
   resolveMockNavigation,
   resolveMockSettings,
   resolveMockJournal,
+  resolveMockJournalArticleBySlug,
   resolveMockSubmission,
+  resolveMockPage,
+  resolveMockPlacement,
   type MockSwitch,
 } from './mocks/index';
 
@@ -100,7 +109,7 @@ const TIMEOUT_MS = 8000;
  * ISR window for public reads. Every public page is prerendered at build time
  * and regenerated in the background at most this often.
  */
-export const PUBLIC_REVALIDATE_SECONDS = 300;
+export const PUBLIC_REVALIDATE_SECONDS = 30;
 
 /** Cache tags for on-demand revalidation (revalidateTag) once the CMS can call it. */
 export const CACHE_TAGS = {
@@ -110,6 +119,8 @@ export const CACHE_TAGS = {
   navigation: 'navigation',
   settings: 'settings',
   journal: 'journal',
+  placements: 'placements',
+  pages: 'pages',
 } as const;
 
 /** A cookie-free, ISR-cached public GET. */
@@ -259,6 +270,9 @@ export const api = {
     category?: string;
     collection?: string;
     finish?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    available?: boolean;
     sort?: string;
     page?: number;
     perPage?: number;
@@ -307,7 +321,38 @@ export const api = {
       }
     }
 
-    return httpRequest<SingleResponse<ProductDetail>>('GET', `/api/v1/products/${slug}`, publicRead(CACHE_TAGS.products));
+    return httpRequest<SingleResponse<ProductDetail>>('GET', `/api/v1/products/${slug}`, {
+      credentials: 'omit',
+      next: { revalidate: 60, tags: [CACHE_TAGS.products, `product:${slug}`] },
+    });
+  },
+
+  /**
+   * Catalog: Related Products
+   */
+  async getRelatedProducts(
+    slug: string,
+    mockSwitch?: MockSwitch
+  ): Promise<SingleResponse<ProductCard[]>> {
+    if (isMockMode()) {
+      try {
+        return await resolveMockRelatedProducts(slug, mockSwitch);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'status' in err) {
+          const e = err as { status: number; code: string; message: string };
+          throw new ApiError(e.status, e.code, e.message);
+        }
+        if (err && typeof err === 'object' && 'isTimeout' in err) {
+          throw new TimeoutError();
+        }
+        throw err;
+      }
+    }
+
+    return httpRequest<SingleResponse<ProductCard[]>>('GET', `/api/v1/products/${slug}/related`, {
+      credentials: 'omit',
+      next: { revalidate: 60, tags: [CACHE_TAGS.products, `product:${slug}:related`] },
+    });
   },
 
   /**
@@ -352,6 +397,35 @@ export const api = {
     }
 
     return httpRequest<SingleResponse<Collection[]>>('GET', '/api/v1/collections', publicRead(CACHE_TAGS.collections));
+  },
+
+  /**
+   * Catalog: Collection Detail by slug
+   */
+  async getCollectionBySlug(
+    slug: string,
+    mockSwitch?: MockSwitch
+  ): Promise<SingleResponse<CollectionDetail>> {
+    if (isMockMode()) {
+      try {
+        return await resolveMockCollectionBySlug(slug, mockSwitch);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'status' in err) {
+          const e = err as { status: number; code: string; message: string };
+          throw new ApiError(e.status, e.code, e.message);
+        }
+        if (err && typeof err === 'object' && 'isTimeout' in err) {
+          throw new TimeoutError();
+        }
+        throw err;
+      }
+    }
+
+    return httpRequest<SingleResponse<CollectionDetail>>(
+      'GET',
+      `/api/v1/collections/${encodeURIComponent(slug)}`,
+      publicRead(CACHE_TAGS.collections)
+    );
   },
 
   /**
@@ -470,6 +544,8 @@ export const api = {
    */
   async getJournal(params?: {
     category?: string;
+    page?: number;
+    perPage?: number;
     mockSwitch?: MockSwitch;
   }): Promise<Paginated<JournalArticleCard>> {
     if (isMockMode()) {
@@ -491,6 +567,41 @@ export const api = {
       ...publicRead(CACHE_TAGS.journal),
       params: params as Record<string, string | number | boolean | undefined>,
     });
+  },
+
+  /**
+   * Journal: Get Article Detail by Slug
+   */
+  async getJournalArticleBySlug(
+    slug: string,
+    mockSwitch?: MockSwitch
+  ): Promise<SingleResponse<JournalArticleDetail>> {
+    if (isMockMode()) {
+      try {
+        return await resolveMockJournalArticleBySlug(slug, mockSwitch);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'status' in err) {
+          const e = err as { status: number; code: string; message: string };
+          throw new ApiError(e.status, e.code, e.message);
+        }
+        if (err && typeof err === 'object' && 'isTimeout' in err) {
+          throw new TimeoutError();
+        }
+        throw err;
+      }
+    }
+
+    return httpRequest<SingleResponse<JournalArticleDetail>>(
+      'GET',
+      `/api/v1/journal/${encodeURIComponent(slug)}`,
+      {
+        ...publicRead(CACHE_TAGS.journal),
+        next: {
+          revalidate: PUBLIC_REVALIDATE_SECONDS,
+          tags: [CACHE_TAGS.journal, `journal:${slug}`],
+        },
+      }
+    );
   },
 
   /**
@@ -516,5 +627,70 @@ export const api = {
     }
 
     return httpRequest<SingleResponse<SubmissionResponse>>('POST', '/api/v1/submissions', { ...SESSION_CALL, body });
+  },
+
+  /**
+   * Pages: Fetch page by slug (empty string "" is the homepage)
+   */
+  async getPage(
+    slug: string,
+    mockSwitch?: MockSwitch
+  ): Promise<SingleResponse<PageResponse>> {
+    if (isMockMode()) {
+      try {
+        return await resolveMockPage(slug, mockSwitch);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'status' in err) {
+          const e = err as { status: number; code: string; message: string };
+          throw new ApiError(e.status, e.code, e.message);
+        }
+        if (err && typeof err === 'object' && 'isTimeout' in err) {
+          throw new TimeoutError();
+        }
+        throw err;
+      }
+    }
+
+    const path = slug ? `/api/v1/pages/${encodeURIComponent(slug)}` : '/api/v1/pages';
+    return httpRequest<SingleResponse<PageResponse>>('GET', path, {
+      credentials: 'omit',
+      next: {
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+        tags: [CACHE_TAGS.pages, `page:${slug}`],
+      },
+    });
+  },
+
+  /**
+   * Placements: Resolved products for a placement location
+   */
+  async getPlacement(
+    locationType: string,
+    locationId: string,
+    mockSwitch?: MockSwitch
+  ): Promise<SingleResponse<PlacementResponse>> {
+    if (isMockMode()) {
+      try {
+        return await resolveMockPlacement(locationType, locationId, mockSwitch);
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'status' in err) {
+          const e = err as { status: number; code: string; message: string };
+          throw new ApiError(e.status, e.code, e.message);
+        }
+        if (err && typeof err === 'object' && 'isTimeout' in err) {
+          throw new TimeoutError();
+        }
+        throw err;
+      }
+    }
+
+    const path = `/api/v1/placements/${encodeURIComponent(locationType)}/${encodeURIComponent(locationId)}`;
+    return httpRequest<SingleResponse<PlacementResponse>>('GET', path, {
+      credentials: 'omit',
+      next: {
+        revalidate: PUBLIC_REVALIDATE_SECONDS,
+        tags: [CACHE_TAGS.placements, `placement:${locationType}:${locationId}`],
+      },
+    });
   },
 };
