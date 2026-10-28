@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Flowtop 3D Model Specification",
+  "description": "Asset manifest and sub-mesh contract for Flowtop 3D hero models",
+  "format": "GLB",
+  "maxTriangles": 50000,
+  "maxFileSizeBytes": 2621440,
+  "compression": ["draco", "meshopt"],
+  "units": "millimeters",
+  "orientation": "Y-up",
+  "submeshes": [
+    { "name": "body", "description": "Base escutcheon, lower collar, and vertical body column" },
+    { "name": "handle", "description": "Single-lever cartridge pivot and paddle" },
+    { "name": "spout", "description": "High-arc gooseneck water delivery spout" },
+    { "name": "aerator", "description": "Recessed aerator collar nozzle ring" }
+  ],
+  "finishes": [
+    { "id": "chrome", "name": "Mirror Chrome", "metalness": 1.0, "roughness": 0.05 },
+    { "id": "brushed-gold", "name": "Brushed Gold", "metalness": 0.95, "roughness": 0.35 },
+    { "id": "matte-black", "name": "Matte Black", "metalness": 0.60, "roughness": 0.70 },
+    { "id": "rose-gold", "name": "Rose Gold", "metalness": 0.90, "roughness": 0.20 }
+  ]
+}
