@@ -30,6 +30,13 @@ export interface FilterSidebarProps {
   maxBoundRupees?: number;
 }
 
+const FINISH_SWATCH_CLASSES: Record<string, string> = {
+  chrome: 'bg-grey-200 border-grey-300',
+  'brushed-gold': 'bg-warning-tint border-warning/40',
+  'matte-black': 'bg-ink border-ink',
+  'rose-gold': 'bg-error-tint border-error/30',
+};
+
 export function FilterSidebar({
   categories,
   finishes,
@@ -43,14 +50,14 @@ export function FilterSidebar({
   return (
     <div className="flex flex-col gap-space-6 bg-surface-solid rounded-md border border-border shadow-sm p-space-6 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-space-3">
-        <h2 className="font-display font-light text-title tracking-tight text-fg">
+      <div className="flex items-center justify-between border-b border-border pb-space-4">
+        <h2 className="font-body font-medium text-body tracking-tight text-fg">
           Filters
         </h2>
         <button
           type="button"
           onClick={onClearAll}
-          className="text-caption text-primary hover:underline font-medium focus-ring rounded-sm py-space-1 px-space-1"
+          className="text-caption text-primary hover:underline font-semibold focus-ring rounded-sm py-space-1 px-space-1"
         >
           Reset
         </button>
@@ -58,8 +65,8 @@ export function FilterSidebar({
 
       {/* 1. Category Filter (unless locked by category page) */}
       {!lockCategory && categories.length > 0 && (
-        <fieldset className="flex flex-col gap-space-3 border-none p-0 m-0">
-          <legend className="text-small font-semibold text-fg mb-space-1">
+        <fieldset className="flex flex-col gap-space-2 border-none p-0 m-0">
+          <legend className="text-caption font-semibold uppercase tracking-wider text-fg mb-space-2">
             Category
           </legend>
           <div className="flex flex-col gap-space-2 max-h-56 overflow-y-auto pr-space-1">
@@ -103,8 +110,8 @@ export function FilterSidebar({
 
       {/* 2. Finish Swatches with Text Labels */}
       {finishes.length > 0 && (
-        <fieldset className="flex flex-col gap-space-3 border-t border-border pt-space-4 border-b-0 border-l-0 border-r-0 p-0 m-0">
-          <legend className="text-small font-semibold text-fg mb-space-1">
+        <fieldset className="flex flex-col gap-space-2 border-t border-border pt-space-4 border-b-0 border-l-0 border-r-0 p-0 m-0">
+          <legend className="text-caption font-semibold uppercase tracking-wider text-fg mb-space-2">
             Finish & Material
           </legend>
           <div className="flex flex-col gap-space-2">
@@ -133,7 +140,9 @@ export function FilterSidebar({
                   className="w-4 h-4 text-primary focus-ring border-border-input"
                 />
                 <span
-                  className="w-4 h-4 rounded-full border border-border shadow-sm flex-shrink-0"
+                  className={`w-3.5 h-3.5 rounded-pill border shadow-sm flex-shrink-0 ${
+                    FINISH_SWATCH_CLASSES[f.code] || 'border-border bg-surface'
+                  }`}
                   style={{
                     backgroundColor: isValidHex(f.swatchHex) ? f.swatchHex : undefined,
                   }}

@@ -51,14 +51,17 @@ export function ProductCard({
 
   return (
     <article
-      className={`group relative flex flex-col bg-surface-solid border border-border rounded-md overflow-hidden transition-all duration-base hover:shadow-md ${
-        isEditorial ? 'p-space-6' : 'p-space-4'
+      className={`group relative flex flex-col bg-surface-solid border border-border rounded-md overflow-hidden transition-all duration-base hover:shadow-lg ${
+        isEditorial ? 'p-space-5' : 'p-space-3'
       }`}
     >
       {/* Placement Badge */}
       {badge && (
-        <div className="absolute top-space-3 left-space-3 z-raised">
-          <Badge variant="primary">
+        <div className="absolute top-space-5 left-space-5 z-raised">
+          <Badge
+            variant="neutral"
+            className="bg-surface-solid/95 text-fg border-transparent shadow-sm font-semibold"
+          >
             {badge}
           </Badge>
         </div>
@@ -81,7 +84,7 @@ export function ProductCard({
             placeholder="blur"
             blurDataURL={PRODUCT_BLUR_DATA_URL}
             onError={() => setImgSrc('/images/fallback-fitting.svg')}
-            className={`object-cover transition-opacity duration-base ${
+            className={`object-cover transition-all duration-slow group-hover:scale-105 ${
               hoverSrc ? 'group-hover:opacity-0' : ''
             }`}
           />
@@ -96,13 +99,13 @@ export function ProductCard({
             placeholder="blur"
             blurDataURL={PRODUCT_BLUR_DATA_URL}
             onError={() => setHoverSrc(undefined)}
-            className="object-cover opacity-0 transition-opacity duration-base group-hover:opacity-100"
+            className="object-cover opacity-0 transition-all duration-slow group-hover:opacity-100 group-hover:scale-105"
           />
         )}
       </Link>
 
       {/* Content */}
-      <div className="flex flex-col flex-1">
+      <div className="px-space-1 flex flex-col flex-1 justify-between">
         {/* Swatches */}
         {swatches && swatches.length > 0 && (
           <div
@@ -113,7 +116,7 @@ export function ProductCard({
               <span
                 key={swatch.id || swatch.name}
                 title={swatch.name}
-                className="w-3.5 h-3.5 rounded-full border border-border shadow-sm inline-block"
+                className="w-3.5 h-3.5 rounded-pill border border-border shadow-sm inline-block"
                 style={{
                   backgroundColor: isValidHex(swatch.swatchHex) ? swatch.swatchHex : undefined,
                 }}
@@ -128,18 +131,18 @@ export function ProductCard({
         )}
 
         {/* Title */}
-        <h3 className="font-display font-medium text-body text-fg group-hover:text-primary transition-colors line-clamp-1 mb-space-1">
+        <h3 className="font-body font-semibold text-small text-fg group-hover:text-primary transition-colors line-clamp-1 leading-snug">
           <Link href={`/products/${slug}`}>{name}</Link>
         </h3>
 
         {/* Price display with strikethrough salePrice & WhatsApp inquiry button */}
-        <div className="flex items-center justify-between gap-space-2 mt-auto pt-space-2">
+        <div className="flex items-center justify-between gap-space-2 mt-space-2">
           <div className="flex items-baseline gap-space-2">
-            <span className="font-semibold text-body text-fg">
+            <span className="font-semibold text-small text-fg">
               {formatPaise(salePrice ? salePrice : price)}
             </span>
             {salePrice && salePrice < price && (
-              <span className="text-small text-text-muted line-through">
+              <span className="text-caption text-text-muted line-through">
                 {formatPaise(price)}
               </span>
             )}

@@ -114,13 +114,13 @@ export function ListingShell({
       </div>
 
       {/* Header & Title Area */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-4 border-b border-border pb-space-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-6 pb-space-4">
         <div>
-          <h1 className="font-display font-light text-display tracking-tight text-fg mb-space-1">
+          <h1 className="font-display font-light text-display tracking-tight text-fg leading-tight">
             {pageTitle}
           </h1>
           {pageSubtitle && (
-            <p className="text-body text-fg-muted max-w-measure leading-relaxed">
+            <p className="text-small md:text-body text-fg-muted mt-space-2 max-w-2xl leading-relaxed">
               {pageSubtitle}
             </p>
           )}

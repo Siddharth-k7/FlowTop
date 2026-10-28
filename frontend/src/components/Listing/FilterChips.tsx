@@ -34,11 +34,11 @@ export function FilterChips({
           type="button"
           onClick={() => onRemoveChip(chip)}
           aria-label={chip.ariaLabel}
-          className="inline-flex items-center gap-space-2 px-space-3 py-space-1 rounded-pill border border-border bg-surface-solid hover:bg-surface text-small text-fg transition-colors focus-ring touch-target"
+          className="inline-flex items-center gap-space-2 px-space-3 py-space-1 rounded-pill border border-border bg-surface hover:bg-surface-light text-caption font-medium text-fg transition-colors focus-ring touch-target"
         >
           <span>{chip.label}</span>
           <span
-            className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-fg text-caption select-none"
+            className="w-4 h-4 rounded-pill flex items-center justify-center text-text-muted hover:text-fg text-caption font-semibold select-none"
             aria-hidden="true"
           >
             ×
@@ -52,7 +52,7 @@ export function FilterChips({
           e.preventDefault();
           onClearAll();
         }}
-        className="text-small text-primary hover:underline font-medium px-space-2 py-space-1 rounded-sm focus-ring ml-space-2"
+        className="text-caption text-primary hover:underline font-semibold px-space-2 py-space-1 rounded-sm focus-ring ml-space-1"
       >
         Clear all
       </Link>

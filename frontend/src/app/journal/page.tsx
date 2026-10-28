@@ -87,29 +87,32 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
   const activeCategory = getJournalCategoryBySlug(parsed.category);
 
   return (
-    <div className="w-full flex flex-col py-space-6 md:py-space-8 max-w-full overflow-x-hidden">
-      <div className="container-page flex flex-col gap-space-8 w-full">
+    <div className="w-full flex flex-col py-space-7 md:py-space-8 max-w-full overflow-x-hidden bg-surface-solid">
+      <div className="container-page flex flex-col gap-space-7 w-full">
         {/* Header Section */}
-        <header className="flex flex-col gap-space-3 max-w-2xl">
-          <span className="text-caption font-semibold tracking-wide uppercase text-primary">
+        <header className="flex flex-col gap-space-3 max-w-4xl">
+          <span className="text-caption font-semibold tracking-wider uppercase text-primary">
             The Flowtop Journal
           </span>
-          <h1 className="text-display font-display font-normal tracking-tight text-fg">
-            Water, materials & considered living
+          <h1 className="text-display font-display font-normal leading-tight tracking-tight text-fg">
+            Water, materials &amp; considered living
           </h1>
-          <p className="text-body text-fg-muted leading-relaxed">
+          <p className="text-body md:text-title text-fg-muted max-w-2xl leading-relaxed">
             Essays on architectural restraint, metallurgical purity, and considered everyday rituals.
           </p>
         </header>
 
         {/* Category Filter Pills */}
-        <nav aria-label="Journal categories" className="flex flex-wrap items-center gap-space-2 pb-space-2 border-b border-border">
+        <nav
+          aria-label="Journal categories"
+          className="flex items-center gap-space-2 overflow-x-auto pb-space-4 scrollbar-none border-b border-border"
+        >
           <Link
             href="/journal"
-            className={`min-h-[44px] px-space-4 py-space-2 rounded-full text-small font-medium transition-colors duration-fast focus-ring flex items-center ${
+            className={`min-h-touch px-space-5 py-space-2 rounded-pill text-caption md:text-small transition-colors duration-fast focus-ring whitespace-nowrap flex items-center ${
               !parsed.category
-                ? 'bg-primary text-on-primary'
-                : 'bg-surface text-fg hover:bg-surface-solid border border-border'
+                ? 'bg-primary text-on-primary font-medium shadow-sm'
+                : 'bg-surface-solid text-fg hover:bg-surface border border-border-strong font-regular'
             }`}
           >
             All Articles
@@ -120,10 +123,10 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
               <Link
                 key={cat.slug}
                 href={buildJournalHref('/journal', parsed, { category: cat.slug, page: 1 })}
-                className={`min-h-[44px] px-space-4 py-space-2 rounded-full text-small font-medium transition-colors duration-fast focus-ring flex items-center ${
+                className={`min-h-touch px-space-5 py-space-2 rounded-pill text-caption md:text-small transition-colors duration-fast focus-ring whitespace-nowrap flex items-center ${
                   isActive
-                    ? 'bg-primary text-on-primary'
-                    : 'bg-surface text-fg hover:bg-surface-solid border border-border'
+                    ? 'bg-primary text-on-primary font-medium shadow-sm'
+                    : 'bg-surface-solid text-fg hover:bg-surface border border-border-strong font-regular'
                 }`}
               >
                 {cat.label}
@@ -150,17 +153,20 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
             }
           />
         ) : (
-          <div className="flex flex-col gap-space-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-6">
+          <div className="flex flex-col gap-space-8 pb-space-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-6">
               {articles.map((art) => (
                 <Link
                   key={art.id}
                   href={`/journal/${art.slug}`}
-                  className="group flex flex-col focus-ring rounded-lg"
+                  className="group flex flex-col focus-ring rounded-md"
                 >
-                  <Card variant="raised" className="flex flex-col h-full overflow-hidden hover:shadow-md transition-shadow duration-fast">
+                  <Card
+                    variant="flat"
+                    className="flex flex-col h-full overflow-hidden hover:shadow-lg transition-all duration-base"
+                  >
                     {/* Cover Image */}
-                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-solid">
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface">
                       <Image
                         src={art.coverImage}
                         alt={art.title}
@@ -173,32 +179,44 @@ export default async function JournalPage({ searchParams }: JournalPageProps) {
                       />
                     </div>
 
-                    <Card.Header>
-                      <div className="flex items-center justify-between w-full gap-space-2">
-                        <Badge variant="primary">{art.category}</Badge>
-                        <span className="text-caption text-fg-muted whitespace-nowrap">
+                    {/* Unified Article Card Content */}
+                    <div className="p-space-6 flex flex-col flex-1">
+                      <div className="flex items-center justify-between w-full gap-space-2 text-caption text-fg-muted mb-space-3">
+                        <Badge
+                          variant="primary"
+                          className="border-transparent px-space-3 py-space-1 font-medium"
+                        >
+                          {art.category}
+                        </Badge>
+                        <time
+                          dateTime={art.publishedAt}
+                          className="text-caption text-fg-muted font-regular whitespace-nowrap"
+                        >
                           {formatDate(art.publishedAt)}
-                        </span>
+                        </time>
                       </div>
-                    </Card.Header>
 
-                    <Card.Body className="flex-1 flex flex-col gap-space-2">
-                      <Card.Title as="h2" className="line-clamp-2 group-hover:text-primary transition-colors duration-fast">
+                      <h2 className="text-title font-semibold tracking-tight text-fg group-hover:text-primary transition-colors duration-fast leading-snug mb-space-2 line-clamp-2">
                         {art.title}
-                      </Card.Title>
-                      <p className="text-small text-fg-muted line-clamp-3 leading-relaxed">
+                      </h2>
+
+                      <p className="text-small text-fg-muted line-clamp-3 leading-relaxed mb-space-6 font-regular">
                         {art.excerpt}
                       </p>
-                    </Card.Body>
 
-                    <Card.Footer>
-                      <div className="flex items-center justify-between w-full text-caption text-fg-muted font-medium">
+                      <div className="mt-auto pt-space-4 border-t border-border flex items-center justify-between w-full text-caption text-fg-muted font-medium">
                         <span>{art.readTimeMinutes} min read</span>
-                        <span className="text-primary group-hover:translate-x-0.5 transition-transform duration-fast">
-                          Read article &rarr;
+                        <span className="text-fg group-hover:text-primary transition-colors duration-fast inline-flex items-center gap-space-1 font-medium">
+                          <span>Read article</span>
+                          <span
+                            className="inline-block transition-transform duration-fast group-hover:translate-x-0.5"
+                            aria-hidden="true"
+                          >
+                            &rarr;
+                          </span>
                         </span>
                       </div>
-                    </Card.Footer>
+                    </div>
                   </Card>
                 </Link>
               ))}

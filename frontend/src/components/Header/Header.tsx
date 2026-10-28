@@ -158,15 +158,15 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
       {/* Header Container (Fixed 64px height to avoid layout shift) */}
       <header
         className={[
-          'sticky top-0 z-sticky w-full h-space-8 transition-colors duration-fast select-none',
+          'sticky top-0 z-sticky w-full h-space-8 transition-colors duration-fast select-none border-b border-border',
           isScrolled
-            ? 'bg-surface-solid/95 backdrop-blur-md border-b border-border shadow-sm'
-            : 'bg-surface/90 backdrop-blur-sm border-b border-transparent',
+            ? 'bg-surface-solid/95 backdrop-blur-md shadow-sm'
+            : 'bg-surface-solid',
         ]
           .filter(Boolean)
           .join(' ')}
       >
-        <div className="max-w-7xl mx-auto h-full px-space-4 md:px-space-6 flex items-center justify-between gap-space-4">
+        <div className="container-page h-full flex items-center justify-between gap-space-4">
           {/* Left: Hamburger (Mobile) + Wordmark */}
           <div className="flex items-center gap-space-3">
             <button
@@ -201,7 +201,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
               className="inline-flex items-center gap-space-2 text-fg focus-ring rounded-sm py-space-1 px-space-1"
               aria-label="Flowtop - Go to homepage"
             >
-              <span className="font-display font-semibold tracking-tight text-title text-primary uppercase">
+              <span className="font-display font-semibold tracking-wider text-title text-primary uppercase">
                 FLOWTOP
               </span>
             </Link>

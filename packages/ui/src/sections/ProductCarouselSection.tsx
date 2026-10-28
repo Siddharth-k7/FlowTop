@@ -147,7 +147,7 @@ export function ProductCarouselSection({
             {safeViewAll && (
               <Link
                 href={safeViewAll}
-                className="text-small font-medium text-primary hover:text-primary-hover focus-ring inline-flex items-center gap-space-1 p-space-2 rounded-sm"
+                className="text-small font-medium text-primary hover:underline focus-ring inline-flex items-center gap-space-1 p-space-2 rounded-sm"
               >
                 <span>View All</span>
                 <span aria-hidden="true">→</span>
@@ -160,7 +160,7 @@ export function ProductCarouselSection({
                 type="button"
                 onClick={() => setIsPaused((prev) => !prev)}
                 aria-label={isPaused ? 'Resume product carousel' : 'Pause product carousel'}
-                className="min-w-touch min-h-touch px-space-3 rounded-sm border border-border bg-surface-solid text-fg text-caption font-medium focus-ring"
+                className="min-w-touch min-h-touch px-space-3 rounded-pill border border-border-strong bg-surface-solid text-fg text-caption font-medium focus-ring"
               >
                 {isPaused ? 'Play' : 'Pause'}
               </button>
@@ -172,9 +172,9 @@ export function ProductCarouselSection({
               onClick={() => scrollToIndex(activeIndex - 1)}
               disabled={activeIndex === 0}
               aria-label="Previous products"
-              className="min-w-touch min-h-touch flex items-center justify-center rounded-sm border border-border bg-surface-solid text-fg hover:bg-surface-light disabled:opacity-40 disabled:cursor-not-allowed focus-ring transition-colors shadow-xs"
+              className="min-w-touch min-h-touch flex items-center justify-center rounded-pill border border-border-strong bg-surface-solid text-fg hover:border-fg disabled:opacity-40 disabled:cursor-not-allowed focus-ring transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -185,9 +185,9 @@ export function ProductCarouselSection({
               onClick={() => scrollToIndex(activeIndex + 1)}
               disabled={activeIndex >= items.length - 1}
               aria-label="Next products"
-              className="min-w-touch min-h-touch flex items-center justify-center rounded-sm border border-border bg-surface-solid text-fg hover:bg-surface-light disabled:opacity-40 disabled:cursor-not-allowed focus-ring transition-colors shadow-xs"
+              className="min-w-touch min-h-touch flex items-center justify-center rounded-pill border border-border-strong bg-surface-solid text-fg hover:border-fg disabled:opacity-40 disabled:cursor-not-allowed focus-ring transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -202,7 +202,7 @@ export function ProductCarouselSection({
         {/* Scroll-Snap Track: swipe works without JS */}
         <div
           ref={trackRef}
-          className="flex gap-space-4 md:gap-space-6 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-space-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full"
+          className="flex gap-space-4 md:gap-space-5 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-space-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden w-full"
         >
           {items.map((product, idx) => (
             <div
@@ -214,7 +214,7 @@ export function ProductCarouselSection({
               role="group"
               aria-roledescription="slide"
               aria-label={`${idx + 1} of ${items.length}`}
-              className="snap-start shrink-0 w-[260px] sm:w-[280px] md:w-[320px] lg:w-[340px]"
+              className="snap-start shrink-0 w-64 sm:w-72 md:w-80"
             >
               <ProductCard
                 product={product}
@@ -238,13 +238,13 @@ export function ProductCarouselSection({
                 onClick={() => scrollToIndex(idx)}
                 aria-label={`Go to slide ${idx + 1}`}
                 aria-current={idx === activeIndex ? 'true' : undefined}
-                className={`min-w-touch min-h-touch flex items-center justify-center focus-ring rounded-full`}
+                className="min-w-touch min-h-touch flex items-center justify-center focus-ring rounded-pill"
               >
                 <span
-                  className={`block rounded-full transition-all duration-base ${
+                  className={`block rounded-pill transition-all duration-base ${
                     idx === activeIndex
-                      ? 'bg-primary w-6 h-2'
-                      : 'bg-border-input hover:bg-fg-muted w-2 h-2'
+                      ? 'bg-primary w-6 h-1.5'
+                      : 'bg-border-strong hover:bg-fg-muted w-1.5 h-1.5'
                   }`}
                 />
               </button>

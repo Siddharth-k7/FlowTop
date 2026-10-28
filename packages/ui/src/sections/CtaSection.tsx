@@ -71,8 +71,8 @@ export function CtaSection({
         {/* Optional Body */}
         {config.body && (
           <p
-            className={`text-body leading-relaxed max-w-measure mb-space-6 ${
-              isDarkBg ? 'text-white/90' : 'text-fg-muted'
+            className={`text-body md:text-title leading-relaxed tracking-wide max-w-measure mb-space-6 ${
+              isDarkBg ? 'text-white/80' : 'text-fg-muted'
             }`}
           >
             {config.body}
@@ -81,12 +81,13 @@ export function CtaSection({
 
         {/* Action: Button Mode */}
         {isButtonMode && config.cta && safeButtonUrl && (
-          <div className="pt-space-2">
+          <div className="pt-space-1">
             <a
               href={safeButtonUrl}
               className={buttonClasses({
                 variant: config.cta.style === 'secondary' ? 'secondary' : 'primary',
-                size: 'lg',
+                size: 'md',
+                className: 'px-space-6',
               })}
             >
               {config.cta.label}

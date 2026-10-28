@@ -11,11 +11,11 @@ export interface FooterProps {
 export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
   return (
     <footer className="w-full bg-surface-solid border-t border-border pt-space-8 pb-space-6 text-fg select-none">
-      <div className="max-w-7xl mx-auto px-space-4 md:px-space-6 flex flex-col gap-space-8">
+      <div className="container-page flex flex-col gap-space-8">
         {/* Brand & Introduction */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-4 border-b border-border pb-space-6">
-          <div className="flex flex-col gap-space-2 max-w-lg">
-            <span className="font-display font-semibold tracking-tight text-headline text-primary uppercase">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-space-6 border-b border-border pb-space-7">
+          <div className="flex flex-col gap-space-2 max-w-md">
+            <span className="font-display font-semibold tracking-wider text-headline text-primary uppercase">
               FLOWTOP
             </span>
             <p className="text-small text-fg-muted leading-relaxed">
@@ -24,7 +24,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
           </div>
 
           {/* Social Icons */}
-          <div className="flex items-center gap-space-2">
+          <div className="flex items-center gap-space-3 md:self-center">
             {socialLinks.map((social) => (
               <a
                 key={social.id}
@@ -32,7 +32,7 @@ export function Footer({ columns, socialLinks, legalNotice }: FooterProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={social.label}
-                className="min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg-muted hover:text-primary transition-colors focus-ring"
+                className="min-w-touch min-h-touch flex items-center justify-center rounded-pill border border-border text-fg-muted hover:text-primary hover:border-primary transition-colors focus-ring"
               >
                 {social.platform === 'instagram' && (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

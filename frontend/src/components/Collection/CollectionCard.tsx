@@ -37,30 +37,24 @@ export function CollectionCard({ collection, priority = false }: CollectionCardP
       </div>
 
       {/* Card Content */}
-      <div className="p-space-6 flex flex-col flex-1 justify-between gap-space-4">
+      <div className="p-space-6 flex flex-col flex-1 justify-between gap-space-5">
         <div className="flex flex-col gap-space-2">
-          <span className="text-caption font-medium tracking-wide uppercase text-primary">
+          <span className="text-caption font-semibold tracking-widest uppercase text-fg-muted">
             {productCountText}
           </span>
-          <h2 className="font-display font-light text-headline tracking-tight text-fg group-hover:text-primary transition-colors">
+          <h2 className="font-display font-light text-title md:text-headline tracking-tight text-fg group-hover:text-primary transition-colors">
             {collection.name}
           </h2>
-          <p className="text-body text-fg-muted line-clamp-3 leading-relaxed">
+          <p className="text-caption md:text-small text-fg-muted font-light line-clamp-3 leading-relaxed">
             {collection.description || collection.tagline}
           </p>
         </div>
 
-        <div className="pt-space-2 inline-flex items-center gap-space-2 text-small font-medium text-fg group-hover:text-primary transition-colors">
+        <div className="pt-space-1 inline-flex items-center gap-space-2 text-caption font-semibold text-fg group-hover:text-primary transition-colors">
           <span>Explore Collection</span>
-          <svg
-            className="w-4 h-4 transition-transform duration-300 ease-out group-hover:translate-x-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
+          <span className="transition-transform duration-base group-hover:translate-x-1" aria-hidden="true">
+            →
+          </span>
         </div>
       </div>
     </Link>

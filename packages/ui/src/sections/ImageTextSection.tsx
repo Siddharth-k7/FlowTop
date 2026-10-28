@@ -60,10 +60,10 @@ export function ImageTextSection({
 
   return (
     <SectionShell layout={config.layout} headingId={headingId} className={className}>
-      <div className={`flex ${mobileOrderClass} ${sideClass} gap-space-8 md:gap-space-12 items-center w-full`}>
+      <div className={`flex ${mobileOrderClass} ${sideClass} gap-space-7 lg:gap-space-8 items-center w-full`}>
         {/* Image Column */}
         <div className={`${ratioClass} w-full shrink-0`}>
-          <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border border-border shadow-md bg-surface">
+          <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] rounded-lg overflow-hidden border border-border bg-surface-light">
             {imageUrl ? (
               <Picture
                 desktopSrc={imageUrl}
@@ -72,11 +72,11 @@ export function ImageTextSection({
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="w-full h-full object-cover"
                 width={1200}
-                height={900}
+                height={750}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-surface-light text-fg-muted">
-                <span className="text-small font-medium">Architectural Imagery</span>
+                <span className="text-small tracking-wide font-regular">Architectural Imagery</span>
               </div>
             )}
           </div>
@@ -86,13 +86,13 @@ export function ImageTextSection({
         <div className="flex-1 flex flex-col justify-center w-full">
           <h2
             id={headingId}
-            className="font-display font-light text-headline tracking-tight text-fg mb-space-4 leading-tight"
+            className="font-display font-light text-headline md:text-display tracking-tight text-fg mb-space-4 leading-tight"
           >
             {config.heading}
           </h2>
 
           {/* Plain text paragraphs */}
-          <div className="flex flex-col gap-space-4 text-body text-fg-muted leading-relaxed max-w-measure mb-space-6">
+          <div className="flex flex-col gap-space-4 text-body md:text-title font-regular text-fg-muted leading-relaxed max-w-md mb-space-6">
             {paragraphs.map((para, idx) => (
               <p key={idx}>{para}</p>
             ))}
@@ -106,6 +106,7 @@ export function ImageTextSection({
                 className={buttonClasses({
                   variant: config.cta.style === 'secondary' ? 'secondary' : 'primary',
                   size: 'md',
+                  className: 'px-space-6',
                 })}
               >
                 {config.cta.label}

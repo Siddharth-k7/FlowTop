@@ -82,21 +82,26 @@ export function ProductCard({
   return (
     <article
       data-product-id={id}
-      className={`group relative flex flex-col bg-surface-solid border rounded-md overflow-hidden transition-all duration-base hover:shadow-md ${
+      className={`group relative flex flex-col justify-between bg-surface-solid border rounded-md overflow-hidden transition-all duration-base hover:shadow-lg ${
         highlight
           ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface-solid border-primary'
           : 'border-border'
-      } ${isEditorial ? 'p-space-6' : isCompact ? 'p-space-3' : 'p-space-4'} ${className}`}
+      } ${isEditorial ? 'p-space-5' : isCompact ? 'p-space-3' : 'p-space-3'} ${className}`}
     >
-      {/* Placement Badge from View Model (never derived) */}
-      {badge && (
-        <div className="absolute top-space-3 left-space-3 z-raised">
-          <Badge variant="neutral">{badge}</Badge>
-        </div>
-      )}
-
       {/* Product Image Frame */}
-      <div className="relative w-full aspect-square rounded-sm overflow-hidden bg-surface mb-space-3">
+      <div className="relative w-full aspect-[4/5] rounded-sm overflow-hidden bg-surface">
+        {/* Placement Badge from View Model (never derived) */}
+        {badge && (
+          <div className="absolute top-space-3 left-space-3 z-raised">
+            <Badge
+              variant="neutral"
+              className="bg-surface-solid/95 text-fg border-transparent shadow-sm font-semibold"
+            >
+              {badge}
+            </Badge>
+          </div>
+        )}
+
         {primaryUrl ? (
           <>
             <Picture
@@ -104,20 +109,20 @@ export function ProductCard({
               alt={primaryAlt}
               priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              className={`w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.03] ${
+              className={`w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-105 ${
                 hoverUrl ? 'group-hover:opacity-0' : ''
               }`}
               width={600}
-              height={600}
+              height={750}
             />
             {hoverUrl && (
               <Picture
                 desktopSrc={hoverUrl}
                 alt={hoverAlt}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                className="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 group-hover:scale-[1.03]"
+                className="absolute inset-0 w-full h-full object-cover transition-all duration-500 ease-out opacity-0 group-hover:opacity-100 group-hover:scale-105"
                 width={600}
-                height={600}
+                height={750}
               />
             )}
           </>
@@ -129,7 +134,7 @@ export function ProductCard({
       </div>
 
       {/* Card Details */}
-      <div className="flex flex-col flex-1 justify-between gap-space-2">
+      <div className="flex flex-col flex-1 justify-between gap-space-1 pt-space-4 pb-space-2 px-space-1">
         <div className="flex flex-col gap-space-1">
           {sku && isEditorial && (
             <span className="text-caption font-mono text-fg-muted tracking-wider">
@@ -137,7 +142,7 @@ export function ProductCard({
             </span>
           )}
 
-          <h3 className="font-display font-light text-body tracking-tight text-fg group-hover:text-primary transition-colors line-clamp-2">
+          <h3 className="font-body font-regular text-small text-fg group-hover:text-primary transition-colors line-clamp-2">
             <Link
               href={`/products/${slug}`}
               className="focus-ring outline-none after:absolute after:inset-0"
@@ -156,7 +161,7 @@ export function ProductCard({
                 key={swatch.id}
                 title={swatch.name}
                 aria-label={swatch.name}
-                className="w-3.5 h-3.5 rounded-full border border-border shadow-xs bg-surface-solid"
+                className="w-3.5 h-3.5 rounded-pill border border-border shadow-xs bg-surface-solid"
               />
             ))}
           </div>
@@ -167,7 +172,7 @@ export function ProductCard({
           <div className="flex items-baseline gap-space-2">
             {formattedSalePrice ? (
               <>
-                <span className="text-small font-medium text-fg">
+                <span className="text-small font-semibold text-fg">
                   {formattedSalePrice}
                 </span>
                 <span className="text-caption text-fg-muted line-through">
@@ -175,7 +180,7 @@ export function ProductCard({
                 </span>
               </>
             ) : formattedPrice ? (
-              <span className="text-small font-medium text-fg">
+              <span className="text-small font-semibold text-fg">
                 {formattedPrice}
               </span>
             ) : (
