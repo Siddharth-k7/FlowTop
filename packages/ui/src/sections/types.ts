@@ -282,6 +282,9 @@ export type SectionDataMap = Record<
     products?: ProductCardView[];
     collection?: CollectionShowcaseView;
     images?: GalleryImage[];
+    desktopImageUrl?: string | null;
+    mobileImageUrl?: string | null;
+    imageAlt?: string;
   }
 >;
 

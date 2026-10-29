@@ -65,7 +65,21 @@ export async function resolveSectionData(
     }
 
     try {
-      if (section.type === 'product_carousel') {
+      if (section.type === 'hero') {
+        const config = section.config;
+        const resolveHeroMedia = (id?: string | null): string | null => {
+          if (!id) return null;
+          if (id.startsWith('http') || id.startsWith('/')) return id;
+          return '/images/hero-bath.jpg';
+        };
+        dataMap[section.id] = {
+          ...dataMap[section.id],
+          desktopImageUrl: resolveHeroMedia(config.desktopImageId),
+          mobileImageUrl: resolveHeroMedia(config.mobileImageId),
+          imageAlt:
+            config.headline || 'Luxury architectural bathroom featuring Flowtop brassware',
+        };
+      } else if (section.type === 'product_carousel') {
         const config = section.config;
         let products: ProductCardView[] = [];
 

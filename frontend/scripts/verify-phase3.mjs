@@ -87,7 +87,7 @@ function recordResult(id, name, status, evidence) {
   assert.ok(norm1 && norm2);
   assert.equal(norm1.id, 'sec-hero-01');
   assert.equal(norm2.id, 'sec-hero-02-copy');
-  assert.equal(norm1.config.headline, 'The art of everyday water');
+  assert.equal(norm1.config.headline, 'The art of everyday water.');
   assert.equal(norm2.config.headline, 'Second Featured Narrative');
   assert.deepEqual(norm1.config.layout, norm2.config.layout);
 

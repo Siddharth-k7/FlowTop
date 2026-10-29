@@ -75,6 +75,9 @@ export function SectionRenderer({
             key={section.id}
             config={config}
             isFirst={isFirst}
+            desktopImageUrl={sectionData?.desktopImageUrl}
+            mobileImageUrl={sectionData?.mobileImageUrl}
+            imageAlt={sectionData?.imageAlt}
           />
         );
         break;

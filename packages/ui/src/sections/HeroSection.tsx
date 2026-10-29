@@ -42,10 +42,33 @@ export function HeroSection({
   const headingId = `hero-heading-${config.headline.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 32)}`;
 
   // Safe alt resolution: alt text required; missing alt gets alt="" and console warning, never filename
-  const safeAlt = typeof imageAlt === 'string' && imageAlt.trim().length > 0 ? imageAlt.trim() : '';
+  const resolvedAltInput =
+    imageAlt ?? (config.desktopImageId === 'med-hero-bath' ? config.headline : undefined);
+  const safeAlt =
+    typeof resolvedAltInput === 'string' && resolvedAltInput.trim().length > 0
+      ? resolvedAltInput.trim()
+      : '';
   if (!safeAlt) {
     console.warn('[HeroSection] Image missing alt text; provided decorative alt="".');
   }
+
+  const resolvedDesktopUrl =
+    desktopImageUrl ??
+    (config.desktopImageId === 'med-hero-bath'
+      ? '/images/hero-bath.jpg'
+      : config.desktopImageId &&
+        (config.desktopImageId.startsWith('http') || config.desktopImageId.startsWith('/'))
+      ? config.desktopImageId
+      : null);
+
+  const resolvedMobileUrl =
+    mobileImageUrl ??
+    (config.mobileImageId === 'med-hero-bath-mobile'
+      ? '/images/hero-bath.jpg'
+      : config.mobileImageId &&
+        (config.mobileImageId.startsWith('http') || config.mobileImageId.startsWith('/'))
+      ? config.mobileImageId
+      : null);
 
   const isFullBleed = config.layout?.width === 'full';
   const frameClasses = isFullBleed
@@ -65,10 +88,11 @@ export function HeroSection({
     .filter((cta): cta is typeof cta & { safeUrl: string } => cta.safeUrl !== null);
 
   const hasMedia =
-    (config.mediaType === 'image' && Boolean(desktopImageUrl || config.desktopImageId)) ||
+    (config.mediaType === 'image' && Boolean(resolvedDesktopUrl || config.desktopImageId)) ||
     (config.mediaType === 'video' && Boolean(config.videoUrl));
 
   const isOverlayNone = config.overlay === 'none';
+  const waterHeadlineMatch = config.headline.match(/^(The art of everyday)\s+(water\.?)$/i);
 
   return (
     <SectionShell layout={config.layout} headingId={headingId} className={className}>
@@ -83,13 +107,13 @@ export function HeroSection({
             {config.mediaType === 'video' && config.videoUrl ? (
               <HeroVideo
                 videoUrl={config.videoUrl}
-                posterUrl={posterUrl || desktopImageUrl}
+                posterUrl={posterUrl || resolvedDesktopUrl}
                 ariaLabel={safeAlt || config.headline}
               />
-            ) : desktopImageUrl ? (
+            ) : resolvedDesktopUrl ? (
               <Picture
-                desktopSrc={desktopImageUrl}
-                mobileSrc={mobileImageUrl}
+                desktopSrc={resolvedDesktopUrl}
+                mobileSrc={resolvedMobileUrl}
                 alt={safeAlt}
                 priority={isFirst}
                 className="w-full h-full object-cover"
@@ -103,7 +127,8 @@ export function HeroSection({
             {!isOverlayNone && (
               <>
                 <div className={`absolute inset-0 ${overlayClass} pointer-events-none`} />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/25 to-ink/60 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/20 to-ink/55 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r from-ink/65 via-ink/20 to-transparent pointer-events-none" />
               </>
             )}
           </div>
@@ -138,7 +163,10 @@ export function HeroSection({
         >
           {hasMedia && !isOverlayNone && (
             <div className="inline-flex items-center gap-space-2 px-space-3 py-space-1 rounded-pill bg-white/10 backdrop-blur-md border border-white/20 text-white text-caption font-medium self-start mb-space-4">
-              <span className="w-1.5 h-1.5 rounded-pill bg-purple-pale" aria-hidden="true" />
+              <span
+                className="w-2.5 h-2.5 rounded-pill rounded-tl-none rotate-45 border border-purple-pale bg-purple-pale/30 inline-block"
+                aria-hidden="true"
+              />
               <span>Flowtop Series 2026</span>
             </div>
           )}
@@ -148,7 +176,19 @@ export function HeroSection({
             id={headingId}
             className="font-display font-light text-display tracking-tight leading-tight mb-space-3"
           >
-            {config.headline}
+            {waterHeadlineMatch && waterHeadlineMatch[1] && waterHeadlineMatch[2] ? (
+              <>
+                {waterHeadlineMatch[1]}
+                <br />
+                <span className="italic font-serif font-normal text-purple-pale">
+                  {waterHeadlineMatch[2].endsWith('.')
+                    ? waterHeadlineMatch[2]
+                    : `${waterHeadlineMatch[2]}.`}
+                </span>
+              </>
+            ) : (
+              config.headline
+            )}
           </HeadingTag>
 
           {/* Subheading (renders with zero gap if absent) */}
@@ -194,13 +234,14 @@ export function HeroSection({
               <div className="bg-surface-solid/95 backdrop-blur-md p-space-1 sm:p-space-2 rounded-pill shadow-lg inline-flex flex-wrap items-center gap-space-2 border border-white/60 self-start">
                 {validCtas.map((cta, idx) => {
                   const isPrimary = idx === 0 && cta.style !== 'secondary' && cta.style !== 'ghost';
+                  const cleanLabel = cta.label.replace(/\s*→$/, '');
                   return isPrimary ? (
                     <a
                       key={idx}
                       href={cta.safeUrl}
                       className="inline-flex items-center gap-space-2 px-space-5 sm:px-space-6 py-space-3 rounded-pill bg-surface-inverse text-on-surface-inverse text-caption sm:text-small font-medium hover:bg-primary transition-colors group shadow-sm focus-ring min-h-touch"
                     >
-                      <span>{cta.label}</span>
+                      <span>{cleanLabel}</span>
                       <span className="transition-transform group-hover:translate-x-1" aria-hidden="true">
                         →
                       </span>
@@ -220,7 +261,7 @@ export function HeroSection({
               <div />
             )}
 
-            <div className="flex items-center gap-space-5 bg-surface-inverse/60 backdrop-blur-md border border-white/15 px-space-5 py-space-3 rounded-md text-white self-start sm:self-auto">
+            <div className="flex items-center gap-space-5 bg-ink/65 backdrop-blur-md border border-white/15 px-space-5 py-space-3 rounded-md text-white self-start sm:self-auto shadow-md">
               <div className="flex flex-col text-left">
                 <span className="text-caption uppercase tracking-widest text-white/70 font-semibold">
                   Grade

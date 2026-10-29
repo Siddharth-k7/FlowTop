@@ -20,17 +20,18 @@ export const mockPages: Record<string, PageResponse> = {
         position: 0,
         visible: true,
         config: {
-          headline: 'The art of everyday water',
-          subheading: 'Premium bathfittings designed for considered Indian homes.',
+          headline: 'The art of everyday water.',
+          subheading:
+            'Precision architectural fittings designed with enduring poise, whisper-quiet cartridges, and living patinas for considered spaces.',
           mediaType: 'image',
           desktopImageId: 'med-hero-bath',
           mobileImageId: 'med-hero-bath-mobile',
           videoUrl: null,
-          overlay: 'medium',
+          overlay: 'light',
           textPosition: 'bottom-left',
           ctas: [
-            { label: 'Explore collections', href: '/collections', style: 'primary' },
-            { label: 'View products', href: '/products', style: 'secondary' },
+            { label: 'Schedule an Architectural Consultation', href: '/contact', style: 'primary' },
+            { label: 'Explore Collections', href: '/collections', style: 'secondary' },
           ],
           layout: {
             background: 'white',
