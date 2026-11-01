@@ -1,13 +1,10 @@
 import { MOCK_MFA_CODE, MOCK_RECOVERY_CODE, SESSION_COOKIE, mockUsers } from './auth';
 import { mockMedia } from './media';
-import { mockDashboard } from './dashboard';
+import { adminRoutes } from './admin';
+import { fail, ok, type Res } from './res';
 import type { MediaAsset } from '@/types';
 
 // TODO: swap for real API. This whole file goes away on swap day.
-type Res = { status: number; json: unknown };
-const ok = (data: unknown): Res => ({ status: 200, json: { data } });
-const fail = (status: number, code: string, message: string, fields?: Record<string, string>): Res =>
-  ({ status, json: { error: { code, message, fields } } });
 
 const media: MediaAsset[] = [...mockMedia];
 const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
@@ -74,8 +71,6 @@ export async function mockRequest(path: string, method: string, body: unknown): 
   if (route === '/admin/users') {
     return me.permissions.includes('user:read') ? ok([]) : fail(403, 'FORBIDDEN', 'You do not have permission to manage users.');
   }
-  if (route === '/admin/dashboard') return ok(mockDashboard);
-
   if (route === '/admin/media' && method === 'GET') {
     const q = (params.get('search') ?? '').toLowerCase();
     const t = params.get('type');
@@ -97,7 +92,7 @@ export async function mockRequest(path: string, method: string, body: unknown): 
     }
     return ok(item);
   }
-  return fail(404, 'NOT_FOUND', 'Not found.');
+  return adminRoutes(route, method, body, params, me.permissions) ?? fail(404, 'NOT_FOUND', 'Not found.');
 }
 
 /** Mock upload target: adds the file to the in-memory library. */

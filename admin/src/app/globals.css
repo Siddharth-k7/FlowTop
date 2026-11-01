@@ -29,3 +29,4 @@ html, body { overflow-x: hidden; }
 body { background: var(--grey-100); color: var(--ink); font-family: system-ui, sans-serif; }
 :focus-visible { outline: 3px solid var(--purple-deep); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media print { aside, header, nav, [role='dialog'] { display: none !important; } body { background: #fff; } }
