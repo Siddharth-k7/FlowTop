@@ -12,6 +12,11 @@ export interface AuthUser {
   role: string | null;
   permissions: string[];
   mfaEnabled: boolean;
+  /**
+   * True for a super admin without MFA (IAM-04: super admins must have it).
+   * Such a session can only reach the MFA setup routes until MFA is on.
+   */
+  mfaSetupRequired: boolean;
 }
 
 /** A request that has passed AuthGuard. */

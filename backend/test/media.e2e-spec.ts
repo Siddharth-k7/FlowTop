@@ -4,11 +4,10 @@ import { randomUUID } from 'node:crypto';
 import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import request from 'supertest';
-import { syncPermissionsAndRoles } from '../prisma/seed-permissions';
+import { syncPermissionsAndRoles } from '../src/database/seed-permissions';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import type { RoleName } from '../src/auth';
-import { PasswordHasher } from '../src/auth/password-hasher';
 import type { Paginated } from '../src/common/dto/pagination';
 import { ErrorBody } from '../src/common/errors/error-code';
 import { PrismaService } from '../src/common/prisma/prisma.service';
@@ -17,6 +16,7 @@ import type { MediaAssetResponse } from '../src/media/dto/media.dto';
 import { LocalObjectStorage } from '../src/media/storage/local-object-storage';
 import { ObjectStorage } from '../src/media/storage/object-storage';
 import { resetDatabase } from './database';
+import { createAccount } from './accounts';
 import { jpegFile, pdfFile, pngFile, svgFile, windowsExecutable } from './fixtures/files';
 
 const PASSWORD = `test-only-${randomUUID()}`;
@@ -24,6 +24,12 @@ const UPLOAD = '/api/v1/admin/media/upload';
 const MEDIA = '/api/v1/admin/media';
 const MEDIA_DIR = process.env.MEDIA_LOCAL_DIR ?? '';
 const MB = 1024 * 1024;
+
+/** ISO 8601 UTC that Date can parse. A bare string is not enough. */
+function expectIsoUtc(value: string): void {
+  expect(value).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+  expect(Number.isNaN(Date.parse(value))).toBe(false);
+}
 
 type Uploaded = { data: MediaAssetResponse };
 
@@ -58,13 +64,7 @@ describe('Media (e2e)', () => {
   const http = () => request(app.getHttpServer());
 
   async function signInAs(role: RoleName): Promise<string> {
-    const email = `${role}@flowtop.in`;
-    const { id } = await prisma.role.findUniqueOrThrow({ where: { name: role } });
-    await prisma.user.create({
-      data: { name: role, email, passwordHash: await app.get(PasswordHasher).hash(PASSWORD), roles: { create: { roleId: id } } },
-    });
-    const res = await http().post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(200);
-    return (res.headers['set-cookie'] as unknown as string[])[0].split(';')[0];
+    return (await createAccount(app, role, { email: `${role}@flowtop.in`, password: PASSWORD })).cookie;
   }
 
   function upload(file: Buffer, filename: string, bucket: string, as: RoleName = 'marketing_admin', contentType?: string) {
@@ -101,9 +101,35 @@ describe('Media (e2e)', () => {
       const res = await upload(png, 'opel-mixer.png', 'public', 'marketing_admin', 'image/png').expect(201);
       const { data } = res.body as Uploaded;
 
-      expect(Object.keys(data).sort()).toEqual(['alt', 'height', 'id', 'mimeType', 'sizeBytes', 'url', 'variants', 'width']);
-      expect(data).toMatchObject({ alt: '', width: 4, height: 3, sizeBytes: png.length, mimeType: 'image/png', variants: {} });
+      expect(Object.keys(data).sort()).toEqual([
+        'alt',
+        'createdAt',
+        'filename',
+        'height',
+        'id',
+        'mimeType',
+        'sizeBytes',
+        'url',
+        'variants',
+        'width',
+      ]);
+      expect(data).toMatchObject({
+        alt: '',
+        filename: 'opel-mixer.png',
+        width: 4,
+        height: 3,
+        sizeBytes: png.length,
+        mimeType: 'image/png',
+        variants: {},
+      });
+      expectIsoUtc(data.createdAt);
       expect(data.url).toMatch(/^http:\/\/localhost:4000\/api\/v1\/files\/public\/[0-9a-f-]{36}\.png$/);
+
+      const fetched = await http().get(`${MEDIA}/${data.id}`).set('Cookie', cookies.marketing_admin ?? '').expect(200);
+      const got = (fetched.body as Uploaded).data;
+      expect(got.filename).toBe('opel-mixer.png');
+      expectIsoUtc(got.createdAt);
+      expect(got.createdAt).toBe(data.createdAt);
 
       const served = await http().get(pathOf(data.url)).buffer(true).expect(200);
       expect(Buffer.compare(served.body as Buffer, png)).toBe(0);
@@ -157,7 +183,7 @@ describe('Media (e2e)', () => {
     it('Phase 1 check 10: cuts off an upload over 25 MB while it is still streaming', async () => {
       const res = await upload(Buffer.concat([pdfFile(), Buffer.alloc(26 * MB)]), 'too-big.pdf', 'public').expect(413);
 
-      expect((res.body as ErrorBody).error.code).toBe('VALIDATION_FAILED');
+      expect((res.body as ErrorBody).error.code).toBe('PAYLOAD_TOO_LARGE');
       expect(await storedFiles()).toEqual([]);
     });
 
@@ -248,6 +274,11 @@ describe('Media (e2e)', () => {
       expect(body.data).toHaveLength(2);
       expect(body.meta).toEqual({ page: 1, perPage: 2, total: 3, totalPages: 2 });
       expect(body.data[0].mimeType).toBe('application/pdf');
+      expect(body.data[0].filename).toBe('opel-installation-manual.pdf');
+      expect(body.data[1].filename).toBe('kitchen-faucet.jpg');
+      expectIsoUtc(body.data[0].createdAt);
+      expectIsoUtc(body.data[1].createdAt);
+      expect(Date.parse(body.data[0].createdAt)).toBeGreaterThanOrEqual(Date.parse(body.data[1].createdAt));
     });
 
     it('filters by search and by type', async () => {
@@ -279,7 +310,9 @@ describe('Media (e2e)', () => {
 
     it('answers 404 for an unknown id and 400 for a malformed one', async () => {
       await http().get(`${MEDIA}/${randomUUID()}`).set('Cookie', cookies.marketing_admin ?? '').expect(404);
-      await http().get(`${MEDIA}/not-a-uuid`).set('Cookie', cookies.marketing_admin ?? '').expect(400);
+      const res = await http().get(`${MEDIA}/not-a-uuid`).set('Cookie', cookies.marketing_admin ?? '').expect(400);
+
+      expect((res.body as ErrorBody).error.code).toBe('BAD_REQUEST');
     });
   });
 

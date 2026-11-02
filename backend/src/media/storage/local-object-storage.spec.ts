@@ -83,8 +83,11 @@ describe('LocalObjectStorage', () => {
   it('refuses a tampered signature, a moved expiry, another key, or a different signing key', async () => {
     const key = newStorageKey('pdf');
     const { expires, signature } = signatureOf(await storage.url('private', key));
+    const lastChar = signature.slice(-1);
+    const tampered = `${signature.slice(0, -1)}${lastChar === 'A' ? 'B' : 'A'}`;
 
-    expect(storage.verifySignedUrl(key, expires, `${signature.slice(0, -1)}A`)).toBe(false);
+    expect(tampered).not.toBe(signature);
+    expect(storage.verifySignedUrl(key, expires, tampered)).toBe(false);
     expect(storage.verifySignedUrl(key, String(Number(expires) + 3600), signature)).toBe(false);
     expect(storage.verifySignedUrl(newStorageKey('pdf'), expires, signature)).toBe(false);
     expect(new LocalObjectStorage({ ...options, signingKey: randomBytes(32) }).verifySignedUrl(key, expires, signature)).toBe(false);

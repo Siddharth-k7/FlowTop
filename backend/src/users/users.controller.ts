@@ -35,11 +35,14 @@ export class UsersController {
   }
 
   /**
-   * Record-level access, not a route permission: any signed-in user may read
-   * their own account, and only user:read may read someone else's.
+   * Permission at the route, scope at the object. user:read_self (every role)
+   * lets a user through the door; UsersService.get then lets them see only
+   * their own account unless they also hold user:read. This is the reference
+   * for requireRecordAccess in backend/AGENTS.md.
    */
   @Get(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
+  @RequirePermission('user:read_self')
   async get(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() viewer: AuthUser): Promise<{ data: UserSummary }> {
     return { data: await this.users.get(viewer, id) };
   }

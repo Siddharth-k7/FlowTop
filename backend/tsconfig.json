@@ -22,7 +22,7 @@
     "incremental": true,
     "outDir": "./dist",
     "isolatedModules": true,
-    "rootDir": "."
+    "rootDir": ".."
   },
   "include": [
     "src",

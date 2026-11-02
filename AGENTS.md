@@ -38,6 +38,22 @@ Each of `backend/`, `frontend/` and `admin/` has its own AGENTS.md with rules sp
 
 5. **Never report success that did not happen.** If a save failed, an email bounced or a payment is unconfirmed, say so. A false success is worse than an error.
 
+## How we work
+
+Six rules. Each came from something that broke in Phase 1.
+Full version with the incidents: docs/11-working-rules.md
+
+1. **Ship the type before the thing.** Publish the signature, with a
+   working example and a drift test, before you write the body.
+2. **Branches live 48 hours.** Longer than that, split it and merge half.
+3. **No private type copies.** Import from `@flowtop/types` or it does not
+   exist.
+4. **Mock shapes come from the type.** Never hand-written.
+5. **Shared config changes get an output diff.** Before and after.
+6. **Real API before "done".** Mock mode is not verification.
+
+Before reporting work complete, read docs/10-review-standards.md.
+
 ## Where things are written down
 
 Read the relevant doc before you build, not after.
@@ -49,6 +65,9 @@ Read the relevant doc before you build, not after.
 | `docs/02-mvp-scope.md` | What ships in v1, what is deferred | Adding anything not already specified |
 | `docs/05-team-split.md` | Who owns what, and the seams between them | Working near a boundary |
 | `docs/06-conventions.md` | Naming, folders, patterns | Creating new files |
+| `docs/10-review-standards.md` | How to review, and when work counts as done | Writing any review, or reporting work complete |
+
+[docs/10-review-standards.md](docs/10-review-standards.md) must be read before writing any review or reporting work complete.
 
 The API contract is the agreement between four people. Changing it is a pull request all four review, never a unilateral edit.
 

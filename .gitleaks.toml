@@ -26,6 +26,18 @@ regex = '''(?i)(?:^|[\s"',])[a-z0-9_]*(?:password|passwd|pwd)["']?[ \t]*[:=][ \t
 secretGroup = 1
 keywords = ["password", "passwd", "pwd"]
 
+# Deploy config (Render's render.yaml, Kubernetes-style env lists) names a variable on one
+# line and gives its value on the next, so no single-line rule sees both. A variable whose
+# name marks it as secret must never carry a literal `value:`: it belongs in the host's
+# secret storage (Render: `sync: false`, `generateValue`, `fromDatabase`).
+[[rules]]
+id = "flowtop-secret-variable-with-literal-value"
+description = "A secret-named variable given a literal value in deploy config"
+path = '''(?i)\.ya?ml$'''
+regex = '''(?i)-\s*(?:key|name):\s*["']?[a-z0-9_]*(?:secret|password|passwd|token|api_key|access_key|private_key|encryption_key|signing_key|database_url)[a-z0-9_]*["']?[ \t]*(?:#[^\n]*)?\r?\n\+?[ \t]*value:[ \t]*["']?([^\s"'#][^\s"'#]*)'''
+secretGroup = 1
+keywords = ["key:", "name:"]
+
 # Credentials inside a connection string, in any file.
 [[rules]]
 id = "flowtop-connection-string-credentials"
@@ -38,6 +50,15 @@ keywords = ["://"]
   description = "Placeholders by shape: <...>, an interpolated ${...}, or a run of asterisks"
   regexTarget = "secret"
   regexes = ['''^(<[^>]+>|\$\{[^}]+\}|\*+)$''']
+
+[[allowlists]]
+# Render's render.yaml names each environment variable on a `- key:` line, with the value
+# (if any) on the next line. A line that only names a variable, in capitals, holds no
+# secret; the generic rule mistakes the name for a value. Values on any other line are
+# still scanned, so a real secret in render.yaml is still caught.
+description = "Environment variable names declared on their own line"
+regexTarget = "line"
+regexes = ['''^\s*-\s*key:\s*[A-Z][A-Z0-9_]*\s*(#.*)?$''']
 
 [[allowlists]]
 description = "Generated and vendored files"

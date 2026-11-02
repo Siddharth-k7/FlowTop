@@ -37,6 +37,7 @@
 /backend/src/analytics/      @dev-b
 /backend/src/search/         @dev-b
 /backend/src/_base/          @dev-b
+/backend/prisma/seed-content.ts @dev-b     
 
 # Dev C: Public Website
 /frontend/                  @dev-c

@@ -40,7 +40,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ data: LoginResponse }> {
-    return { data: respond(await this.auth.completeMfa(dto.mfaToken, dto.code, clientIp(req)), res) };
+    return { data: respond(await this.auth.completeMfa(dto.mfaToken, dto, clientIp(req)), res) };
   }
 
   @Post('logout')

@@ -1,0 +1,196 @@
+/*
+ * Flowtop design tokens.
+ *
+ * This is the ONLY file in frontend/, admin/ and packages/ui/ allowed to contain hex colours.
+ * Everything else reads these custom properties, either directly or through the Tailwind preset
+ * (packages/ui/tailwind-preset.cjs), which also reads the breakpoints below from this file.
+ *
+ * Add a token here before using a new value anywhere. Never inline it.
+ * `node packages/ui/scripts/check.mjs` verifies contrast for the pairs the components use.
+ */
+
+:root {
+  /* ---------------------------------------------------------------- Colour: brand */
+  --color-purple-deep: #5B2A86;
+  --color-purple-light: #9B6FC4;
+  --color-purple-pale: #F4EEFA;
+  --color-ink: #16121C;
+  --color-white: #FFFFFF;
+
+  /* ---------------------------------------------------------------- Colour: grey, tinted toward purple */
+  --color-grey-50: #F8F7FA;
+  --color-grey-100: #F1EFF5;
+  --color-grey-200: #E3DFEA;
+  --color-grey-300: #CEC8D8;
+  --color-grey-400: #A8A0B6;
+  --color-grey-500: #837A93;
+  --color-grey-600: #635A73;
+  --color-grey-700: #494156;
+  --color-grey-800: #2E2937;
+  --color-grey-900: #1E1A25;
+
+  /* ---------------------------------------------------------------- Colour: semantic */
+  /* Each foreground passes 4.5:1 on white and on its own tint. */
+  --color-success: #1A6B43;
+  --color-success-tint: #E7F4EC;
+  --color-warning: #8A5A00;
+  --color-warning-tint: #FCF3E2;
+  --color-error: #B42335;
+  --color-error-tint: #FCECEE;
+  --color-info: #1E5A9E;
+  --color-info-tint: #E8F0FA;
+
+  /* ---------------------------------------------------------------- Colour: roles */
+  /* Components use roles, not raw palette names, wherever a role exists. */
+  --primary: var(--color-purple-deep);
+  --primary-dark: color-mix(in srgb, var(--color-purple-deep) 80%, var(--color-ink));
+  --primary-tint: var(--color-purple-pale);
+  /* Light purple fails 4.5:1 on white. Large text, icons and dark backgrounds only. */
+  --accent: var(--color-purple-light);
+  --on-primary: var(--color-white);
+
+  --surface: var(--color-grey-50);
+  --surface-solid: var(--color-white);
+  --surface-glass: color-mix(in srgb, var(--color-white) 72%, transparent);
+  --surface-light: var(--color-purple-pale);
+  --surface-inverse: var(--color-ink);
+  --on-surface-inverse: var(--color-white);
+
+  --fg: var(--color-ink);
+  --fg-muted: var(--color-grey-600);
+  --text-primary: var(--color-ink);
+  --text-muted: var(--color-grey-600);
+
+  --border: var(--color-grey-200);
+  --border-strong: var(--color-grey-300);
+  /* Inputs need 3:1 against their background (WCAG 1.4.11), hence a darker grey. */
+  --border-input: var(--color-grey-500);
+
+  /* ---------------------------------------------------------------- Focus */
+  /* Light purple clears 3:1 on white, the page surface and ink, so one ring works everywhere. */
+  --focus-ring: var(--color-purple-light);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ---------------------------------------------------------------- Type: families */
+  /* --font-*-face is set by next/font on <html>. Without it, the system stack is used. */
+  --font-display: var(--font-display-face, "Helvetica Neue"), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --font-body: var(--font-body-face, system-ui), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+  /* ---------------------------------------------------------------- Type: weights and tracking */
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+
+  /* ---------------------------------------------------------------- Type: scale */
+  /* Fixed sizes for UI text. Title, headline and display are fluid from 360px to 1440px. */
+  --text-caption-size: 0.75rem;     /* 12px */
+  --text-caption-leading: 1rem;
+  --text-small-size: 0.875rem;      /* 14px */
+  --text-small-leading: 1.25rem;
+  --text-body-size: 1rem;           /* 16px */
+  --text-body-leading: 1.5rem;
+  --text-title-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);      /* 20px to 26px */
+  --text-title-leading: 1.3;
+  --text-headline-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.75rem);    /* 28px to 44px */
+  --text-headline-leading: 1.15;
+  --text-display-size: clamp(2.5rem, 1.8rem + 3.4vw, 4.5rem);       /* 40px to 72px */
+  --text-display-leading: 1.05;
+  --measure: 65ch;
+
+  /* ---------------------------------------------------------------- Spacing, 4px base */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 3rem;      /* 48px */
+  --space-8: 4rem;      /* 64px */
+
+  /* Minimum touch target for every interactive element. */
+  --size-touch: 2.75rem; /* 44px */
+
+  /* ---------------------------------------------------------------- Radius */
+  /* sm: inputs. md: cards, modals. lg: large panels. pill: buttons, chips. */
+  --radius-none: 0;
+  --radius-sm: 0.75rem; /* 12px */
+  --radius-md: 1.5rem;  /* 24px */
+  --radius-lg: 2.5rem;  /* 40px */
+  --radius-pill: 9999px;
+
+  /* ---------------------------------------------------------------- Shadow, tinted with the brand purple */
+  --shadow-sm:
+    0 1px 2px color-mix(in srgb, var(--color-purple-deep) 6%, transparent),
+    0 1px 3px color-mix(in srgb, var(--color-purple-deep) 4%, transparent);
+  --shadow-md:
+    0 4px 12px -2px color-mix(in srgb, var(--color-purple-deep) 8%, transparent),
+    0 2px 4px color-mix(in srgb, var(--color-purple-deep) 4%, transparent);
+  --shadow-lg:
+    0 16px 40px -8px color-mix(in srgb, var(--color-purple-deep) 12%, transparent),
+    0 4px 12px color-mix(in srgb, var(--color-purple-deep) 5%, transparent);
+
+  /* ---------------------------------------------------------------- Glass (frontend decoration only) */
+  --glass-blur: 16px;
+
+  /* ---------------------------------------------------------------- Breakpoints */
+  /* Read by the Tailwind preset to build the screens. Keep the `--breakpoint-<name>: <n>px` format. */
+  --breakpoint-xs: 360px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1440px;
+
+  /* ---------------------------------------------------------------- Containers and gutters, per breakpoint */
+  /* Max width includes the gutters. Used by the `container-page` class. */
+  --container-xs: 100%;
+  --container-md: 100%;
+  --container-lg: 100%;
+  --container-xl: 90rem;     /* 1440px */
+  --container-wide: 105rem;  /* 1680px, for layout.width "wide" */
+  --gutter-xs: var(--space-4);
+  --gutter-md: var(--space-6);
+  --gutter-lg: var(--space-7);
+  --gutter-xl: var(--space-8);
+
+  /* ---------------------------------------------------------------- Z-index layers */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+  --z-skip-link: 700;
+
+  /* ---------------------------------------------------------------- Overlay max-height constraints */
+  --max-h-dialog: 85vh;
+  --max-h-sheet: 90vh;
+
+  /* ---------------------------------------------------------------- Motion */
+  /* Animate transform and opacity only. */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.34, 1.4, 0.64, 1); /* slight overshoot */
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 400ms;
+}
+
+/*
+ * Reduced motion: no overshoot, nothing longer than 200ms.
+ * Components must still drop movement (translate, scale) here and keep only opacity,
+ * for example with Tailwind's `motion-safe:` variant.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease-emphasized: var(--ease-standard);
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --duration-slow: 200ms;
+  }
+}

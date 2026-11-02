@@ -143,12 +143,14 @@ export class MediaService {
   async toResponse(asset: MediaAsset): Promise<MediaAssetResponse> {
     return {
       id: asset.id,
+      filename: asset.filename,
       url: await this.storage.url(asset.bucket, asset.storageKey),
       alt: asset.altText,
       width: asset.width,
       height: asset.height,
       sizeBytes: asset.sizeBytes,
       mimeType: asset.mimeType,
+      createdAt: asset.createdAt.toISOString(),
       variants: readVariants(asset.variants),
     };
   }

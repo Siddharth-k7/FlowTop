@@ -1,4 +1,13 @@
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  PayloadTooLargeException,
+  ServiceUnavailableException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { ApiException } from './api.exception';
 import { toErrorResponse } from './api-exception.filter';
 import { RateLimitedException } from './rate-limited.exception';
@@ -38,11 +47,26 @@ describe('toErrorResponse', () => {
     expect(result.headers).toEqual({ 'Retry-After': '42' });
   });
 
-  it('keeps the real status for a 4xx the contract does not name', () => {
-    const result = toErrorResponse(new BadRequestException('Malformed JSON'));
+  it('gives each status its own code, and keeps VALIDATION_FAILED for 422 only', () => {
+    const codeFor = (exception: HttpException) => {
+      const { status, body } = toErrorResponse(exception);
+      return `${status} ${body.error.code}`;
+    };
 
-    expect(result.status).toBe(400);
-    expect(result.body.error.code).toBe('VALIDATION_FAILED');
+    expect(codeFor(new BadRequestException('Malformed JSON'))).toBe('400 BAD_REQUEST');
+    expect(codeFor(new PayloadTooLargeException())).toBe('413 PAYLOAD_TOO_LARGE');
+    expect(codeFor(new UnprocessableEntityException())).toBe('422 VALIDATION_FAILED');
+    expect(codeFor(new ServiceUnavailableException('Database unavailable'))).toBe('503 SERVICE_UNAVAILABLE');
+  });
+
+  it('keeps the real status for one the contract does not name, with the nearest generic code', () => {
+    const codeFor = (status: number) => {
+      const result = toErrorResponse(new HttpException('Nope', status));
+      return `${result.status} ${result.body.error.code}`;
+    };
+
+    expect(codeFor(HttpStatus.UNSUPPORTED_MEDIA_TYPE)).toBe('415 BAD_REQUEST');
+    expect(codeFor(HttpStatus.BAD_GATEWAY)).toBe('502 SERVER_ERROR');
   });
 
   it('hides the details of an unknown error behind a generic 500', () => {

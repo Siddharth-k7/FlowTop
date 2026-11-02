@@ -87,6 +87,27 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ ...validEnv, CORS_ORIGINS: 'http://localhost:3000,*' })).toThrow(/CORS_ORIGINS/);
   });
 
+  it('defaults the session cookie to SameSite=Lax and no Domain', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.SESSION_COOKIE_SAME_SITE).toBe('lax');
+    expect(env.SESSION_COOKIE_DOMAIN).toBeUndefined();
+    expect(validateEnv({ ...validEnv, SESSION_COOKIE_SAME_SITE: '' }).SESSION_COOKIE_SAME_SITE).toBe('lax');
+    expect(validateEnv({ ...validEnv, SESSION_COOKIE_DOMAIN: '  ' }).SESSION_COOKIE_DOMAIN).toBeUndefined();
+  });
+
+  it('accepts a configured SameSite and Domain', () => {
+    const env = validateEnv({ ...validEnv, SESSION_COOKIE_SAME_SITE: 'None', SESSION_COOKIE_DOMAIN: '.flowtop.in' });
+
+    expect(env.SESSION_COOKIE_SAME_SITE).toBe('none');
+    expect(env.SESSION_COOKIE_DOMAIN).toBe('.flowtop.in');
+  });
+
+  it('rejects an unknown SameSite and a Domain that is not a hostname', () => {
+    expect(() => validateEnv({ ...validEnv, SESSION_COOKIE_SAME_SITE: 'loose' })).toThrow(/SESSION_COOKIE_SAME_SITE/);
+    expect(() => validateEnv({ ...validEnv, SESSION_COOKIE_DOMAIN: 'https://flowtop.in' })).toThrow(/SESSION_COOKIE_DOMAIN/);
+  });
+
   it('never includes a variable value in the error message', () => {
     const run = () => validateEnv({ ...validEnv, PORT: fakeSecret, DATABASE_URL: `mysql://u:${fakeSecret}@h/db` });
 

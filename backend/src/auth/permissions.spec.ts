@@ -38,11 +38,17 @@ describe('permission list', () => {
   });
 
   it('keeps the super_admin-only powers away from the other roles', () => {
-    const superAdminOnly = ['user:manage', 'settings:write', 'order:export', 'audit:read'];
+    const superAdminOnly = ['user:read', 'user:manage', 'settings:write', 'order:export', 'audit:read'];
     for (const role of ['marketing_admin', 'product_manager'] as const) {
       for (const permission of superAdminOnly) {
         expect(ROLE_PERMISSIONS[role]).not.toContain(permission);
       }
+    }
+  });
+
+  it('lets every role read its own account (GET /admin/users/:id), and only that', () => {
+    for (const role of ROLES) {
+      expect(ROLE_PERMISSIONS[role]).toContain('user:read_self');
     }
   });
 });

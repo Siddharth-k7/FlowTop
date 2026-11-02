@@ -7,6 +7,15 @@
 # If it flags a test value or placeholder, change the value so it is not secret-shaped
 # (generate it at runtime). Do not bypass with --no-verify: CI runs GitGuardian anyway.
 
+# No .env file, ever, even one forced past .gitignore with `git add -f`. Only .env.example.
+staged_env=$(git diff --cached --name-only --diff-filter=ACR | grep -E '(^|/)\.env($|\.)' | grep -vE '(^|/)\.env\.example$')
+if [ -n "$staged_env" ]; then
+  echo "pre-commit: commit blocked, a .env file is staged:" >&2
+  echo "$staged_env" | sed 's/^/  /' >&2
+  echo "Unstage it with: git restore --staged <file>. Secrets belong in the host's secret storage." >&2
+  exit 1
+fi
+
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "pre-commit: gitleaks is not installed, so this commit cannot be scanned for secrets." >&2
   echo "  Windows: winget install Gitleaks.Gitleaks" >&2

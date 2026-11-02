@@ -2,6 +2,7 @@ import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -52,6 +53,32 @@ export class Env {
   /** Base URL of the admin app. Password reset links point here. */
   @IsUrl({ require_tld: false, require_protocol: true })
   ADMIN_URL!: string;
+
+  /**
+   * SameSite on the session cookie. Default lax, which is what the cookie has
+   * always used. none is for cross-site admin hosts; see docs/09-session-cookie.md.
+   */
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value !== 'string' || value.trim() === '') return 'lax';
+    return value.trim().toLowerCase();
+  })
+  @IsIn(['lax', 'strict', 'none'])
+  SESSION_COOKIE_SAME_SITE: 'lax' | 'strict' | 'none' = 'lax';
+
+  /**
+   * Domain attribute on the session cookie. Unset means host-only, which is
+   * the current cookie. A leading dot (`.flowtop.in`) covers subdomains.
+   */
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed === '' ? undefined : trimmed;
+  })
+  @IsOptional()
+  @Matches(/^\.?[A-Za-z0-9.-]+$/, {
+    message: 'SESSION_COOKIE_DOMAIN must be a hostname, optionally starting with a dot',
+  })
+  SESSION_COOKIE_DOMAIN?: string;
 
   /** 32 random bytes, base64. Encrypts MFA secrets at rest. Generate with: openssl rand -base64 32 */
   @Matches(/^[A-Za-z0-9+/]{43}=$/, {

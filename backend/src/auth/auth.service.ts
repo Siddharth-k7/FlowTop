@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { SecretBox } from '../common/crypto/secret-box';
 import { ApiException } from '../common/errors/api.exception';
 import { enforceRateLimit } from '../common/rate-limit/enforce-rate-limit';
 import { RateLimiter } from '../common/rate-limit/rate-limiter';
@@ -11,10 +10,11 @@ import {
 } from './auth.constants';
 import { AuthUser } from './auth-user';
 import { AuthRepository } from './auth.repository';
+import { SecondFactorDto } from './mfa/mfa.dto';
+import { MfaService } from './mfa/mfa.service';
 import { PasswordHasher } from './password-hasher';
 import { hashToken, newSecretToken } from './secret-token';
 import { SessionService } from './session.service';
-import { verifyTotp } from './totp';
 
 export interface SignedIn {
   requiresMfa: false;
@@ -34,7 +34,7 @@ export class AuthService {
     private readonly repository: AuthRepository,
     private readonly hasher: PasswordHasher,
     private readonly sessions: SessionService,
-    private readonly secretBox: SecretBox,
+    private readonly mfa: MfaService,
     private readonly rateLimiter: RateLimiter,
   ) {}
 
@@ -71,8 +71,11 @@ export class AuthService {
     return this.startSession(candidate.id);
   }
 
-  /** The second step. An mfaToken works once: a replay, even with a valid code, is rejected. */
-  async completeMfa(mfaToken: string, code: string, ip: string): Promise<SignedIn> {
+  /**
+   * The second step, with a TOTP code or a recovery code. An mfaToken works
+   * once, and so does each code: a replay of either is rejected.
+   */
+  async completeMfa(mfaToken: string, factor: SecondFactorDto, ip: string): Promise<SignedIn> {
     enforceRateLimit(this.rateLimiter.hit(`mfa:ip:${ip}`, AUTH_RATE_LIMITS.mfaPerIp));
 
     const now = new Date();
@@ -87,7 +90,8 @@ export class AuthService {
       throw new ApiException('UNAUTHENTICATED', AUTH_MESSAGES.mfaChallengeInvalid);
     }
 
-    if (!verifyTotp(this.secretBox.open(challenge.user.mfaSecret), code)) {
+    // Also enforces the per-account lock: 5 wrong codes in 15 minutes, across every MFA endpoint.
+    if (!(await this.mfa.checkSecondFactor(challenge.userId, challenge.user.mfaSecret, factor))) {
       await this.repository.recordMfaFailure(challenge.id, MFA_CHALLENGE_MAX_FAILURES, now);
       throw new ApiException('UNAUTHENTICATED', AUTH_MESSAGES.mfaCodeInvalid);
     }

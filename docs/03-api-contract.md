@@ -73,18 +73,35 @@ POST   /auth/login              { email, password }
                                 200 { data: { user, requiresMfa: false } }   session cookie set
                                 200 { data: { requiresMfa: true, mfaToken } } no cookie yet
 POST   /auth/mfa                { mfaToken, code } or { mfaToken, recoveryCode }
-                                200 { data: { user, requiresMfa: false } }   session cookie set
-POST   /auth/logout             204, no body. Always 204, even without a session.
+                                Exactly one of code or recoveryCode.
+                                recoveryCode is the alternative to code: one of the
+                                codes returned once by POST /auth/mfa/verify. Each works once.
+                                200, the same two shapes as POST /auth/login
+POST   /auth/logout             204, empty body. Clears the session cookie.
+                                Always 204, even without a session.
 GET    /auth/me                 200 { data: { user } }
 POST   /auth/password-reset     { email }
-                                202 { data: { message } } whether or not the account exists
+                                202 { data: { message } }
+                                Status and body are identical whether or not an account
+                                exists for that email. The message does not say which.
 POST   /auth/password-reset/confirm  { token, password }
-                                204, no body. Every session of that user is signed out.
+                                204, empty body. Every session of that user is signed out.
+POST   /auth/mfa/setup          { password }
+                                200 { data: { secret, otpauthUri, expiresAt } }
+                                Requires the session cookie. Reachable during MFA setup.
+POST   /auth/mfa/verify         { code }
+                                200 { data: { recoveryCodes: string[] } }
+                                Requires the session cookie. Reachable during MFA setup.
+                                recoveryCodes is returned once and is not stored in clear text.
 ```
+
+`secret` is base32, for typing in when a QR code cannot be scanned. `otpauthUri` is an `otpauth://` URI the admin renders as a QR code. `expiresAt` is ISO 8601 UTC. Setup does nothing to the account until verify succeeds.
 
 Session is an httpOnly cookie. No token is ever returned in a body for the frontend to store.
 
-`POST /auth/mfa` takes exactly one of `code` (6 digits from the authenticator app) or `recoveryCode` (one of the codes shown at setup, format `ABCD-EFGH-JKMN-PQRS`; each works once). Both, or neither, is a 422. A wrong code, or an expired or used `mfaToken`, is 401: start again from `/auth/login`. Five wrong codes in 15 minutes lock MFA for that account (429, across every MFA endpoint).
+**403 `MFA_SETUP_REQUIRED`.** A super admin who has not finished MFA enrolment gets this on every route behind `AuthGuard`. It is decided from the database on each request, so it lifts as soon as MFA is on. Two routes are exempt, because they are how enrolment happens: `POST /auth/mfa/setup` and `POST /auth/mfa/verify`. Both stay reachable during MFA setup. Every other guarded route, including `GET /auth/me`, answers 403 with this code until enrolment is done.
+
+`POST /auth/mfa` takes exactly one of `code` (6 digits from the authenticator app) or `recoveryCode` (one of the codes shown at setup, format `ABCD-EFGH-JKMN-PQRS`; each works once). Both, or neither, is a 422. A wrong code, or an expired or used `mfaToken`, is 401: start again from `/auth/login`. Five failures in 15 minutes lock MFA for that account (429 with `Retry-After`, across every MFA endpoint, a correct code included). Failures are wrong codes, and wrong passwords at `/auth/mfa/setup`.
 
 ```json
 User {
@@ -96,6 +113,8 @@ User {
   "mfaEnabled": false,
   "mfaSetupRequired": false
 }
+
+`role` is null only for a user with no role assigned yet. `mfaSetupRequired` is true for a super admin who has not finished MFA enrolment: that session reaches only `POST /auth/mfa/setup` and `POST /auth/mfa/verify` until it is false. It is recomputed from the database on every request.
 ```
 
 `permissions` is for showing and hiding UI only. The server checks again on every call.
@@ -508,30 +527,40 @@ Navigation is replaced wholesale, same reasoning as specifications.
 ## Media (Dev A)
 
 ```
-POST   /admin/media/upload          multipart: file, bucket ("public"|"private"), altText (optional)
-                                    201 { data: MediaAsset }
+POST   /admin/media/upload          multipart. { bucket: "public"|"private", altText? }
+                                    Requires media:write. 201 { data: MediaAsset }
 GET    /admin/media?search=&type=&page=&perPage=
-                                    type is "image" or "document". search matches filename or alt text.
-GET    /admin/media/:id             200 { data: MediaAsset }
-PATCH  /admin/media/:id             { altText }   200 { data: MediaAsset }
-DELETE /admin/media/:id             204. 409 if still referenced
+                                    Requires media:read.
+GET    /admin/media/:id             Requires media:read. 200 { data: MediaAsset }
+PATCH  /admin/media/:id             { altText }. Requires media:write.
+DELETE /admin/media/:id             Requires media:delete. 204. 409 if still referenced
 ```
 
-- One file per upload, at most 25 MB: larger is 413 `PAYLOAD_TOO_LARGE`, cut off while it streams. The type is checked from the file's bytes, not its name or `Content-Type`; an unsupported type is 422 with `fields.file`.
-- `altText` is at most 500 characters. It comes back as `alt`.
-- Permissions: upload and PATCH need `media:write`, the reads `media:read`, DELETE `media:delete`.
+`media:read` is the permission for the list and for one asset. `media:delete` is the permission for delete. `media:write` is the permission for upload and for editing alt text.
+
+`type` is `image` or `document`. It is not `pdf`. `document` selects PDFs. Any other value, including `pdf`, is 422.
+
+`perPage` is the page size. It defaults to 25. The maximum is 100. A larger `perPage` is 422.
+
+`search` matches the display filename and the alt text.
+
+One file per upload. Size limits: images (JPEG, PNG, WebP, AVIF) up to 15 MB and PDFs up to 25 MB. Over 25 MB the upload is cut off while it streams: 413 `PAYLOAD_TOO_LARGE`. An image over 15 MB is 422 with `fields.file`. The type is checked from the file's bytes, not its name or `Content-Type`; an unsupported type is 422 with `fields.file`.
+
+`altText` is at most 500 characters. It comes back as `alt`. `PATCH` answers 200 `{ data: MediaAsset }`.
 
 **MediaAsset:**
 
 ```json
 {
   "id": "uuid",
+  "filename": "opel-basin-mixer.jpg",
   "url": "https://cdn.../opel-basin-mixer.jpg",
   "alt": "Opel Basin Mixer in chrome",
   "width": 2000,
   "height": 2000,
   "sizeBytes": 482000,
   "mimeType": "image/jpeg",
+  "createdAt": "2026-10-12T04:30:00.000Z",
   "variants": {
     "thumb": "https://cdn.../thumb.webp",
     "medium": "https://cdn.../medium.webp",
@@ -540,9 +569,11 @@ DELETE /admin/media/:id             204. 409 if still referenced
 }
 ```
 
-Private-bucket assets return a signed `url` that expires (15 minutes). Never a permanent public link.
+`width` and `height` are null for anything that is not an image, such as a PDF. `variants` is `{}` until background image processing ships (task 2.1); do not assume thumb, medium or large are present.
 
-`width` and `height` are `null` for documents. **`variants` is `{}` until resized versions exist (task 2.1).** Until then, use `url` and treat each variant key as optional.
+`filename` is the cleaned original upload name, for display. It is not the last segment of `url`. That segment is the storage key. `createdAt` is ISO 8601 UTC. The list is newest `createdAt` first.
+
+Private-bucket assets return a signed `url` that expires after 15 minutes. Never a permanent public link.
 
 ---
 

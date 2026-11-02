@@ -3,15 +3,36 @@ import { SESSION_TTL_MS } from './auth.constants';
 
 export const SESSION_COOKIE = 'flowtop_session';
 
-/** httpOnly: no script can read it. Secure: HTTPS only (browsers treat localhost as secure). Lax: not sent on cross-site POSTs. */
-const COOKIE_OPTIONS: CookieOptions = { httpOnly: true, secure: true, sameSite: 'lax', path: '/' };
+/** What SameSite the session cookie is allowed to take. The default is lax. */
+export type SessionCookieSameSite = 'lax' | 'strict' | 'none';
+
+/**
+ * Defaults are the cookie as it has always shipped: SameSite=Lax, no Domain
+ * (host-only). configureSessionCookie replaces them from env at boot.
+ * httpOnly so no script can read it. Secure so it is HTTPS only (browsers treat localhost as secure).
+ */
+const DEFAULTS: { sameSite: SessionCookieSameSite; domain?: string } = { sameSite: 'lax' };
+
+let configured: { sameSite: SessionCookieSameSite; domain?: string } = { ...DEFAULTS };
+
+export function configureSessionCookie(options: { sameSite: SessionCookieSameSite; domain?: string }): void {
+  configured = { sameSite: options.sameSite, domain: options.domain };
+}
+
+function cookieOptions(): CookieOptions {
+  const options: CookieOptions = { httpOnly: true, secure: true, sameSite: configured.sameSite, path: '/' };
+  if (configured.domain) {
+    options.domain = configured.domain;
+  }
+  return options;
+}
 
 export function setSessionCookie(res: Response, token: string): void {
-  res.cookie(SESSION_COOKIE, token, { ...COOKIE_OPTIONS, maxAge: SESSION_TTL_MS });
+  res.cookie(SESSION_COOKIE, token, { ...cookieOptions(), maxAge: SESSION_TTL_MS });
 }
 
 export function clearSessionCookie(res: Response): void {
-  res.clearCookie(SESSION_COOKIE, COOKIE_OPTIONS);
+  res.clearCookie(SESSION_COOKIE, cookieOptions());
 }
 
 export function readSessionCookie(req: Request): string | undefined {

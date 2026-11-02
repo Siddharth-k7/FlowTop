@@ -14,19 +14,43 @@ export function generateTotp(secretBase32: string, timeMs = Date.now(), digits =
  * allow for clock drift. Compares in constant time and checks every step.
  */
 export function verifyTotp(secretBase32: string, code: string, timeMs = Date.now(), window = 1): boolean {
+  return matchTotpStep(secretBase32, code, timeMs, window) !== null;
+}
+
+/**
+ * The time step the code belongs to, or null if it matches none in the
+ * window. Callers record the step so the same code cannot be used twice
+ * (RFC 6238 section 5.2).
+ */
+export function matchTotpStep(secretBase32: string, code: string, timeMs = Date.now(), window = 1): number | null {
   if (!/^\d{6}$/.test(code)) {
-    return false;
+    return null;
   }
   const key = base32Decode(secretBase32);
   const step = timeStep(timeMs);
   const given = Buffer.from(code);
 
-  let matched = false;
+  let matchedStep: number | null = null;
   for (let offset = -window; offset <= window; offset += 1) {
     const candidate = Buffer.from(hotp(key, step + offset, DIGITS));
-    matched = timingSafeEqual(candidate, given) || matched;
+    if (timingSafeEqual(candidate, given)) {
+      matchedStep = step + offset;
+    }
   }
-  return matched;
+  return matchedStep;
+}
+
+/** The otpauth:// URI an authenticator app reads from a QR code. */
+export function totpProvisioningUri(secretBase32: string, accountName: string, issuer: string): string {
+  const label = encodeURIComponent(`${issuer}:${accountName}`);
+  const params = new URLSearchParams({
+    secret: secretBase32,
+    issuer,
+    algorithm: 'SHA1',
+    digits: String(DIGITS),
+    period: String(STEP_SECONDS),
+  });
+  return `otpauth://totp/${label}?${params.toString()}`;
 }
 
 /** RFC 4226 HOTP. */
