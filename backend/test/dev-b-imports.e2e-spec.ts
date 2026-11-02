@@ -20,6 +20,10 @@ import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
 import { syncPermissionsAndRoles } from '../src/database/seed-permissions';
 import { createAccount } from './accounts';
 import { resetDatabase } from './database';
+import { ProductsModule } from '../src/products/products.module';
+
+@Module({})
+class EmptyProductsModule {}
 
 const PASSWORD = `test-only-${randomUUID()}`;
 
@@ -55,7 +59,10 @@ describe("AGENTS.md: what Dev B imports from Dev A (e2e, the documented examples
   let prisma: PrismaService;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule, AgentsExamplesModule, FailsClosedProbeModule] }).compile();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule, AgentsExamplesModule, FailsClosedProbeModule] })
+      .overrideModule(ProductsModule)
+      .useModule(EmptyProductsModule)
+      .compile();
     app = moduleRef.createNestApplication<NestExpressApplication>();
     configureApp(app);
     await app.init();
