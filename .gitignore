@@ -54,3 +54,6 @@ Desktop.ini
 # Misc
 *.pem
 .cache/
+
+# Audit report PDF
+Flowtop_Frontend_Requirements_Audit_Report.pdf
