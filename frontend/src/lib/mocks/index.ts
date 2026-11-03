@@ -20,13 +20,26 @@ import type {
   Category,
   Collection,
   Cart,
-  PaginatedResponse,
   SingleResponse,
   NavigationResponse,
   PublicSettingsResponse,
   JournalArticleCard,
   SubmissionResponse,
 } from '../types-pending';
+import type { ErrorCode, ErrorEnvelope, Paginated } from '@flowtop/types';
+
+/**
+ * The error a mock throws in place of a failed response. `code` is the
+ * contract's ErrorCode, so a code the backend never sends fails to compile.
+ */
+export function mockApiError(
+  status: number,
+  code: ErrorCode,
+  message: string
+): Error & { status: number; code: ErrorCode; envelope: ErrorEnvelope } {
+  const envelope: ErrorEnvelope = { error: { code, message } };
+  return Object.assign(new Error(message), { status, code, envelope });
+}
 
 export type MockSwitch = 'none' | 'empty' | '500' | 'timeout' | 'forbidden';
 
@@ -71,10 +84,7 @@ export async function simulateNetwork(customSwitch?: MockSwitch): Promise<void> 
   }
 
   if (activeSwitch === '500') {
-    const error = new Error('Simulated internal server error (mock switch: 500)');
-    (error as unknown as { status: number; code: string }).status = 500;
-    (error as unknown as { status: number; code: string }).code = 'SERVER_ERROR';
-    throw error;
+    throw mockApiError(500, 'SERVER_ERROR', 'Simulated internal server error (mock switch: 500)');
   }
 
   if (activeSwitch === 'timeout') {
@@ -84,10 +94,7 @@ export async function simulateNetwork(customSwitch?: MockSwitch): Promise<void> 
   }
 
   if (activeSwitch === 'forbidden') {
-    const error = new Error('Access denied (mock switch: forbidden)');
-    (error as unknown as { status: number; code: string }).status = 403;
-    (error as unknown as { status: number; code: string }).code = 'FORBIDDEN';
-    throw error;
+    throw mockApiError(403, 'FORBIDDEN', 'Access denied (mock switch: forbidden)');
   }
 }
 
@@ -100,7 +107,7 @@ export async function resolveMockProducts(params?: {
   page?: number;
   perPage?: number;
   mockSwitch?: MockSwitch;
-}): Promise<PaginatedResponse<ProductCard>> {
+}): Promise<Paginated<ProductCard>> {
   await simulateNetwork(params?.mockSwitch);
 
   if (globalMockConfig.switchState === 'empty' && process.env.NODE_ENV !== 'production') {
@@ -174,10 +181,7 @@ export async function resolveMockProductBySlug(
 
   const product = mockProducts.find((p) => p.slug === slug);
   if (!product) {
-    const error = new Error(`Product not found with slug: ${slug}`);
-    (error as unknown as { status: number; code: string }).status = 404;
-    (error as unknown as { status: number; code: string }).code = 'NOT_FOUND';
-    throw error;
+    throw mockApiError(404, 'NOT_FOUND', `Product not found with slug: ${slug}`);
   }
 
   return { data: product };
@@ -225,7 +229,7 @@ export async function resolveMockSettings(
 export async function resolveMockJournal(params?: {
   category?: string;
   mockSwitch?: MockSwitch;
-}): Promise<PaginatedResponse<JournalArticleCard>> {
+}): Promise<Paginated<JournalArticleCard>> {
   await simulateNetwork(params?.mockSwitch);
 
   let articles: JournalArticleCard[] = mockJournalArticles.map(

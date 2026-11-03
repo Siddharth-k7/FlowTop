@@ -187,12 +187,18 @@ module.exports = {
         'skip-link': 'var(--z-skip-link)',
       },
 
+      // DEFAULT is what bare transition, transition-colors, transition-opacity
+      // and the rest emit. Without these two DEFAULTs Tailwind falls back to its
+      // own 150ms and cubic-bezier(0.4, 0, 0.2, 1), which ignores the motion
+      // tokens and the reduced-motion overrides in tokens.css.
       transitionDuration: {
+        DEFAULT: 'var(--duration-fast)',
         fast: 'var(--duration-fast)',
         base: 'var(--duration-base)',
         slow: 'var(--duration-slow)',
       },
       transitionTimingFunction: {
+        DEFAULT: 'var(--ease-standard)',
         standard: 'var(--ease-standard)',
         emphasized: 'var(--ease-emphasized)',
       },

@@ -1,6 +1,14 @@
 'use client';
 
-import React, { useState, useRef, useId, createContext, useContext } from 'react';
+import React, {
+  useState,
+  useRef,
+  useId,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+} from 'react';
 
 export interface TabItem {
   id: string;
@@ -28,6 +36,9 @@ interface TabsContextValue {
   orientation: 'horizontal' | 'vertical';
   registerTab: (val: string, element: HTMLButtonElement | null) => void;
   tabElements: React.MutableRefObject<Map<string, HTMLButtonElement>>;
+  /** Values that have a TabPanel element in the DOM. aria-controls is only set for these. */
+  panelValues: ReadonlySet<string>;
+  registerPanel: (val: string) => () => void;
 }
 
 const TabsContext = createContext<TabsContextValue | null>(null);
@@ -73,6 +84,31 @@ export const Tabs: React.FC<TabsProps> = ({
     }
   };
 
+  // Panels register themselves so a Tab never points aria-controls at an id
+  // that is not in the DOM (for example a TabList used without TabPanels).
+  const [registeredPanels, setRegisteredPanels] = useState<ReadonlySet<string>>(() => new Set());
+  const registerPanel = useCallback((val: string) => {
+    setRegisteredPanels(prev => {
+      if (prev.has(val)) return prev;
+      const next = new Set(prev);
+      next.add(val);
+      return next;
+    });
+    return () => {
+      setRegisteredPanels(prev => {
+        if (!prev.has(val)) return prev;
+        const next = new Set(prev);
+        next.delete(val);
+        return next;
+      });
+    };
+  }, []);
+
+  // In items mode every item renders a panel element, so the ids are known on
+  // the server render too, before any effect has run.
+  const panelValues: ReadonlySet<string> =
+    items && items.length > 0 ? new Set(items.map(item => item.id)) : registeredPanels;
+
   const contextValue: TabsContextValue = {
     activeTab,
     setActiveTab: handleSelectTab,
@@ -80,6 +116,8 @@ export const Tabs: React.FC<TabsProps> = ({
     orientation,
     registerTab,
     tabElements,
+    panelValues,
+    registerPanel,
   };
 
   // If items array prop is provided, render data-driven layout
@@ -194,7 +232,7 @@ export interface TabProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
 
 export const Tab = React.forwardRef<HTMLButtonElement, TabProps>(
   ({ value, className = '', children, disabled, ...props }, ref) => {
-    const { activeTab, setActiveTab, tabsId, registerTab } = useTabsContext();
+    const { activeTab, setActiveTab, tabsId, registerTab, panelValues } = useTabsContext();
     const isSelected = activeTab === value;
     const tabId = `${tabsId}-tab-${value}`;
     const panelId = `${tabsId}-panel-${value}`;
@@ -212,8 +250,9 @@ export const Tab = React.forwardRef<HTMLButtonElement, TabProps>(
         id={tabId}
         type="button"
         disabled={disabled}
+        aria-disabled={disabled ? true : undefined}
         aria-selected={isSelected}
-        aria-controls={isSelected ? panelId : undefined}
+        aria-controls={panelValues.has(value) ? panelId : undefined}
         tabIndex={isSelected ? 0 : -1}
         onClick={() => !disabled && setActiveTab(value)}
         className={[
@@ -241,24 +280,30 @@ export interface TabPanelProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const TabPanel = React.forwardRef<HTMLDivElement, TabPanelProps>(
   ({ value, className = '', children, ...props }, ref) => {
-    const { activeTab, tabsId } = useTabsContext();
+    const { activeTab, tabsId, registerPanel } = useTabsContext();
     const isSelected = activeTab === value;
     const tabId = `${tabsId}-tab-${value}`;
     const panelId = `${tabsId}-panel-${value}`;
 
-    if (!isSelected) return null;
+    useEffect(() => registerPanel(value), [registerPanel, value]);
 
+    // Every panel element stays in the DOM so each tab's aria-controls resolves.
+    // Inactive panels are hidden and their children are not mounted, which keeps
+    // the previous lazy-render behaviour.
     return (
       <div
         ref={ref}
         role="tabpanel"
         id={panelId}
         aria-labelledby={tabId}
-        tabIndex={0}
-        className={`p-space-4 focus-ring rounded-sm outline-none ${className}`}
+        hidden={!isSelected}
+        tabIndex={isSelected ? 0 : -1}
+        // A consumer class such as `flex` would beat the [hidden] rule, so
+        // classes apply only to the visible panel.
+        className={isSelected ? `p-space-4 focus-ring rounded-sm outline-none ${className}` : undefined}
         {...props}
       >
-        {children}
+        {isSelected ? children : null}
       </div>
     );
   }

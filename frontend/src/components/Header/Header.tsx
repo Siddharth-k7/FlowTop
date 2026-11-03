@@ -150,7 +150,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-navigation-drawer"
+              aria-controls={isMobileMenuOpen ? 'mobile-navigation-drawer' : undefined}
               className="lg:hidden min-w-touch min-h-touch flex items-center justify-center rounded-sm text-fg hover:text-primary transition-colors focus-ring"
             >
               <svg
@@ -211,7 +211,7 @@ export function Header({ items, cartCount = 0 }: HeaderProps) {
                     type="button"
                     aria-expanded={isCurrentOpen}
                     aria-haspopup="true"
-                    aria-controls={`dropdown-panel-${item.id}`}
+                    aria-controls={isCurrentOpen ? `dropdown-panel-${item.id}` : undefined}
                     onClick={() => setOpenDropdown(isCurrentOpen ? null : item.id)}
                     className={[
                       'inline-flex items-center gap-space-1 text-small font-medium transition-colors focus-ring px-space-2 py-space-1 rounded-sm',

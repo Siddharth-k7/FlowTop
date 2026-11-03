@@ -3,7 +3,7 @@ import { Skeleton } from '@flowtop/ui';
 
 export default function Loading() {
   return (
-    <div className="w-full max-w-7xl mx-auto px-space-4 md:px-space-6 py-space-8 flex flex-col gap-space-8" aria-busy="true" aria-label="Loading page content">
+    <div className="w-full max-w-7xl mx-auto px-space-4 md:px-space-6 py-space-8 flex flex-col gap-space-8" role="status" aria-busy="true" aria-label="Loading page content">
       {/* Hero Section Skeleton */}
       <div className="w-full h-80 sm:h-96 rounded-md bg-surface border border-border p-space-6 md:p-space-8 flex flex-col justify-end gap-space-4">
         <Skeleton variant="text" className="w-32 h-space-3" />

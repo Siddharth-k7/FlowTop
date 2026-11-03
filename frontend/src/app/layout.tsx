@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   description: 'Architectural bath fittings and brassware crafted in India for enduring luxury.',
 };
 
+// Every public page is static and regenerated in the background (ISR). This is
+// the floor even when the build-time navigation fetch fails and falls back to
+// the seed fixtures, so a backend outage at build time heals within the window.
+// Must be a literal (Next reads it statically) and equal PUBLIC_REVALIDATE_SECONDS
+// in lib/api.ts; scripts/check-static-routes.mjs checks both.
+export const revalidate = 300;
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,

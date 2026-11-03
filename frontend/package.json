@@ -6,14 +6,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/check-static-routes.mjs --build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "list:mocks": "node scripts/list-mocks.mjs",
     "test:api": "npx tsx scripts/test-api.mjs",
-    "test": "node ../packages/ui/scripts/check.mjs"
+    "test": "node ../packages/ui/scripts/check.mjs && node scripts/check-agents-examples.mjs && node scripts/check-static-routes.mjs --source && node scripts/test-navigation-fallback.mjs"
   },
   "dependencies": {
+    "@flowtop/types": "file:../shared/types",
     "@flowtop/ui": "file:../packages/ui",
     "next": "^15.2.0",
     "react": "^19.0.0",

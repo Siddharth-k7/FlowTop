@@ -5,45 +5,14 @@
  * Owned by Dev C locally in frontend.
  */
 
-// ─── API Envelope & Pagination ────────────────────────────────────────────────
-export interface PaginationMeta {
-  page: number;
-  perPage: number;
-  total: number;
-  totalPages: number;
-}
+import type { MediaAsset } from '@flowtop/types';
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: PaginationMeta;
-}
-
+// ─── API Envelope, Pagination & Media ─────────────────────────────────────────
+// Paginated, ErrorEnvelope and MediaAsset are owned by @flowtop/types
+// (shared/types/src/index.ts). Import them from there. Do not copy them here:
+// a private copy is how a mock drifts from the contract without a compile error.
 export interface SingleResponse<T> {
   data: T;
-}
-
-export interface ApiErrorEnvelope {
-  error: {
-    code: string;
-    message: string;
-    fields?: Record<string, string>;
-  };
-}
-
-// ─── Media Assets ─────────────────────────────────────────────────────────────
-export interface MediaAsset {
-  id: string;
-  url: string;
-  alt: string;
-  width: number;
-  height: number;
-  sizeBytes: number;
-  mimeType: string;
-  variants: {
-    thumb: string;
-    medium: string;
-    large: string;
-  };
 }
 
 // ─── Navigation & Settings ───────────────────────────────────────────────────
