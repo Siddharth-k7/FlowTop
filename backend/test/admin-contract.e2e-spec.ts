@@ -113,7 +113,7 @@ describe('admin app against the real API (e2e)', () => {
       expect((edited.body as { data: AdminProduct }).data.name).toBe('Opel Basin Mixer II');
 
       const published = await http().post(`${PRODUCTS}/${id}/publish`).set('Cookie', superAdmin).expect(201);
-      expect((published.body as { data: AdminProduct }).data).toMatchObject({ status: 'published', publishedAt: expect.any(String) });
+      expect((published.body as { data: AdminProduct }).data).toMatchObject({ status: 'published', publishedAt: expect.any(String) as string });
       const unpublished = await http().post(`${PRODUCTS}/${id}/unpublish`).set('Cookie', superAdmin).expect(201);
       expect((unpublished.body as { data: AdminProduct }).data.status).toBe('unpublished');
       const archived = await http().post(`${PRODUCTS}/${id}/archive`).set('Cookie', superAdmin).expect(201);
