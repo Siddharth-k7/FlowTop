@@ -1,4 +1,4 @@
-import type { AdminProduct, NavNode, Page, Placement, PublishStatus, Specification, Variant } from '@flowtop/types';
+import type { AdminProduct, NavNode, Page, Placement, PublishStatus, SettingItem, Specification, Variant } from '@flowtop/types';
 import type { Doc } from '@/lib/doc';
 
 // TODO: swap for real API. Realistic Flowtop data so screens do not look like "Test Product 1".
@@ -93,9 +93,15 @@ export const seedNav: NavNode[] = [
   { id: 'n4', label: 'Journal', href: '/journal', children: [] },
 ];
 
-export const seedSettings: Record<string, string> = {
-  emailFrom: 'orders@flowtop.in', orderRecipients: 'orders@flowtop.in', contactRecipients: 'hello@flowtop.in',
-  purchaseAssistanceRecipients: 'sales@flowtop.in', dealerRecipients: 'dealers@flowtop.in',
-  whatsappNumber: '+919876543210', whatsappGeneral: "Hi, I'd like to know more about Flowtop products.",
-  whatsappProduct: "Hi, I'm interested in {productName} (SKU: {sku}) in {finish}. {url}",
-};
+/** Same keys, order and descriptions as backend/src/settings/setting-definitions.ts. __tests__/mock-shapes.test.ts fails if they drift. */
+const setting = (key: string, value: unknown, description: string, isPublic: boolean): SettingItem => ({ key, value, description, public: isPublic, updatedBy: null, updatedAt: null });
+export const seedSettings: SettingItem[] = [
+  setting('email.senderName', 'Flowtop', 'The name customers see as the sender of every email', false),
+  setting('email.senderAddress', null, 'The address every email is sent from. Must be on the verified sending domain.', false),
+  setting('email.recipients.orders', [], 'Who is notified of every new online order', false),
+  setting('email.recipients.contact', [], 'Who receives contact form enquiries', false),
+  setting('email.recipients.dealer', [], 'Who receives dealer enquiries', false),
+  setting('whatsapp.number', null, 'The WhatsApp number every button on the website opens. Empty hides WhatsApp.', true),
+  setting('whatsapp.generalTemplate', "Hi, I'd like to know more about Flowtop products.", 'The message pre-filled by the site-wide WhatsApp button', true),
+  setting('whatsapp.productTemplate', "Hi, I'm interested in {productName} (SKU: {sku}) in {finish}. {url}", 'The message pre-filled on a product page', true),
+];

@@ -1,4 +1,4 @@
-import type { AdminProduct, NavNode, Permission, Placement, PlacementLocation, Specification, Variant } from '@flowtop/types';
+import type { AdminProduct, NavNode, Permission, Placement, PlacementLocation, SettingItem, Specification, Variant } from '@flowtop/types';
 import type { Doc } from '@/lib/doc';
 import { fail, ok, type Res } from './res';
 import { seed, seedNav, seedPages, seedPlacements, seedProducts, seedSettings, seedSpecs, seedVariants } from './seed';
@@ -9,7 +9,7 @@ let placements: Placement[] = structuredClone(seedPlacements);
 let nav: NavNode[] = structuredClone(seedNav);
 const variants: Record<string, Variant[]> = structuredClone(seedVariants);
 const specs: Record<string, Specification[]> = structuredClone(seedSpecs);
-const settings: Record<string, string> = { ...seedSettings };
+const settings: SettingItem[] = structuredClone(seedSettings);
 
 /** The server is the real guard; the mock mimics it so a 403 is visible during development. Permissions are typed, so a typo does not compile. */
 const READ: Record<string, Permission> = { products: 'product:read', variants: 'product:read', categories: 'category:read', collections: 'collection:read', pages: 'page:read', journal: 'journal:read', orders: 'order:read', submissions: 'submission:read', navigation: 'navigation:read', settings: 'settings:read' };
@@ -75,9 +75,13 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
   }
   if (col === 'navigation') { if (method === 'PUT') nav = b.tree as NavNode[]; return ok(nav); }
   if (col === 'settings') {
-    if (id === 'test-email') return settings.emailFrom ? ok({ sent: true, to: settings.emailFrom }) : fail(422, 'VALIDATION_FAILED', 'Set a sender address first.', { emailFrom: 'Required' });
-    if (method === 'PUT') { settings[String(b.key)] = String(b.value); return ok({ key: b.key, value: b.value }); }
-    return ok(settings);
+    if (method !== 'PUT') return ok(settings);
+    const item = settings.find((x) => x.key === b.key);
+    if (!item) return fail(422, 'VALIDATION_FAILED', INVALID, { key: 'Unknown setting.' });
+    // The real rules live in setting-definitions.ts; the mock only keeps the one that shapes the UI: lists stay lists, null needs null-able keys.
+    if (Array.isArray(item.value) !== Array.isArray(b.value) || (typeof item.value === 'string' && typeof b.value !== 'string')) return fail(422, 'VALIDATION_FAILED', INVALID, { value: 'Enter a valid value.' });
+    Object.assign(item, { value: b.value, updatedBy: { id: 'mock', name: 'You' }, updatedAt: now() });
+    return ok(item);
   }
 
   if (col === 'variants' && id) {
