@@ -380,6 +380,8 @@ export function ModalExample() {
 
 Controlled data table with server-side sorting headers (`aria-sort`), loading skeleton, empty state, and scoped horizontal scroll.
 
+`Table` does not reorder `data` itself: `onSort` reports the column and direction, and the caller passes back sorted rows (from the API, or from a `useMemo` for client-side data). While `loading` is true the `<table>` carries `aria-busy="true"`. With `onRowClick`, the first cell of each row is a `<button>`, so rows are reachable by keyboard.
+
 ### Props
 
 | Prop | Type / Allowed Values | Default | Required / Optional | Description |
@@ -543,6 +545,8 @@ export function BadgeExample() {
 
 Accessible tabs following the WAI-ARIA tablist pattern. Supports Arrow keys (Left/Right/Up/Down), Home, and End navigation, plus a horizontally scrollable tabstrip on mobile devices.
 Supports both data-driven `items` array usage and compound component composition (`TabList`, `Tab`, and `TabPanel`).
+
+Every `TabPanel` keeps its element in the DOM (inactive ones are `hidden`) so each tab's `aria-controls` resolves, but only the active panel mounts its children. A `Tab` with no matching `TabPanel` sets no `aria-controls`. A disabled `Tab` is skipped by arrow-key navigation and cannot be selected.
 
 ### Props
 

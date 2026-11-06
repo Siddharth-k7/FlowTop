@@ -28,7 +28,25 @@ export const mockProducts = [
     shortDescription: 'Tall deck-mounted mixer for countertop washbasins with knurled joystick control.',
     fullDescriptionHtml: '<p>Forged from lead-free architectural brass, the Aura Tall Basin Mixer provides a tranquil laminar water cascade. Equipped with a high-durability Sedal ceramic disc cartridge tested to 500,000 cycles.</p>',
     isPurchasable: true,
-    gallery: [],
+    // Typed against MediaAsset from @flowtop/types. filename and createdAt are
+    // required by the contract (PR #11); width and height may be null.
+    gallery: [
+      {
+        id: 'media-01',
+        filename: 'aura-tall-basin-mixer-front.jpg',
+        url: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=1600&q=80',
+        alt: 'Aura Tall Basin Mixer, front view',
+        width: 1600,
+        height: 2000,
+        sizeBytes: 412318,
+        mimeType: 'image/jpeg',
+        createdAt: '2026-10-20T09:30:00.000Z',
+        variants: {
+          thumb: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=320&q=80',
+          medium: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80',
+        },
+      },
+    ],
     specifications: [
       { key: 'aerator', label: 'Aerator Type', value: 'Neoperl Honeycomb laminar flow' },
       { key: 'flow_rate', label: 'Nominal Flow Rate', value: '5.7', unit: 'L/min at 3.0 bar' },

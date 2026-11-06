@@ -80,6 +80,35 @@ Rules for all of them:
 
 Build against a typed mock in `lib/mocks/` matching the contract exactly, and tag it `TODO: swap for real API`. Never wait on the backend.
 
+Shared shapes (`Paginated`, `ErrorEnvelope`, `ErrorCode`, `MediaAsset`, `User`, and the product catalogue: `ProductCard`, `ProductDetail`, `Variant`, `Specification`, `SpecificationGroup`, `Category`, `Collection`, `CollectionDetail`; see `shared/types/AGENTS.md`) come from `@flowtop/types`; never copy them into `lib/`. Type mock data with them so contract drift fails `npm run typecheck`. Build mock errors with `mockApiError` so the envelope and code are checked too:
+
+```ts
+import { mockApiError } from '@/lib/mocks';
+
+throw mockApiError(404, 'NOT_FOUND', 'Product not found');
+```
+
+## Public pages stay static
+
+Every public page renders at build time and refreshes in the background every 5 minutes (ISR, `PUBLIC_REVALIDATE_SECONDS` in `lib/api.ts`, matched by `export const revalidate` in `app/layout.tsx`). The public reads in `lib/api.ts` never read or send cookies, so they keep pages static. Calling `cookies()` or `headers()`, or fetching with `cache: 'no-store'`, makes the whole route render on every request, and every visitor then waits on the API.
+
+Only `lib/api-session.ts` may call `cookies()`. Only a route that truly needs the visitor's session may import it, and that route must be added to `ALLOWED_DYNAMIC_ROUTES` in `scripts/check-static-routes.mjs` with a reason. `npm test` fails on a stray `cookies()` or `next/headers` import. `npm run build` (postbuild) fails if any page that is not on the allowlist renders dynamically. A server-side loader for public data must **throw** when the API fails at runtime, never fall back to fixtures. A failed ISR regeneration keeps the last good page, but a fallback would be cached as if it were good and replace real content for as long as the API stays down. The seed fallback is allowed only while `next build` runs (`isBuildPhase()` in `lib/navigation.ts`), where there is no previous page; `scripts/test-navigation-fallback.mjs` in `npm test` checks this. The browser cart talks to the API directly with `credentials: 'include'` and does not need any of this.
+
+```ts
+import { api } from '@/lib/api';
+import { sessionInit } from '@/lib/api-session';
+
+// Public data: cookie-free and cached, so the page stays static.
+export async function loadCollections() {
+  return api.getCollections();
+}
+
+// Session data on the server: only in a route listed in ALLOWED_DYNAMIC_ROUTES.
+export async function loadServerCart() {
+  return api.getCart(undefined, await sessionInit());
+}
+```
+
 ## Checklist before opening a PR
 
 - [ ] No hex codes or raw pixel values outside the token file
@@ -89,3 +118,4 @@ Build against a typed mock in `lib/mocks/` matching the contract exactly, and ta
 - [ ] No money arithmetic in JavaScript
 - [ ] Empty optional fields render cleanly
 - [ ] Error states tested, not just the happy path
+- [ ] `npm run build` route table shows every public page as ○ or ●, not ƒ

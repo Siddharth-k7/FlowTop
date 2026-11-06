@@ -150,6 +150,7 @@ For JavaScript/TypeScript consumers, `packages/ui/src/index.ts` re-exports `BREA
 - `.focus-ring`: Accessible 2px focus ring using `--focus-ring` with 2px offset on `:focus-visible`.
 - `.touch-target`: Enforces 44px min-width and min-height for mobile accessibility.
 - `.scrollbar-none`: Hides scrollbars across WebKit, Firefox, and Edge while retaining scroll capability.
+- `transition`, `transition-colors` and the other `transition-*` utilities default to `--duration-fast` and `--ease-standard` (preset `transitionDuration.DEFAULT` / `transitionTimingFunction.DEFAULT`), so a bare `transition-colors` uses the motion tokens rather than Tailwind's built-in 150ms `cubic-bezier(0.4, 0, 0.2, 1)`.
 - `.animate-in`, `.fade-in`, `.zoom-in-95`, `.slide-in-from-*`: Preset entry animation utilities utilizing `--duration-base` and `--ease-standard`, honoring `prefers-reduced-motion`.
 
 ### 9. Component-Scoped Dimensions & Rationale
