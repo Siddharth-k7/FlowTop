@@ -7,6 +7,7 @@ import { DraftBanner, EditorBar, LoadError, Skeleton } from '@/components/ui/Edi
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { SchemaForm, type Field } from '@/components/ui/SchemaForm';
 import { SortableList } from '@/components/ui/SortableList';
+import { useCan } from '@/hooks/useCurrentUser';
 import { useDocument } from '@/hooks/useDocument';
 import { SECTIONS, SECTION_TYPES, TEMPLATES, defaultConfig } from '@/lib/sections';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
@@ -26,6 +27,9 @@ const HISTORY = 20;
 
 /** Three columns on desktop (list, live preview, editor); tabs on tablet and phone. */
 export function PageBuilder({ id }: { id: string }) {
+  const can = useCan(); // COSMETIC ONLY: hiding a button is presentation; the server checks each permission.
+  const canPage = can('page:write');
+  const canSections = can('section:write');
   const doc = useDocument<Page>('pages', id, blank);
   const [pane, setPane] = useState<'sections' | 'preview' | 'edit'>('sections');
   const [selected, setSelected] = useState<string>();
@@ -70,7 +74,7 @@ export function PageBuilder({ id }: { id: string }) {
   return (
     <PageWrapper title={doc.isNew ? 'New page' : v.title || 'Page'} actions={<Link href="/pages" className="text-sm underline">← All pages</Link>}>
       {doc.draft && <DraftBanner onUse={doc.useDraft} onDrop={doc.dropDraft} />}
-      {doc.isNew && secs.length === 0 && (
+      {doc.isNew && secs.length === 0 && canSections && (
         <div className={`${cardCls} mb-4`}>
           <h2 className="mb-2 font-medium">Start from</h2>
           <div className="flex flex-wrap gap-2">{TEMPLATES.map((t) => (
@@ -81,33 +85,33 @@ export function PageBuilder({ id }: { id: string }) {
       </div>
       <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)_22rem]">
         <section aria-label="Sections" className={`${pane === 'sections' ? '' : 'hidden'} flex flex-col gap-3 lg:flex`}>
-          <div className="flex flex-wrap gap-2">
+          {canSections && <div className="flex flex-wrap gap-2">
             <button className={btnSecondary} onClick={undo} disabled={!past.length} aria-label="Undo">↶ Undo</button>
             <button className={btnSecondary} onClick={redo} disabled={!future.length} aria-label="Redo">↷ Redo</button>
-          </div>
+          </div>}
           {secs.length === 0 ? <div className={cardCls}><p className="text-sm">No sections yet. Pick a type below and add the first one.</p></div> : (
-            <SortableList items={secs} getKey={(s) => s.id} onChange={(n) => apply(n)} label="section"
+            <SortableList items={secs} getKey={(s) => s.id} onChange={(n) => canSections && apply(n)} label="section"
               render={(s) => (
                 <div className={`flex flex-col gap-1 rounded p-1 ${s.id === selected ? 'bg-purple-pale' : ''} ${s.visible ? '' : 'opacity-60'}`}>
                   <button className="min-h-touch text-left" onClick={() => { setSelected(s.id); setPane('edit'); }} aria-pressed={s.id === selected}>
                     <span className="block text-sm font-medium">{SECTIONS[s.type]?.label ?? s.type}{s.visible ? '' : ' (hidden)'}</span>
                     <span className="block truncate text-xs text-grey-500">{summary(s)}</span>
                   </button>
-                  <span className="flex flex-wrap gap-3 text-xs">
+                  {canSections && <span className="flex flex-wrap gap-3 text-xs">
                     <button className="min-h-touch underline" onClick={() => patch(s.id, { visible: !s.visible })}>{s.visible ? 'Hide' : 'Show'}</button>
                     <button className="min-h-touch underline" onClick={() => duplicate(s)}>Duplicate</button>
                     <button className="min-h-touch text-error underline" onClick={() => setRm(s)}>Delete</button>
-                  </span>
+                  </span>}
                 </div>)} />)}
-          <div className="flex gap-2">
+          {canSections && <div className="flex gap-2">
             <select className={inputCls} aria-label="Section type to add" value={add} onChange={(e) => setAdd(e.target.value)}>
               {SECTION_TYPES.map((t) => <option key={t} value={t}>{SECTIONS[t]?.label}</option>)}
             </select>
             <button className={btnPrimary} onClick={() => addType(add)}>Add</button>
-          </div>
+          </div>}
           <details className={cardCls}>
             <summary className="min-h-touch cursor-pointer font-medium">Page settings</summary>
-            <div className="mt-3"><SchemaForm compact idPrefix="pg" fields={SETTINGS} value={{ ...v, seoTitle: v.seo.title, seoDescription: v.seo.description }} onChange={(k, x) => doc.set((k === 'seoTitle' ? { seo: { ...v.seo, title: String(x) } } : k === 'seoDescription' ? { seo: { ...v.seo, description: String(x) } } : { [k]: x }) as Partial<Page>)} errors={doc.errors} /></div>
+            <fieldset disabled={!canPage} className="mt-3"><SchemaForm compact idPrefix="pg" fields={SETTINGS} value={{ ...v, seoTitle: v.seo.title, seoDescription: v.seo.description }} onChange={(k, x) => doc.set((k === 'seoTitle' ? { seo: { ...v.seo, title: String(x) } } : k === 'seoDescription' ? { seo: { ...v.seo, description: String(x) } } : { [k]: x }) as Partial<Page>)} errors={doc.errors} /></fieldset>
           </details>
         </section>
         <section aria-label="Live preview" className={`${pane === 'preview' ? '' : 'hidden'} min-w-0 lg:block`}>
@@ -118,12 +122,12 @@ export function PageBuilder({ id }: { id: string }) {
         </section>
         <section aria-label="Section editor" className={`${pane === 'edit' ? '' : 'hidden'} lg:block`}>
           <div className={cardCls}>
-            {sel ? <SectionEditor section={sel} onChange={(config) => patch(sel.id, { config }, true)} /> : <p className="text-sm">Pick a section on the left to edit its content and layout.</p>}
+            {sel ? <fieldset disabled={!canSections} className="contents"><SectionEditor section={sel} onChange={(config) => patch(sel.id, { config }, true)} /></fieldset> : <p className="text-sm">Pick a section on the left to edit its content and layout.</p>}
           </div>
         </section>
       </div>
-      <EditorBar status={v.status} dirty={doc.dirty} saving={doc.saving || busy} savedAt={doc.savedAt} error={doc.error} onSave={() => doc.save()}
-        onPublish={publish} publishLabel={v.status === 'published' ? 'Publish changes' : 'Publish'}
+      <EditorBar status={v.status} dirty={doc.dirty} saving={doc.saving || busy} savedAt={doc.savedAt} error={doc.error} onSave={() => doc.save()} canSave={canPage || canSections}
+        onPublish={can('page:publish') ? publish : undefined} publishLabel={v.status === 'published' ? 'Publish changes' : 'Publish'}
         blockedReason={!v.title ? 'Before publishing: give the page a title (Page settings).' : undefined}
         extra={v.status === 'draft' && !doc.isNew ? <span className="text-xs text-grey-500">Autosaves every 30s</span> : undefined} />
       <ConfirmDialog open={!!rm} onClose={() => setRm(undefined)} title={`Delete this ${rm ? SECTIONS[rm.type]?.label : ''} section?`} confirmLabel="Delete section"

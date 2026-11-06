@@ -1,6 +1,7 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useCan } from '@/hooks/useCurrentUser';
 import { ListScreen } from '@/components/ui/ListScreen';
 import { formatPrice } from '@/lib/utils/formatPrice';
 import type { Doc } from '@/lib/doc';
@@ -9,13 +10,14 @@ const STATUS = [{ value: 'draft', label: 'Draft' }, { value: 'published', label:
 
 export function ProductList() {
   const missing = useSearchParams().get('missing');
+  const can = useCan(); // COSMETIC ONLY: the server checks product:create and product:publish.
   const bulk = (action: string) => (ids: string[]) => api('/admin/products/bulk', { method: 'POST', body: { ids, action } });
   return (
     <ListScreen title={missing ? `Products missing ${missing}` : 'Products'} endpoint={`/admin/products${missing ? `?missing=${missing}` : ''}`}
-      newHref="/products/new" newLabel="Add product" rowHref={(d) => `/products/${d.id}`}
+      newHref={can('product:create') ? '/products/new' : undefined} newLabel="Add product" rowHref={(d) => `/products/${d.id}`}
       emptyText="No products yet. Add your first product and choose where it appears on the site."
       filters={[{ key: 'status', label: 'Status', options: STATUS }]}
-      bulk={[{ label: 'Publish selected', run: bulk('publish') }, { label: 'Unpublish selected', run: bulk('unpublish') }]}
+      bulk={can('product:publish') ? [{ label: 'Publish selected', run: bulk('publish') }, { label: 'Unpublish selected', run: bulk('unpublish') }] : undefined}
       columns={[
         { key: 'name', label: 'Product' }, { key: 'sku', label: 'SKU' },
         { key: 'price', label: 'Price', render: (d: Doc) => formatPrice(Number(d.price)) },

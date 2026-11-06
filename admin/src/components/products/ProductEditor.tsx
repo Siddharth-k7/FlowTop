@@ -7,7 +7,7 @@ import { PageWrapper } from '@/components/shell/PageWrapper';
 import { DraftBanner, EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { SchemaForm, missingRequired, type Field } from '@/components/ui/SchemaForm';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCan } from '@/hooks/useCurrentUser';
 import { useDocument } from '@/hooks/useDocument';
 import { btnSecondary, cardCls } from '@/lib/ui-classes';
 import { PlacementPanel } from './PlacementPanel';
@@ -46,9 +46,7 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').repla
 
 export function ProductEditor({ id }: { id: string }) {
   const doc = useDocument<AdminProduct>('products', id, blank, toBody);
-  const user = useCurrentUser();
-  // COSMETIC ONLY: hiding a button is presentation. The server checks the permission on every call.
-  const can = (p: (typeof user.permissions)[number]) => user.permissions.includes(p);
+  const can = useCan(); // COSMETIC ONLY: hiding a button is presentation. The server checks the permission on every call.
   const canSave = doc.isNew ? can('product:create') : can('product:update');
   const [tab, setTab] = useState<Tab>('Identity');
   const [busy, setBusy] = useState(false);

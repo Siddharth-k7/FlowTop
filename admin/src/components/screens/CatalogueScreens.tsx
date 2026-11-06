@@ -2,6 +2,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useCan } from '@/hooks/useCurrentUser';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { ListScreen } from '@/components/ui/ListScreen';
@@ -12,8 +13,9 @@ import type { Doc } from '@/lib/doc';
 
 export function PageList() {
   const status = useSearchParams().get('status') ?? '';
+  const can = useCan(); // COSMETIC ONLY: the server checks page:write.
   return (
-    <ListScreen title="Pages" endpoint="/admin/pages" newHref="/pages/new" newLabel="Create page" rowHref={(d) => `/pages/${d.id}`} initialFilters={{ status }}
+    <ListScreen title="Pages" endpoint="/admin/pages" newHref={can('page:write') ? '/pages/new' : undefined} newLabel="Create page" rowHref={(d) => `/pages/${d.id}`} initialFilters={{ status }}
       emptyText="No pages yet. Create one to build a landing page or a campaign."
       filters={[{ key: 'status', label: 'Status', options: [{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }] }]}
       columns={[{ key: 'title', label: 'Page' }, { key: 'slug', label: 'Address', render: (d: Doc) => `/${String(d.slug)}` }, { key: 'status', label: 'Status', render: (d: Doc) => <span className="capitalize">{String(d.status)}</span> }]} />
@@ -22,6 +24,7 @@ export function PageList() {
 
 /** Inline rename, drag reorder, add and delete in one place. Each change saves immediately and says so. */
 export function CategoryScreen() {
+  const canWrite = useCan()('category:write'); // COSMETIC ONLY: the server checks category:write.
   const [rows, setRows] = useState<Doc[]>();
   const [error, setError] = useState<string>();
   const [name, setName] = useState('');
@@ -36,19 +39,19 @@ export function CategoryScreen() {
       {error && rows ? <p role="alert" className="mb-3 text-sm text-error">{error}</p> : null}
       {!rows ? (error ? <LoadError message={error} onRetry={load} /> : <Skeleton />) : (
         <div className={`${cardCls} flex flex-col gap-4`}>
-          {rows.length === 0 && <p className="text-sm">No categories yet. Add the first one below, like “Basin Mixers”.</p>}
+          {rows.length === 0 && <p className="text-sm">No categories yet.{canWrite ? ' Add the first one below, like “Basin Mixers”.' : ''}</p>}
           <SortableList items={rows} getKey={(d) => d.id} label="category"
-            onChange={(n) => { setRows(n); run(() => api('/admin/categories/reorder', { method: 'POST', body: { ids: n.map((d) => d.id) } })); }}
+            onChange={(n) => { if (!canWrite) return; setRows(n); run(() => api('/admin/categories/reorder', { method: 'POST', body: { ids: n.map((d) => d.id) } })); }}
             render={(d) => (
               <div className="flex gap-2">
-                <input className={inputCls} aria-label={`Rename ${String(d.name)}`} defaultValue={String(d.name)}
+                <input className={inputCls} readOnly={!canWrite} aria-label={`Rename ${String(d.name)}`} defaultValue={String(d.name)}
                   onBlur={(e) => e.target.value && e.target.value !== d.name && run(() => api(`/admin/categories/${d.id}`, { method: 'PATCH', body: { name: e.target.value } }))} />
-                <button className="min-h-touch px-2 text-sm text-error" onClick={() => { setRmErr(undefined); setRm(d); }}>Delete</button>
+                {canWrite && <button className="min-h-touch px-2 text-sm text-error" onClick={() => { setRmErr(undefined); setRm(d); }}>Delete</button>}
               </div>)} />
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) run(async () => { await api('/admin/categories', { method: 'POST', body: { name: name.trim(), slug: slug(name), description: '' } }); setName(''); }); }}>
+          {canWrite && <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) run(async () => { await api('/admin/categories', { method: 'POST', body: { name: name.trim(), slug: slug(name), description: '' } }); setName(''); }); }}>
             <input className={inputCls} aria-label="New category name" placeholder="New category name" value={name} onChange={(e) => setName(e.target.value)} />
             <button className={btnPrimary} type="submit">Add</button>
-          </form>
+          </form>}
         </div>)}
       <ConfirmDialog open={!!rm} onClose={() => setRm(undefined)} title={`Delete ${String(rm?.name ?? '')}?`} confirmLabel="Delete category" error={rmErr}
         body="This removes the category and its page from the site. If any products still use it, the delete is refused and nothing changes. Products are never deleted."

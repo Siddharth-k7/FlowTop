@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCan } from '@/hooks/useCurrentUser';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { ListScreen } from '@/components/ui/ListScreen';
@@ -24,9 +24,8 @@ export function csvDownload(name: string, rows: Doc[], cols: string[]) {
 }
 
 export function OrderList() {
-  const user = useCurrentUser();
   // COSMETIC ONLY: the export button is hidden without order:export; the server enforces it on GET /admin/orders/export.
-  const canExport = user.permissions.includes('order:export');
+  const canExport = useCan()('order:export');
   // TODO: swap for GET /admin/orders/export (server-side CSV). This builds it from the loaded list.
   const exportCsv = async () => csvDownload('orders.csv', await api<Doc[]>('/admin/orders'), ['reference', 'customerName', 'email', 'total', 'status', 'paymentStatus', 'createdAt']);
   return (
@@ -42,6 +41,7 @@ interface Item { name: string; sku: string; finish: string; qty: number; unitPri
 interface Step { at: string; status: string; note: string; by: string }
 
 export function OrderDetail({ id }: { id: string }) {
+  const canChange = useCan()('order:status_change'); // COSMETIC ONLY: the server checks order:status_change.
   const [o, setO] = useState<Doc>();
   const [err, setErr] = useState<string>();
   const [status, setStatus] = useState('');
@@ -73,14 +73,14 @@ export function OrderDetail({ id }: { id: string }) {
           <p className="mt-3 text-sm">Payment: <strong className="capitalize">{String(o.paymentStatus)}</strong></p></section>
         <section className={`${cardCls} lg:col-span-2`} aria-label="Status history"><h2 className="mb-2 font-medium">History</h2>
           <ol className="flex flex-col gap-2 text-sm">{steps.map((s, i) => <li key={i} className="border-l-2 border-purple-light pl-3"><strong className="capitalize">{s.status}</strong> · {formatDate(s.at)} · {s.by}<br />{s.note}</li>)}</ol></section>
-        <section className={`${cardCls} print:hidden`} aria-label="Change status"><h2 className="mb-2 font-medium">Change status</h2>
+        {canChange && <section className={`${cardCls} print:hidden`} aria-label="Change status"><h2 className="mb-2 font-medium">Change status</h2>
           <p className="mb-2 text-xs text-grey-500">Every change is logged with your name and the note.</p>
           <select className={inputCls} aria-label="New status" value={status} onChange={(e) => setStatus(e.target.value)}>{opt(STATUSES).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
           <label className="mt-2 block text-sm">Note<textarea className={`${inputCls} mt-1 py-2`} rows={2} value={note} onChange={(e) => setNote(e.target.value)} aria-invalid={!!fieldErr} /></label>
           {fieldErr && <p className="text-sm text-error">{fieldErr}</p>}
           {err && <p role="alert" className="mt-2 text-sm text-error">{err}</p>}
           <button className={`${btnPrimary} mt-3`} disabled={status === o.status} onClick={() => (note.trim() ? setAsk(true) : setFieldErr('Say why the status is changing.'))}>Update status</button>
-        </section>
+        </section>}
       </div>
       <ConfirmDialog open={ask} danger={false} busy={busy} onClose={() => setAsk(false)} onConfirm={change} confirmLabel="Change status" title={`Mark order as ${status}?`}
         body="The status changes for the team. This does not email or notify the customer, and the change is logged with your name." />

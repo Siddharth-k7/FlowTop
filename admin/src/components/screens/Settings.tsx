@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import type { SettingItem } from '@flowtop/types';
 import { api, ApiError } from '@/lib/api';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCan } from '@/hooks/useCurrentUser';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { SchemaForm, type Field } from '@/components/ui/SchemaForm';
@@ -26,8 +26,7 @@ const show = (v: unknown) => (Array.isArray(v) ? v.join(', ') : v === null || v 
 const send = (was: unknown, text: string): unknown => (Array.isArray(was) ? text.split(',').map((s) => s.trim()).filter(Boolean) : text.trim() === '' ? null : text);
 
 export function SettingsScreen() {
-  const user = useCurrentUser();
-  const canWrite = user.permissions.includes('settings:write'); // COSMETIC ONLY: the server enforces settings:write.
+  const canWrite = useCan()('settings:write'); // COSMETIC ONLY: the server enforces settings:write.
   const [items, setItems] = useState<SettingItem[]>();
   const [vals, setVals] = useState<Record<string, string>>({});
   const [base, setBase] = useState<Record<string, string>>({});

@@ -8,14 +8,16 @@ import { DraftBanner, EditorBar, LoadError, Skeleton } from '@/components/ui/Edi
 import { ListScreen } from '@/components/ui/ListScreen';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { SchemaForm, missingRequired } from '@/components/ui/SchemaForm';
+import { useCan } from '@/hooks/useCurrentUser';
 import { useDocument } from '@/hooks/useDocument';
 import { btnDanger } from '@/lib/ui-classes';
 import type { ContentType } from '@/lib/content-types';
 import type { Doc } from '@/lib/doc';
 
 export function ContentList({ ct }: { ct: ContentType }) {
+  const can = useCan(); // COSMETIC ONLY: the server checks the write permission.
   return (
-    <ListScreen title={ct.title} endpoint={`/admin/${ct.section}`} newHref={`/${ct.section}/new`} newLabel={`Add ${ct.singular}`} emptyText={ct.emptyText}
+    <ListScreen title={ct.title} endpoint={`/admin/${ct.section}`} newHref={can(ct.write) ? `/${ct.section}/new` : undefined} newLabel={`Add ${ct.singular}`} emptyText={ct.emptyText}
       columns={ct.columns.map((c) => ({ ...c, render: (d: Doc) => (c.key === 'filterable' ? (d[c.key] ? 'Yes' : 'No') : String(d[c.key] ?? '') || '—') }))}
       rowHref={(d) => `/${ct.section}/${d.id}`} />
   );
@@ -23,6 +25,8 @@ export function ContentList({ ct }: { ct: ContentType }) {
 
 export function ContentEditor({ ct, id }: { ct: ContentType; id: string }) {
   const router = useRouter();
+  const can = useCan(); // COSMETIC ONLY: hiding a button is presentation; the server checks the permission.
+  const canWrite = can(ct.write);
   const doc = useDocument<Doc>(ct.section, id, () => (ct.hasStatus ? { status: 'draft' } : {}));
   const [del, setDel] = useState(false);
   const [delErr, setDelErr] = useState<string>();
@@ -41,10 +45,10 @@ export function ContentEditor({ ct, id }: { ct: ContentType; id: string }) {
       {doc.draft && <DraftBanner onUse={doc.useDraft} onDrop={doc.dropDraft} />}
       <div className="rounded-lg bg-white p-4 shadow-card">
         <SchemaForm fields={ct.fields} value={v} onChange={(k, x) => doc.set({ [k]: x })} errors={doc.errors} idPrefix={ct.section} />
-        {!doc.isNew && <button className={`${btnDanger} mt-6`} onClick={() => setDel(true)}>Delete {ct.singular}</button>}
+        {!doc.isNew && canWrite && <button className={`${btnDanger} mt-6`} onClick={() => setDel(true)}>Delete {ct.singular}</button>}
       </div>
-      <EditorBar status={ct.hasStatus ? String(v.status) : undefined} dirty={doc.dirty} saving={doc.saving} savedAt={doc.savedAt} error={doc.error} onSave={() => doc.save()}
-        onPublish={ct.hasStatus ? () => doc.save({ status: 'published' }) : undefined}
+      <EditorBar status={ct.hasStatus ? String(v.status) : undefined} dirty={doc.dirty} saving={doc.saving} savedAt={doc.savedAt} error={doc.error} onSave={() => doc.save()} canSave={canWrite}
+        onPublish={ct.hasStatus && can(ct.publish) ? () => doc.save({ status: 'published' }) : undefined}
         publishLabel={v.status === 'published' ? 'Save and keep published' : 'Publish'}
         blockedReason={ct.hasStatus && missingList.length ? `Before publishing: ${missingList[0]}` : undefined} />
       <ConfirmDialog open={del} onClose={() => setDel(false)} title={`Delete this ${ct.singular}?`} body={ct.deleteNote} confirmLabel={`Delete ${ct.singular}`} error={delErr} onConfirm={remove} />

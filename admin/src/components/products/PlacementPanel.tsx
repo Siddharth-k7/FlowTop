@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useCan } from '@/hooks/useCurrentUser';
 import { ConfirmDialog, Modal } from '@/components/ui/Modal';
 import { SortableList } from '@/components/ui/SortableList';
 import { Skeleton } from '@/components/ui/EditorBar';
@@ -15,6 +16,7 @@ const TYPE_LABEL: Record<string, string> = { homepage_section: 'Homepage section
  * the product or any other placement. The wording below says so on purpose.
  */
 export function PlacementPanel({ product }: { product: AdminProduct }) {
+  const canManage = useCan()('placement:manage'); // COSMETIC ONLY: the server checks placement:manage.
   const [items, setItems] = useState<Placement[]>();
   const [error, setError] = useState<string>();
   const [adding, setAdding] = useState(false);
@@ -43,17 +45,17 @@ export function PlacementPanel({ product }: { product: AdminProduct }) {
         return (
           <section key={g} className={cardCls} aria-label={head.locationName}>
             <h3 className="mb-2 font-medium">{head.locationName}</h3>
-            <SortableList items={list} getKey={(p) => p.id} onChange={(n) => reorder(head, n)} label="placement"
+            <SortableList items={list} getKey={(p) => p.id} onChange={(n) => canManage && reorder(head, n)} label="placement"
               render={(p) => (
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <span className="rounded bg-purple-pale px-2 py-1">Position {p.position}</span>
-                  <label className="flex min-h-touch items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={p.enabled} onChange={(e) => act(() => api(`/admin/placements/${p.id}`, { method: 'PATCH', body: { enabled: e.target.checked } }))} />Showing</label>
+                  <label className="flex min-h-touch items-center gap-2"><input type="checkbox" className="h-5 w-5" disabled={!canManage} checked={p.enabled} onChange={(e) => act(() => api(`/admin/placements/${p.id}`, { method: 'PATCH', body: { enabled: e.target.checked } }))} />Showing</label>
                   <button className="min-h-touch underline" onClick={() => setPrev(p)}>Preview</button>
-                  <button className="min-h-touch text-error" onClick={() => setRm(p)}>Remove from here</button>
+                  {canManage && <button className="min-h-touch text-error" onClick={() => setRm(p)}>Remove from here</button>}
                 </div>)} />
           </section>);
       })}
-      <div><button className={btnSecondary} onClick={() => setAdding(true)}>Add a placement</button></div>
+      {canManage && <div><button className={btnSecondary} onClick={() => setAdding(true)}>Add a placement</button></div>}
       <AddPlacement open={adding} onClose={() => setAdding(false)} taken={items} onAdd={(l) => { setAdding(false); act(() => api(`/admin/products/${product.id}/placements`, { method: 'POST', body: { locationType: l.locationType, locationId: l.locationId } })); }} />
       <ConfirmDialog open={!!rm} onClose={() => setRm(undefined)} title={`Remove from ${rm?.locationName}?`} confirmLabel="Remove from here"
         body={`This removes the product from ${rm?.locationName} only. The product itself, and its other placements, are not affected.`}

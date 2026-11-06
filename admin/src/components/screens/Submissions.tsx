@@ -1,23 +1,21 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useCan } from '@/hooks/useCurrentUser';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
 import { formatDate } from '@/lib/utils/formatDate';
 import type { Doc } from '@/lib/doc';
-import { csvDownload } from './Orders';
 
 const TYPES = [
-  { value: 'purchase_assistance', label: 'Where to buy (customers)' }, { value: 'contact', label: 'Contact' }, { value: 'dealer_application', label: 'Dealer applications (trade)' },
+  { value: 'contact', label: 'Contact' }, { value: 'dealer_application', label: 'Dealer applications (trade)' },
 ];
 const typeLabel = (t: unknown) => TYPES.find((x) => x.value === t)?.label ?? String(t);
 
 /** Inbox with a detail panel. Customer "where to buy" requests and trade dealer applications are kept apart on purpose. */
 export function SubmissionsInbox() {
-  const user = useCurrentUser();
-  const canExport = user.permissions.includes('order:export'); // COSMETIC ONLY: the server enforces export rights.
+  const canUpdate = useCan()('submission:update'); // COSMETIC ONLY: the server checks submission:update.
   const [rows, setRows] = useState<Doc[]>();
   const [error, setError] = useState<string>();
   const [type, setType] = useState('');
@@ -34,7 +32,7 @@ export function SubmissionsInbox() {
     catch (e) { setMsg(e instanceof ApiError ? e.message : 'Could not update. Nothing was changed.'); }
   };
   return (
-    <PageWrapper title="Submissions" actions={canExport && rows ? <button className={btnSecondary} onClick={() => csvDownload('submissions.csv', view, ['reference', 'type', 'name', 'email', 'phone', 'city', 'status', 'createdAt'])}>Export CSV</button> : undefined}>
+    <PageWrapper title="Submissions">
       <div className="mb-4 flex flex-col gap-2 md:flex-row">
         <select className={`${inputCls} md:w-64`} aria-label="Type" value={type} onChange={(e) => setType(e.target.value)}><option value="">Type: all</option>{TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select>
         <select className={`${inputCls} md:w-48`} aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Status: all</option><option value="new">New</option><option value="handled">Handled</option></select>
@@ -59,9 +57,8 @@ export function SubmissionsInbox() {
                 {cur.fittingInterest ? <p>Interested in: <strong>{String(cur.fittingInterest)}</strong></p> : null}
                 <p className="whitespace-pre-wrap rounded bg-grey-100 p-3">{String(cur.message)}</p>
                 {!cur.emailSent && <p role="alert" className="text-warning">The email notification for this one failed. It is saved here, so please follow up yourself.</p>}
-                {cur.type === 'purchase_assistance' && <p className="text-xs text-grey-500">Reply personally. The customer was never shown any dealer names or contact details.</p>}
                 {msg && <p role="alert" className="text-error">{msg}</p>}
-                <div><button className={cur.status === 'new' ? btnPrimary : btnSecondary} onClick={() => mark(cur, cur.status === 'new' ? 'handled' : 'new')}>{cur.status === 'new' ? 'Mark as handled' : 'Mark as new'}</button></div>
+                {canUpdate && <div><button className={cur.status === 'new' ? btnPrimary : btnSecondary} onClick={() => mark(cur, cur.status === 'new' ? 'handled' : 'new')}>{cur.status === 'new' ? 'Mark as handled' : 'Mark as new'}</button></div>}
               </div>)}
           </section>
         </div>)}

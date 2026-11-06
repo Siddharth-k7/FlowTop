@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useCan } from '@/hooks/useCurrentUser';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { SortableList } from '@/components/ui/SortableList';
@@ -33,6 +34,7 @@ function Level({ nodes, onChange, depth }: { nodes: NavNode[]; onChange: (n: Nav
 
 /** Two levels, drag to reorder. Saved as one replacement, same as the API (PUT replaces the tree). */
 export function NavigationEditor() {
+  const canWrite = useCan()('navigation:write'); // COSMETIC ONLY: the server checks navigation:write.
   const [tree, setTree] = useState<NavNode[]>();
   const [base, setBase] = useState('');
   const [error, setError] = useState<string>();
@@ -53,8 +55,8 @@ export function NavigationEditor() {
   return (
     <PageWrapper title="Navigation">
       <p className="mb-3 text-sm text-grey-700">This is the site menu. Drag to reorder. A menu item can have one level of sub-items.</p>
-      <div className="rounded-lg bg-white p-4 shadow-card"><Level nodes={tree} depth={0} onChange={(t) => { setTree(t); setSavedAt(undefined); }} /></div>
-      <EditorBar dirty={JSON.stringify(tree) !== base} saving={saving} savedAt={savedAt} error={error} onSave={save} onPublish={save} publishLabel="Save menu" blockedReason={blockedMsg(blankLabel)} />
+      <fieldset disabled={!canWrite} className="rounded-lg bg-white p-4 shadow-card"><Level nodes={tree} depth={0} onChange={(t) => { if (canWrite) { setTree(t); setSavedAt(undefined); } }} /></fieldset>
+      <EditorBar dirty={JSON.stringify(tree) !== base} saving={saving} savedAt={savedAt} error={error} onSave={save} canSave={canWrite} onPublish={canWrite ? save : undefined} publishLabel="Save menu" blockedReason={blockedMsg(blankLabel)} />
     </PageWrapper>
   );
 }
