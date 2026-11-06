@@ -402,3 +402,105 @@ export interface ProductDetail {
   documents: ProductDocument[];
   seo: Seo;
 }
+
+// ─── Admin CMS ─────────────────────────────────────────────────────────────
+// Shapes the admin reads and writes. Each has a drift test:
+// backend/src/common/admin-types.drift.spec.ts.
+
+/**
+ * GET, POST and PATCH /admin/products(/:id). The product row as the API stores
+ * it, so every column is here. Dates are ISO 8601 strings on the wire.
+ * `category` and `_count` come with GET only; POST and PATCH return the bare row.
+ */
+export interface AdminProduct {
+  id: string;
+  name: string;
+  sku: string;
+  slug: string;
+  categoryId: string | null;
+  shortDescription: string;
+  /** Rich text as HTML. */
+  fullDescription: string;
+  /** Paise. */
+  price: number;
+  /** Paise. */
+  salePrice: number | null;
+  taxClass: string;
+  isPurchasable: boolean;
+  isAvailable: boolean;
+  availabilityMessage: string | null;
+  isFeatured: boolean;
+  isNewArrival: boolean;
+  isBestseller: boolean;
+  status: PublishStatus;
+  publishedAt: string | null;
+  seoTitle: string;
+  seoDescription: string;
+  seoCanonical: string | null;
+  seoShareImageId: string | null;
+  modelUrl: string | null;
+  videoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category?: CategoryRef | null;
+  _count?: { specifications: number; media: number; variants: number; placements: number };
+}
+
+/** `homepage_section` ids are keys (`featured`); every other type uses a uuid. */
+export type PlacementLocationType = 'homepage_section' | 'category' | 'collection' | 'campaign_page' | 'related';
+
+/** One row in the placements table: one product in one place. docs/03-api-contract.md, Placements. */
+export interface Placement {
+  id: string;
+  productId: string;
+  locationType: PlacementLocationType;
+  locationId: string;
+  locationName: string;
+  position: number;
+  label: string;
+  enabled: boolean;
+}
+
+/** One entry in GET /admin/placement-locations, the picker's list. */
+export type PlacementLocation = Pick<Placement, 'locationType' | 'locationId' | 'locationName'>;
+
+/** One block on a page. docs/03-api-contract.md, Pages and sections. `config` shapes are listed there. */
+export interface Section {
+  id: string;
+  type: string;
+  position: number;
+  visible: boolean;
+  config: Record<string, unknown>;
+}
+
+/** A page with its sections in position order. */
+export interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  status: PublishStatus;
+  sections: Section[];
+  seo: Seo;
+}
+
+/**
+ * One item of the navigation tree, PUT whole to /admin/navigation.
+ * TODO: docs/03-api-contract.md gives no JSON for it. This is the admin's proposal; Dev B to confirm.
+ */
+export interface NavNode {
+  id: string;
+  label: string;
+  href: string;
+  children: NavNode[];
+}
+
+/** One entry of GET /admin/settings. `value` depends on the key: text, a list of emails, or null. */
+export interface SettingItem {
+  key: string;
+  value: unknown;
+  description: string;
+  public: boolean;
+  /** Null until someone changes it from its seed value. */
+  updatedBy: { id: string; name: string } | null;
+  updatedAt: string | null;
+}
