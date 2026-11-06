@@ -5,7 +5,6 @@ import { assetName, assetThumb } from '@/lib/media';
 import { btnSecondary, inputCls } from '@/lib/ui-classes';
 import { MediaPicker } from '@/components/media/MediaPicker';
 import type { MediaAsset } from '@flowtop/types';
-import { RefSelectField } from './RefFields';
 import { SortableList } from './SortableList';
 
 function useAsset(id: string) {
@@ -64,26 +63,6 @@ export function StringListField({ value, onChange, label, placeholder }: { value
             <button type="button" className="min-h-touch px-2 text-sm text-error" aria-label={`Remove ${label} ${i + 1}`} onClick={() => sync(rows.filter((_, j) => j !== i))}>Remove</button>
           </div>)} />
       <div><button type="button" className={btnSecondary} onClick={() => { setIds([...ids, nextId()]); onChange([...value, '']); }}>Add another</button></div>
-    </div>
-  );
-}
-
-type Spot = { productId: string; x: number; y: number };
-/** "Shop this look" hotspots: product plus a position as a percentage of the image. */
-export function HotspotsField({ value, onChange }: { value: Spot[]; onChange: (v: Spot[]) => void }) {
-  const set = (i: number, p: Partial<Spot>) => onChange(value.map((s, j) => (j === i ? { ...s, ...p } : s)));
-  const pct = 'min-h-touch w-24 rounded border border-grey-500 bg-white px-2';
-  return (
-    <div className="flex flex-col gap-2">
-      {value.length === 0 && <p className="text-sm text-grey-500">No tagged products yet.</p>}
-      {value.map((s, i) => (
-        <div key={i} className="flex flex-wrap items-end gap-2 rounded border border-grey-200 bg-white p-2">
-          <label className="min-w-40 flex-1 text-sm">Product<RefSelectField of="products" value={s.productId} onChange={(x) => set(i, { productId: x })} /></label>
-          <label className="text-sm">Across (%)<input type="number" min={0} max={100} className={pct} value={s.x} onChange={(e) => set(i, { x: Number(e.target.value) })} /></label>
-          <label className="text-sm">Down (%)<input type="number" min={0} max={100} className={pct} value={s.y} onChange={(e) => set(i, { y: Number(e.target.value) })} /></label>
-          <button type="button" className="min-h-touch px-2 text-sm text-error" onClick={() => onChange(value.filter((_, j) => j !== i))}>Remove tag</button>
-        </div>))}
-      <div><button type="button" className={btnSecondary} onClick={() => onChange([...value, { productId: '', x: 50, y: 50 }])}>Tag a product</button></div>
     </div>
   );
 }

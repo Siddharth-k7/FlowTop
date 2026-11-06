@@ -11,7 +11,7 @@ import { SchemaForm, missingRequired } from '@/components/ui/SchemaForm';
 import { useDocument } from '@/hooks/useDocument';
 import { btnDanger } from '@/lib/ui-classes';
 import type { ContentType } from '@/lib/content-types';
-import type { Doc } from '@/types/cms';
+import type { Doc } from '@/lib/doc';
 
 export function ContentList({ ct }: { ct: ContentType }) {
   return (

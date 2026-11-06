@@ -10,16 +10,16 @@ import { SortableList } from '@/components/ui/SortableList';
 import { useDocument } from '@/hooks/useDocument';
 import { SECTIONS, SECTION_TYPES, TEMPLATES, defaultConfig } from '@/lib/sections';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
-import type { Page, Section } from '@/types/cms';
+import type { Page, Section } from '@flowtop/types';
 import { DEVICES, PagePreview, type Device } from './PagePreview';
 import { SectionEditor } from './SectionEditor';
 
 const SETTINGS: Field[] = [
   { key: 'title', label: 'Page title', type: 'text', required: true }, { key: 'slug', label: 'Web address', type: 'text', required: true, hint: 'Leave empty only for the homepage.' },
-  { key: 'isCampaign', label: 'Campaign page', type: 'toggle', hint: 'Products can be placed on this page' },
   { key: 'seoTitle', label: 'Search result title', type: 'text' }, { key: 'seoDescription', label: 'Search result description', type: 'textarea' },
 ];
-const blank = (): Omit<Page, 'id'> => ({ title: '', slug: '', status: 'draft', isCampaign: false, seoTitle: '', seoDescription: '', sections: [], updatedAt: '' });
+const blank = (): Omit<Page, 'id'> => ({ title: '', slug: '', status: 'draft', sections: [], seo: { title: '', description: '', canonical: null, shareImage: null } });
+const renumber = (s: Section[]): Section[] => s.map((x, i) => ({ ...x, position: i + 1 }));
 const sid = () => `sec${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const summary = (s: Section) => String(s.config.headline ?? s.config.heading ?? s.config.question ?? '') || 'Untitled';
 const HISTORY = 20;
@@ -52,12 +52,12 @@ export function PageBuilder({ id }: { id: string }) {
   const apply = (next: Section[], coalesce = false) => {
     const t = Date.now();
     if (!(coalesce && t - lastEdit.current < 1000)) setPast((p) => [...p.slice(-(HISTORY - 1)), secs]);
-    lastEdit.current = t; setFuture([]); doc.set({ sections: next });
+    lastEdit.current = t; setFuture([]); doc.set({ sections: renumber(next) });
   };
   const undo = () => { const p = past.at(-1); if (!p) return; setPast(past.slice(0, -1)); setFuture([secs, ...future].slice(0, HISTORY)); doc.set({ sections: p }); };
   const redo = () => { const f = future[0]; if (!f) return; setFuture(future.slice(1)); setPast([...past, secs].slice(-HISTORY)); doc.set({ sections: f }); };
   const patch = (secId: string, p: Partial<Section>, coalesce = false) => apply(secs.map((s) => (s.id === secId ? { ...s, ...p } : s)), coalesce);
-  const addType = (type: string) => { const s: Section = { id: sid(), type, visible: true, config: defaultConfig(type) }; apply([...secs, s]); setSelected(s.id); setPane('edit'); };
+  const addType = (type: string) => { const s: Section = { id: sid(), type, position: secs.length + 1, visible: true, config: defaultConfig(type) }; apply([...secs, s]); setSelected(s.id); setPane('edit'); };
   const duplicate = (s: Section) => { const copy: Section = { ...structuredClone(s), id: sid() }; apply([...secs.slice(0, secs.indexOf(s) + 1), copy, ...secs.slice(secs.indexOf(s) + 1)]); setSelected(copy.id); };
 
   const publish = async () => {
@@ -74,7 +74,7 @@ export function PageBuilder({ id }: { id: string }) {
         <div className={`${cardCls} mb-4`}>
           <h2 className="mb-2 font-medium">Start from</h2>
           <div className="flex flex-wrap gap-2">{TEMPLATES.map((t) => (
-            <button key={t.id} className={btnSecondary} onClick={() => apply(t.types.map((type) => ({ id: sid(), type, visible: true, config: defaultConfig(type) })))}>{t.label}</button>))}</div>
+            <button key={t.id} className={btnSecondary} onClick={() => apply(t.types.map((type) => ({ id: sid(), type, position: 0, visible: true, config: defaultConfig(type) })))}>{t.label}</button>))}</div>
         </div>)}
       <div className="mb-3 flex items-center gap-2 lg:hidden" role="tablist" aria-label="Builder panels">
         {(['sections', 'preview', 'edit'] as const).map((p) => <button key={p} role="tab" aria-selected={pane === p} onClick={() => setPane(p)} className={`${btnSecondary} flex-1 capitalize ${pane === p ? '!bg-purple-deep !text-white' : ''}`}>{p === 'edit' ? 'Edit section' : p}</button>)}
@@ -101,13 +101,13 @@ export function PageBuilder({ id }: { id: string }) {
                 </div>)} />)}
           <div className="flex gap-2">
             <select className={inputCls} aria-label="Section type to add" value={add} onChange={(e) => setAdd(e.target.value)}>
-              {SECTION_TYPES.map((t) => <option key={t} value={t}>{SECTIONS[t]?.label}{SECTIONS[t]?.isNew ? ' (new)' : ''}</option>)}
+              {SECTION_TYPES.map((t) => <option key={t} value={t}>{SECTIONS[t]?.label}</option>)}
             </select>
             <button className={btnPrimary} onClick={() => addType(add)}>Add</button>
           </div>
           <details className={cardCls}>
             <summary className="min-h-touch cursor-pointer font-medium">Page settings</summary>
-            <div className="mt-3"><SchemaForm compact idPrefix="pg" fields={SETTINGS} value={v} onChange={(k, x) => doc.set({ [k]: x } as Partial<Page>)} errors={doc.errors} /></div>
+            <div className="mt-3"><SchemaForm compact idPrefix="pg" fields={SETTINGS} value={{ ...v, seoTitle: v.seo.title, seoDescription: v.seo.description }} onChange={(k, x) => doc.set((k === 'seoTitle' ? { seo: { ...v.seo, title: String(x) } } : k === 'seoDescription' ? { seo: { ...v.seo, description: String(x) } } : { [k]: x }) as Partial<Page>)} errors={doc.errors} /></div>
           </details>
         </section>
         <section aria-label="Live preview" className={`${pane === 'preview' ? '' : 'hidden'} min-w-0 lg:block`}>

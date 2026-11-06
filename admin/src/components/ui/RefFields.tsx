@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { btnSecondary, inputCls } from '@/lib/ui-classes';
-import type { Doc } from '@/types/cms';
+import type { Doc } from '@/lib/doc';
 import { SortableList } from './SortableList';
 
 export const docLabel = (d: Doc) => String(d.title ?? d.name ?? d.question ?? d.term ?? d.finish ?? d.id);

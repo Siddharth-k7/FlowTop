@@ -5,7 +5,7 @@ import { PageWrapper } from '@/components/shell/PageWrapper';
 import { EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { SortableList } from '@/components/ui/SortableList';
 import { btnSecondary, inputCls } from '@/lib/ui-classes';
-import type { NavNode } from '@/types/cms';
+import type { NavNode } from '@flowtop/types';
 
 const uid = () => `nv${Date.now().toString(36)}${Math.random().toString(36).slice(2, 4)}`;
 

@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
-import type { Doc } from '@/types/cms';
 
 /**
  * Load / edit / save one document. Rules from admin/AGENTS.md live here so every form gets them:
@@ -10,7 +9,8 @@ import type { Doc } from '@/types/cms';
  * - Draft is kept in localStorage every 30s and offered back after a refresh.
  * - Leaving with unsaved changes asks first.
  */
-export function useDocument<T extends Doc>(col: string, id: string, blank: () => Omit<T, 'id'>) {
+/** `toBody` picks what the API accepts. Without it every field except `id` is sent. */
+export function useDocument<T extends { id: string }>(col: string, id: string, blank: () => Omit<T, 'id'>, toBody?: (v: T) => unknown) {
   const router = useRouter();
   const isNew = id === 'new';
   const key = `ft:draft:${col}:${id}`;
@@ -23,6 +23,7 @@ export function useDocument<T extends Doc>(col: string, id: string, blank: () =>
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<T>();
   const blankRef = useRef(blank); blankRef.current = blank;
+  const bodyRef = useRef(toBody); bodyRef.current = toBody;
 
   const load = useCallback(() => {
     setLoadError(undefined);
@@ -58,7 +59,7 @@ export function useDocument<T extends Doc>(col: string, id: string, blank: () =>
     const next = patch ? { ...value, ...patch } : value;
     setSaving(true); setError(undefined); setErrors({});
     try {
-      const body = Object.fromEntries(Object.entries(next).filter(([k]) => k !== 'id'));
+      const body = bodyRef.current ? bodyRef.current(next) : Object.fromEntries(Object.entries(next).filter(([k]) => k !== 'id'));
       const saved = await api<T>(isNew ? `/admin/${col}` : `/admin/${col}/${id}`, { method: isNew ? 'POST' : 'PATCH', body });
       base.current = JSON.stringify(saved); setValue(saved); setSavedAt(new Date());
       try { localStorage.removeItem(key); } catch { /* ignore */ }

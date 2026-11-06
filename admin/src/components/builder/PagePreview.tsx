@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef } from 'react';
 import { SECTIONS } from '@/lib/sections';
-import type { Section } from '@/types/cms';
+import type { Section } from '@flowtop/types';
 
 export const DEVICES = { desktop: 1280, tablet: 768, mobile: 360 } as const;
 export type Device = keyof typeof DEVICES;

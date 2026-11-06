@@ -8,8 +8,7 @@ import { ListScreen } from '@/components/ui/ListScreen';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { SortableList } from '@/components/ui/SortableList';
 import { btnPrimary, cardCls, inputCls } from '@/lib/ui-classes';
-import { formatDate } from '@/lib/utils/formatDate';
-import type { Doc } from '@/types/cms';
+import type { Doc } from '@/lib/doc';
 
 export function PageList() {
   const status = useSearchParams().get('status') ?? '';
@@ -17,8 +16,7 @@ export function PageList() {
     <ListScreen title="Pages" endpoint="/admin/pages" newHref="/pages/new" newLabel="Create page" rowHref={(d) => `/pages/${d.id}`} initialFilters={{ status }}
       emptyText="No pages yet. Create one to build a landing page or a campaign."
       filters={[{ key: 'status', label: 'Status', options: [{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }] }]}
-      columns={[{ key: 'title', label: 'Page' }, { key: 'slug', label: 'Address', render: (d: Doc) => `/${String(d.slug)}` }, { key: 'status', label: 'Status', render: (d: Doc) => <span className="capitalize">{String(d.status)}</span> },
-        { key: 'updatedAt', label: 'Updated', render: (d: Doc) => formatDate(String(d.updatedAt)) }]} />
+      columns={[{ key: 'title', label: 'Page' }, { key: 'slug', label: 'Address', render: (d: Doc) => `/${String(d.slug)}` }, { key: 'status', label: 'Status', render: (d: Doc) => <span className="capitalize">{String(d.status)}</span> }]} />
   );
 }
 

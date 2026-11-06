@@ -6,9 +6,11 @@ import { btnPrimary, btnSecondary } from '@/lib/ui-classes';
 const BADGE: Record<string, string> = { draft: 'bg-grey-200 text-ink', published: 'bg-success text-white', archived: 'bg-warning text-white' };
 
 /** Sticky bottom bar used by every form: Save Draft, Publish, Preview, status badge, honest save state. */
-export function EditorBar({ status, dirty, saving, savedAt, error, onSave, onPublish, publishLabel = 'Publish', blockedReason, previewHref, extra }: {
+export function EditorBar({ status, dirty, saving, savedAt, error, onSave, onPublish, publishLabel = 'Publish', blockedReason, previewHref, extra, canSave = true }: {
   status?: string; dirty: boolean; saving: boolean; savedAt?: Date; error?: string;
   onSave: () => void; onPublish?: () => void; publishLabel?: string; blockedReason?: string; previewHref?: string; extra?: ReactNode;
+  /** False hides Save Draft. Cosmetic: the server enforces the permission. */
+  canSave?: boolean;
 }) {
   return (
     <div className="sticky bottom-0 -mx-4 mt-6 flex flex-wrap items-center gap-2 border-t border-grey-200 bg-white p-3 md:-mx-6 md:px-6">
@@ -20,7 +22,7 @@ export function EditorBar({ status, dirty, saving, savedAt, error, onSave, onPub
       </p>
       {extra}
       {previewHref && <Link href={previewHref} target="_blank" className={btnSecondary}>Preview</Link>}
-      <button className={btnSecondary} disabled={saving || !dirty} onClick={onSave}>Save Draft</button>
+      {canSave && <button className={btnSecondary} disabled={saving || !dirty} onClick={onSave}>Save Draft</button>}
       {onPublish && <button className={btnPrimary} disabled={saving || !!blockedReason} title={blockedReason} onClick={onPublish}>{publishLabel}</button>}
       {blockedReason && <p className="w-full text-right text-xs text-grey-700">{blockedReason}</p>}
     </div>

@@ -6,7 +6,7 @@ import { PageWrapper } from '@/components/shell/PageWrapper';
 import { LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
 import { formatDate } from '@/lib/utils/formatDate';
-import type { Doc } from '@/types/cms';
+import type { Doc } from '@/lib/doc';
 import { csvDownload } from './Orders';
 
 const TYPES = [

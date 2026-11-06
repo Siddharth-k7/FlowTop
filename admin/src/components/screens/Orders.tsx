@@ -10,7 +10,7 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
 import { formatDate } from '@/lib/utils/formatDate';
 import { formatPrice } from '@/lib/utils/formatPrice';
-import type { Doc } from '@/types/cms';
+import type { Doc } from '@/lib/doc';
 
 const STATUSES = ['new', 'processing', 'shipped', 'delivered', 'cancelled'];
 const opt = (v: string[]) => v.map((x) => ({ value: x, label: x[0]?.toUpperCase() + x.slice(1) }));

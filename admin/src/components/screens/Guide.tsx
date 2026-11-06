@@ -9,7 +9,6 @@ const TASKS: [string, string[]][] = [
   ['Rearrange the homepage', ['Pages → Homepage.', 'Drag sections in the left column, or use the ↑ ↓ buttons.', 'Use Hide to take a section off the site without deleting it.', 'Undo and Redo cover your last 20 changes. Publish when happy.']],
   ['Remove a product from one place only', ['Open the product → Placement tab.', 'Click “Remove from here” next to that place. The product and its other places are untouched.']],
   ['Answer a “where to buy” request', ['Submissions → filter by “Where to buy”.', 'Reply to the customer yourself, then Mark as handled.']],
-  ['Teach search a new word', ['Search synonyms → Add synonym, e.g. “faucet” also searches “mixer”.']],
 ];
 
 export function GuideScreen() {

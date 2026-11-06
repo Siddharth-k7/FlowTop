@@ -1,32 +1,55 @@
-import type { Doc, NavNode, Page, Placement, Product } from '@/types/cms';
+import type { AdminProduct, NavNode, Page, Placement, PublishStatus, Specification, Variant } from '@flowtop/types';
+import type { Doc } from '@/lib/doc';
 
 // TODO: swap for real API. Realistic Flowtop data so screens do not look like "Test Product 1".
+// Everything typed from @flowtop/types is the real response shape: a field the API lacks does not compile here.
 const at = (d: number) => `2026-10-${String(d).padStart(2, '0')}T04:30:00Z`;
-const prod = (id: string, name: string, sku: string, price: number, cat: string, status: Product['status'] = 'published', extra: Partial<Product> = {}): Product => ({
-  id, name, slug: name.toLowerCase().replace(/\s+/g, '-'), sku, status, shortDescription: `${name} in solid brass with a ceramic cartridge.`,
-  fullDescription: '', price, salePrice: null, isPurchasable: true, isAvailable: true, availabilityMessage: 'Ships in 3 working days',
-  categoryId: cat, collectionIds: [], variants: [], specs: [], galleryIds: ['m1'], documentIds: [], seoTitle: '', seoDescription: '',
-  seoCanonical: '', shareImageId: '', relatedIds: [], compatibleIds: [], beforeYouBuy: [], fitChecks: [], updatedAt: at(12), ...extra,
+const CATEGORIES: Record<string, { name: string; slug: string }> = {
+  c1: { name: 'Basin Mixers', slug: 'basin-mixers' }, c2: { name: 'Wall Mixers', slug: 'wall-mixers' },
+  c3: { name: 'Showers', slug: 'showers' }, c4: { name: 'Bib Cocks', slug: 'bib-cocks' },
+};
+
+export const seedVariants: Record<string, Variant[]> = {
+  p1: [
+    { id: 'v1', name: 'Chrome', skuSuffix: 'CH', price: 450000, swatchHex: '#C0C0C0', image: null, isAvailable: true, isDefault: true },
+    { id: 'v2', name: 'Matte Black', skuSuffix: 'MB', price: 470000, swatchHex: '#1A1A1A', image: null, isAvailable: true, isDefault: false },
+  ],
+};
+const spec = (id: string, group: string, name: string, value: string, unit: string | null, position: number): Specification => ({ id, group, name, value, unit, type: 'text', position });
+export const seedSpecs: Record<string, Specification[]> = {
+  p1: [spec('s1', 'Technical', 'Material', 'Brass', null, 1), spec('s2', 'Technical', 'Flow Rate', '5.7', 'LPM', 2)],
+  p3: [spec('s3', 'Technical', 'Diameter', '300', 'mm', 1)],
+};
+
+const prod = (id: string, name: string, sku: string, price: number, cat: string, status: PublishStatus, extra: Partial<AdminProduct> = {}): AdminProduct => ({
+  id, name, sku, slug: name.toLowerCase().replace(/\s+/g, '-'), categoryId: cat, shortDescription: `${name} in solid brass with a ceramic cartridge.`, fullDescription: '',
+  price, salePrice: null, taxClass: 'standard', isPurchasable: true, isAvailable: true, availabilityMessage: 'Ships in 3 working days',
+  isFeatured: false, isNewArrival: false, isBestseller: false, status, publishedAt: status === 'published' ? at(12) : null,
+  seoTitle: '', seoDescription: '', seoCanonical: null, seoShareImageId: null, modelUrl: null, videoUrl: null, createdAt: at(1), updatedAt: at(12),
+  category: { id: cat, ...CATEGORIES[cat] as { name: string; slug: string } },
+  _count: { specifications: seedSpecs[id]?.length ?? 0, media: 1, variants: seedVariants[id]?.length ?? 0, placements: 0 },
+  ...extra,
 });
-const spec = (i: string, group: string, name: string, value: string, unit = '') => ({ id: i, group, name, value, unit });
+
+export const seedProducts: AdminProduct[] = [
+  prod('p1', 'Opel Basin Mixer', 'FT-OBM-001', 450000, 'c1', 'published', { salePrice: 399000 }),
+  prod('p2', 'Opel Wall Mixer', 'FT-OWM-002', 620000, 'c2', 'published'),
+  prod('p3', 'Rain Shower Head 300', 'FT-RSH-300', 890000, 'c3', 'published'),
+  prod('p4', 'Aria Single Lever Mixer', 'FT-ASL-004', 380000, 'c1', 'draft', { _count: { specifications: 0, media: 0, variants: 0, placements: 0 } }),
+  prod('p5', 'Concealed Diverter Kit', 'FT-CDK-005', 215000, 'c2', 'draft'),
+  prod('p6', 'Heritage Bib Cock', 'FT-HBC-006', 145000, 'c4', 'archived'),
+];
+
+const layout = (background: string, width: string, spacing: string) => ({ background, spacingTop: spacing, spacingBottom: spacing, width, align: 'left' });
+export const seedPages: Page[] = [
+  { id: 'pg1', title: 'Homepage', slug: '', status: 'published', seo: { title: 'Flowtop Bathfittings', description: '', canonical: null, shareImage: null }, sections: [
+    { id: 'sec1', type: 'hero', position: 1, visible: true, config: { headline: 'Crafted for water', subheading: 'Premium bathfittings from India', mediaType: 'image', desktopImageId: 'm4', mobileImageId: 'm4', overlay: 'medium', textPosition: 'bottom-left', ctas: [{ label: 'Explore', href: '/products', style: 'primary' }], layout: layout('black', 'full', 'none') } },
+    { id: 'sec2', type: 'product_carousel', position: 2, visible: true, config: { heading: 'Featured Products', source: 'placement', placementLocation: 'featured', count: 8, cardStyle: 'standard', viewAllHref: '/products', layout: layout('white', 'contained', 'medium') } },
+  ] },
+  { id: 'pg2', title: 'Opel Launch', slug: 'opel-launch', status: 'draft', seo: { title: '', description: '', canonical: null, shareImage: null }, sections: [] },
+];
 
 export const seed: Record<string, Doc[]> = {
-  products: [
-    prod('p1', 'Opel Basin Mixer', 'FT-OBM-001', 450000, 'c1', 'published', {
-      salePrice: 399000, collectionIds: ['col1'], galleryIds: ['m1', 'm2'], documentIds: ['m6'], relatedIds: ['p2'], compatibleIds: ['p5'],
-      beforeYouBuy: ['Check the basin has a single 35mm tap hole', 'Minimum 1 bar water pressure'], fitChecks: ['Spout reach: 120 mm', 'Hole spacing: single hole'],
-      variants: [
-        { id: 'v1', name: 'Chrome', skuSuffix: 'CH', price: 450000, swatchHex: '#C0C0C0', imageId: 'm1', isAvailable: true, isDefault: true },
-        { id: 'v2', name: 'Matte Black', skuSuffix: 'MB', price: 470000, swatchHex: '#1A1A1A', imageId: 'm2', isAvailable: true, isDefault: false },
-      ],
-      specs: [spec('s1', 'Technical', 'Material', 'Brass'), spec('s2', 'Technical', 'Flow Rate', '5.7', 'LPM')],
-    }),
-    prod('p2', 'Opel Wall Mixer', 'FT-OWM-002', 620000, 'c2', 'published', { collectionIds: ['col1'], galleryIds: ['m5'] }),
-    prod('p3', 'Rain Shower Head 300', 'FT-RSH-300', 890000, 'c3', 'published', { galleryIds: ['m3'], specs: [spec('s3', 'Technical', 'Diameter', '300', 'mm')] }),
-    prod('p4', 'Aria Single Lever Mixer', 'FT-ASL-004', 380000, 'c1', 'draft', { galleryIds: [] }),
-    prod('p5', 'Concealed Diverter Kit', 'FT-CDK-005', 215000, 'c2', 'draft', { galleryIds: ['m5'] }),
-    prod('p6', 'Heritage Bib Cock', 'FT-HBC-006', 145000, 'c4', 'archived', { galleryIds: ['m4'] }),
-  ],
   categories: [
     { id: 'c1', name: 'Basin Mixers', slug: 'basin-mixers', description: '' },
     { id: 'c2', name: 'Wall Mixers', slug: 'wall-mixers', description: '' },
@@ -37,13 +60,6 @@ export const seed: Record<string, Doc[]> = {
     { id: 'col1', name: 'Opel', slug: 'opel', story: '<p>Soft curves, hard-wearing finishes.</p>', heroImageId: 'm1', productIds: ['p1', 'p2'], status: 'published' },
     { id: 'col2', name: 'Heritage', slug: 'heritage', story: '', heroImageId: '', productIds: ['p6'], status: 'draft' },
   ],
-  pages: [
-    { id: 'pg1', title: 'Homepage', slug: '', status: 'published', isCampaign: false, seoTitle: 'Flowtop Bathfittings', seoDescription: '', updatedAt: at(12), sections: [
-      { id: 'sec1', type: 'hero', visible: true, config: { headline: 'Crafted for water', subheading: 'Premium bathfittings from India', mediaType: 'image', desktopImageId: 'm4', mobileImageId: 'm4', overlay: 'medium', textPosition: 'bottom-left', ctas: [{ label: 'Explore', href: '/products', style: 'primary' }], layout: { background: 'black', spacingTop: 'none', spacingBottom: 'none', width: 'full', align: 'left' } } },
-      { id: 'sec2', type: 'product_carousel', visible: true, config: { heading: 'Featured Products', source: 'placement', placementLocation: 'featured', count: 8, cardStyle: 'standard', viewAllHref: '/products', layout: { background: 'white', spacingTop: 'medium', spacingBottom: 'medium', width: 'contained', align: 'left' } } },
-    ] },
-    { id: 'pg2', title: 'Opel Launch', slug: 'opel-launch', status: 'draft', isCampaign: true, seoTitle: '', seoDescription: '', updatedAt: at(10), sections: [] },
-  ] satisfies Page[],
   journal: [
     { id: 'j1', title: 'Choosing a finish that lasts', slug: 'choosing-a-finish', category: 'Guides', excerpt: 'PVD, chrome or matte: what holds up in Indian water.', body: '<p>…</p>', coverImageId: 'm4', status: 'published' },
     { id: 'j2', title: 'Inside the Rajkot foundry', slug: 'inside-the-foundry', category: 'Stories', excerpt: '', body: '', coverImageId: '', status: 'draft' },
@@ -58,42 +74,8 @@ export const seed: Record<string, Doc[]> = {
       items: [{ name: 'Concealed Diverter Kit', sku: 'FT-CDK-005', finish: 'Chrome', qty: 1, unitPrice: 215000 }], timeline: [{ at: at(25), status: 'new', note: 'Order placed', by: 'System' }] },
   ],
   submissions: [
-    { id: 's1', reference: 'PA-2026-0012', type: 'purchase_assistance', name: 'Sneha Iyer', email: 'sneha@example.com', phone: '+919811100004', city: 'Chennai', message: 'Where can I see the Opel range near Adyar?', fittingInterest: 'Basin', status: 'new', emailSent: true, createdAt: at(29) },
-    { id: 's2', reference: 'CT-2026-0042', type: 'contact', name: 'Rahul Mehta', email: 'rahul@example.com', phone: '', city: 'Surat', message: 'Do you ship to Surat?', fittingInterest: '', status: 'new', emailSent: false, createdAt: at(27) },
-    { id: 's3', reference: 'DL-2026-0003', type: 'dealer_application', name: 'Kiran Traders', email: 'kiran@example.com', phone: '+919811100005', city: 'Hubballi', message: 'Showroom 1,200 sq ft, interested in franchise.', fittingInterest: '', status: 'handled', emailSent: true, createdAt: at(20) },
-  ],
-  resources: [
-    { id: 'r1', title: 'Opel Installation Manual', category: 'Manuals', fileId: 'm6', productIds: ['p1'], description: '' },
-    { id: 'r2', title: 'Product Catalogue 2026', category: 'Brochures', fileId: 'm6', productIds: [], description: '' },
-    { id: 'r3', title: 'Opel CAD drawings', category: 'CAD / BIM', fileId: 'm6', productIds: ['p1', 'p2'], description: '' },
-  ],
-  inspiration: [
-    { id: 'i1', title: 'Quiet luxury powder room', styleTags: ['Minimal', 'Matte black'], imageId: 'm4', hotspots: [{ productId: 'p1', x: 42, y: 55 }], status: 'draft' },
-  ],
-  exhibitions: [
-    { id: 'x1', title: 'Index Mumbai 2027', startDate: '2027-01-14', endDate: '2027-01-17', venue: 'Bombay Exhibition Centre', hall: 'Hall 2', booth: 'B-14', coverImageId: 'm4', productIds: ['p1', 'p3'], status: 'draft' },
-  ],
-  faqs: [
-    { id: 'f1', question: 'How do I care for a matte black finish?', answer: 'Wipe with a soft damp cloth. Avoid abrasive cleaners.', category: 'Care', productIds: [] },
-    { id: 'f2', question: 'What is the warranty period?', answer: 'Flowtop products carry a 5 year warranty on the body.', category: 'Warranty', productIds: [] },
-    { id: 'f3', question: 'Do you offer installation?', answer: 'Contact us on WhatsApp and we will connect you with a certified plumber.', category: 'Installation', productIds: [] },
-  ],
-  synonyms: [
-    { id: 'sy1', term: 'faucet', mapsTo: 'mixer', featured: false },
-    { id: 'sy2', term: 'tap', mapsTo: 'mixer', featured: true },
-  ],
-  'style-rules': [
-    { id: 'st1', question: 'Where will it be fitted?', answerLabel: 'Basin', attributeKey: 'fitting_space', attributeValue: 'basin', weight: 3, order: 1 },
-    { id: 'st2', question: 'What look do you like?', answerLabel: 'Modern and minimal', attributeKey: 'style', attributeValue: 'minimal', weight: 2, order: 2 },
-  ],
-  'finish-care': [
-    { id: 'fc1', finish: 'Matte Black', story: 'A powder-coated finish with a soft, low-sheen look.', patina: 'Does not patina; may show fingerprints.', dos: ['Wipe with a soft damp cloth', 'Dry after cleaning'], donts: ['Use abrasive pads', 'Use bleach'], macroImageId: 'm2' },
-    { id: 'fc2', finish: 'PVD Gold', story: 'Vacuum-deposited gold with a hard-wearing surface.', patina: 'Stays bright for years.', dos: ['Mild soap and water'], donts: ['Acidic descalers'], macroImageId: '' },
-  ],
-  attributes: [
-    { id: 'at1', name: 'Spout Height', key: 'spout_height', type: 'number', filterable: true, unit: 'mm' },
-    { id: 'at2', name: 'Mounting Type', key: 'mounting_type', type: 'choice', filterable: true, unit: '' },
-    { id: 'at3', name: 'Handle Count', key: 'handles', type: 'number', filterable: false, unit: '' },
+    { id: 's2', reference: 'CT-2026-0042', type: 'contact', name: 'Rahul Mehta', email: 'rahul@example.com', phone: '', city: 'Surat', message: 'Do you ship to Surat?', status: 'new', emailSent: false, createdAt: at(27) },
+    { id: 's3', reference: 'DL-2026-0003', type: 'dealer_application', name: 'Kiran Traders', email: 'kiran@example.com', phone: '+919811100005', city: 'Hubballi', message: 'Showroom 1,200 sq ft, interested in franchise.', status: 'handled', emailSent: true, createdAt: at(20) },
   ],
 };
 

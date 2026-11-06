@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { api, ApiError } from '@/lib/api';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
-import type { Doc } from '@/types/cms';
+import type { Doc } from '@/lib/doc';
 import { LoadError, Skeleton } from './EditorBar';
 
 export interface Column { key: string; label: string; render?: (d: Doc) => ReactNode }

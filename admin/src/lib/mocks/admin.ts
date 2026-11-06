@@ -1,22 +1,27 @@
-import type { Permission } from '@flowtop/types';
-import type { Doc, NavNode, Page, Placement, PlacementLocation } from '@/types/cms';
+import type { AdminProduct, NavNode, Permission, Placement, PlacementLocation, Specification, Variant } from '@flowtop/types';
+import type { Doc } from '@/lib/doc';
 import { fail, ok, type Res } from './res';
-import { seed, seedNav, seedPlacements, seedSettings } from './seed';
+import { seed, seedNav, seedPages, seedPlacements, seedProducts, seedSettings, seedSpecs, seedVariants } from './seed';
 
 // TODO: swap for real API. This file goes away on swap day, like router.ts.
-const store: Record<string, Doc[]> = structuredClone(seed);
+const store: Record<string, Doc[]> = { ...structuredClone(seed), products: seedProducts.map((p) => structuredClone({ ...p })), pages: seedPages.map((p) => structuredClone({ ...p })) };
 let placements: Placement[] = structuredClone(seedPlacements);
 let nav: NavNode[] = structuredClone(seedNav);
+const variants: Record<string, Variant[]> = structuredClone(seedVariants);
+const specs: Record<string, Specification[]> = structuredClone(seedSpecs);
 const settings: Record<string, string> = { ...seedSettings };
 
-/** The server is the real guard; the mock mimics it so a 403 is visible during development. */
-const READ: Record<string, Permission> = { products: 'product:read', categories: 'category:read', collections: 'collection:read', pages: 'page:read', journal: 'journal:read', orders: 'order:read', submissions: 'submission:read', navigation: 'navigation:read', settings: 'settings:read', attributes: 'product:read' };
-const WRITE: Record<string, Permission> = { products: 'product:update', categories: 'category:write', collections: 'collection:write', pages: 'page:write', journal: 'journal:write', orders: 'order:status_change', submissions: 'submission:update', navigation: 'navigation:write', settings: 'settings:write', attributes: 'product:update', placements: 'placement:manage' };
-const ACTION: Record<string, Permission> = { publish: 'product:publish', unpublish: 'product:publish', archive: 'product:archive', bulk: 'product:publish' };
+/** The server is the real guard; the mock mimics it so a 403 is visible during development. Permissions are typed, so a typo does not compile. */
+const READ: Record<string, Permission> = { products: 'product:read', variants: 'product:read', categories: 'category:read', collections: 'collection:read', pages: 'page:read', journal: 'journal:read', orders: 'order:read', submissions: 'submission:read', navigation: 'navigation:read', settings: 'settings:read' };
+const WRITE: Record<string, Permission> = { products: 'product:update', variants: 'product:update', categories: 'category:write', collections: 'collection:write', pages: 'page:write', sections: 'section:write', journal: 'journal:write', orders: 'order:status_change', submissions: 'submission:update', navigation: 'navigation:write', settings: 'settings:write', placements: 'placement:manage' };
+const ACTION: Record<string, Permission> = { publish: 'product:publish', unpublish: 'product:publish', archive: 'product:archive' };
 function needed(col: string, id: string | undefined, action: string | undefined, method: string): Permission | undefined {
+  if (col === 'orders' && id === 'export') return 'order:export';
   if (method === 'GET') return READ[col] ?? 'page:read';
   if (col === 'pages' && action === 'publish') return 'page:publish';
-  if (col === 'products' && (ACTION[action ?? ''] ?? ACTION[id ?? ''])) return ACTION[action ?? ''] ?? ACTION[id ?? ''];
+  if (col === 'products' && id === 'bulk') return 'product:update';
+  if (col === 'products' && action === 'placements') return 'placement:manage';
+  if (col === 'products' && ACTION[action ?? '']) return ACTION[action ?? ''];
   if (col === 'products' && method === 'POST' && !id) return 'product:create';
   return WRITE[col] ?? 'page:write';
 }
@@ -35,18 +40,18 @@ function validateProduct(p: Doc, publish: boolean): Record<string, string> {
   if (publish) {
     if (!(Number(p.price) > 0)) f.price = 'Set a price before publishing.';
     if (!p.categoryId) f.categoryId = 'Choose a category before publishing.';
-    if (!(p.galleryIds as string[])?.length) f.galleryIds = 'Add at least one image before publishing.';
   }
   return f;
 }
 
 function locations(): PlacementLocation[] {
   const home = [['featured', 'Featured Products'], ['new_arrivals', 'New Arrivals'], ['bestsellers', 'Bestsellers'], ['recommended', 'Recommended']]
-    .map(([id, n]) => ({ locationType: 'homepage_section', locationId: id as string, locationName: `Homepage: ${n}` }));
-  const m = (t: string, col: string, label: string, key: string) => (store[col] ?? []).map((d) => ({ locationType: t, locationId: d.id, locationName: `${label}: ${String(d[key])}` }));
-  return [...home, ...m('category', 'categories', 'Category', 'name'), ...m('collection', 'collections', 'Collection', 'name'),
-    ...(store.pages ?? []).filter((p) => p.isCampaign).map((p) => ({ locationType: 'campaign_page', locationId: p.id, locationName: `Campaign: ${String(p.title)}` }))];
+    .map(([id, n]): PlacementLocation => ({ locationType: 'homepage_section', locationId: id as string, locationName: `Homepage: ${n}` }));
+  const m = (locationType: PlacementLocation['locationType'], col: string, label: string): PlacementLocation[] => (store[col] ?? []).map((d) => ({ locationType, locationId: d.id, locationName: `${label}: ${String(d.name)}` }));
+  return [...home, ...m('category', 'categories', 'Category'), ...m('collection', 'collections', 'Collection')];
 }
+
+const STATUS_FOR = { publish: 'published', unpublish: 'unpublished', archive: 'archived' } as const;
 
 export function adminRoutes(route: string, method: string, raw: unknown, params: URLSearchParams, perms: readonly string[]): Res | null {
   const b = (raw ?? {}) as Record<string, unknown>;
@@ -75,28 +80,52 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
     return ok(settings);
   }
 
+  if (col === 'variants' && id) {
+    const [pid, list] = Object.entries(variants).find(([, l]) => l.some((v) => v.id === id)) ?? [];
+    const v = list?.find((x) => x.id === id);
+    if (!pid || !list || !v) return fail(404, 'NOT_FOUND', 'That finish no longer exists.');
+    if (method === 'DELETE') { variants[pid] = list.filter((x) => x.id !== id); return { status: 204, json: null }; }
+    Object.assign(v, b); return ok(v);
+  }
+  if (col === 'products' && id && action === 'variants') {
+    const list = (variants[id] ??= []);
+    if (parts[4] === 'reorder') { variants[id] = (b.ids as string[]).map((i) => list.find((v) => v.id === i)).filter((v): v is Variant => !!v); return ok({ reordered: true }); }
+    if (method === 'POST') { const v: Variant = { id: uid('v'), name: '', skuSuffix: '', price: 0, swatchHex: null, image: null, isAvailable: true, isDefault: false, ...b }; list.push(v); return ok(v); }
+    return ok(list);
+  }
+  if (col === 'products' && id && action === 'specifications') {
+    if (method === 'PUT') {
+      const items = (b.items as Omit<Specification, 'id'>[]) ?? [];
+      const bad = items.findIndex((s) => !s.value);
+      if (bad >= 0) return fail(422, 'VALIDATION_FAILED', INVALID, { [`items.${bad}.value`]: 'A specification needs a value.' });
+      specs[id] = items.map((s, i) => ({ ...s, id: uid('s'), position: i + 1 }));
+    }
+    return ok(specs[id] ?? []);
+  }
   if (col === 'products' && id && action === 'placements') {
     if (method === 'POST') {
       if (placements.some((p) => p.productId === id && p.locationType === b.locationType && p.locationId === b.locationId)) return fail(409, 'CONFLICT', 'This product is already placed there.');
       const loc = locations().find((l) => l.locationType === b.locationType && l.locationId === b.locationId);
-      const n = placements.filter((p) => p.locationType === b.locationType && p.locationId === b.locationId).length;
-      const p: Placement = { id: uid('pl'), productId: id, locationType: String(b.locationType), locationId: String(b.locationId), locationName: loc?.locationName ?? '', position: n + 1, label: '', enabled: true };
+      if (!loc) return fail(422, 'VALIDATION_FAILED', INVALID, { locationId: 'That place does not exist.' });
+      const n = placements.filter((p) => p.locationType === loc.locationType && p.locationId === loc.locationId).length;
+      const p: Placement = { id: uid('pl'), productId: id, ...loc, position: n + 1, label: '', enabled: true };
       placements.push(p); return ok(p);
     }
     return ok(placements.filter((p) => p.productId === id));
   }
   if (col === 'products' && id === 'bulk') {
-    (b.ids as string[]).forEach((pid) => { const p = find('products', pid); if (p && !Object.keys(validateProduct(p, b.action === 'publish')).length) p.status = b.action === 'publish' ? 'published' : 'draft'; });
-    return ok({ done: true });
+    const to = STATUS_FOR[b.action as keyof typeof STATUS_FOR];
+    (b.ids as string[]).forEach((pid) => { const p = find('products', pid); if (p && to && !Object.keys(validateProduct(p, b.action === 'publish')).length) p.status = to; });
+    return ok((b.ids as string[]).map((pid) => find('products', pid)));
   }
-  if (col === 'products' && id && ['publish', 'unpublish', 'archive'].includes(action ?? '')) {
+  if (col === 'products' && id && action && action in STATUS_FOR) {
     const p = find('products', id); if (!p) return fail(404, 'NOT_FOUND', 'Product not found.');
     const f = validateProduct(p, action === 'publish');
     if (Object.keys(f).length) return fail(422, 'VALIDATION_FAILED', 'This product cannot be published yet.', f);
-    p.status = action === 'publish' ? 'published' : action === 'archive' ? 'archived' : 'draft'; return ok(p);
+    p.status = STATUS_FOR[action as keyof typeof STATUS_FOR]; return ok(p);
   }
   if (col === 'pages' && id && action === 'publish') {
-    const p = find('pages', id) as Page | undefined; if (!p) return fail(404, 'NOT_FOUND', 'Page not found.');
+    const p = find('pages', id); if (!p) return fail(404, 'NOT_FOUND', 'Page not found.');
     p.status = 'published'; return ok(p);
   }
   if (col === 'categories' && id === 'reorder') { store.categories = (b.ids as string[]).map((i) => find('categories', i)).filter((d): d is Doc => !!d); return ok({ reordered: true }); }
@@ -111,12 +140,13 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
   if (!id) {
     if (method === 'POST') {
       if (col === 'products') { const f = validateProduct(b as Doc, false); if (Object.keys(f).length) return fail(422, 'VALIDATION_FAILED', INVALID, f); }
-      const d: Doc = { ...b, id: uid(col.slice(0, 2)), updatedAt: now() }; list.push(d); return ok(d);
+      const base: Partial<AdminProduct> = col === 'products' ? { ...seedProducts[0], status: 'draft', publishedAt: null, category: null, _count: { specifications: 0, media: 0, variants: 0, placements: 0 } } : {};
+      const d: Doc = { ...base, ...b, id: uid(col.slice(0, 2)), createdAt: now(), updatedAt: now() }; list.push(d); return ok(d);
     }
     const q = (params.get('search') ?? '').toLowerCase();
     const miss = params.get('missing');
-    const need = (d: Doc) => !miss || (miss === 'images' ? !(d.galleryIds as string[]).length : !(d.specs as unknown[]).length);
-    return ok(list.filter((d) => (!q || JSON.stringify(d).toLowerCase().includes(q)) && (col !== 'products' || need(d))));
+    const lacks = (d: Doc) => !miss || ((d._count as AdminProduct['_count'])?.[miss === 'images' ? 'media' : 'specifications'] ?? 0) === 0;
+    return ok(list.filter((d) => (!q || JSON.stringify(d).toLowerCase().includes(q)) && (col !== 'products' || lacks(d))));
   }
   const d = find(col, id);
   if (!d) return fail(404, 'NOT_FOUND', 'That item no longer exists.');
@@ -128,7 +158,6 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
   }
   if (method === 'DELETE') {
     if (col === 'categories' && (store.products ?? []).some((p) => p.categoryId === id)) return fail(409, 'CONFLICT', 'This category still has products. Move them to another category first.');
-    if (col === 'products') placements = placements.filter((p) => p.productId !== id);
     list.splice(list.indexOf(d), 1); return { status: 204, json: null };
   }
   return ok(d);

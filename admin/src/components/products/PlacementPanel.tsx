@@ -5,7 +5,8 @@ import { ConfirmDialog, Modal } from '@/components/ui/Modal';
 import { SortableList } from '@/components/ui/SortableList';
 import { Skeleton } from '@/components/ui/EditorBar';
 import { btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
-import type { Doc, Placement, PlacementLocation, Product } from '@/types/cms';
+import type { AdminProduct, Placement, PlacementLocation } from '@flowtop/types';
+import type { Doc } from '@/lib/doc';
 
 const TYPE_LABEL: Record<string, string> = { homepage_section: 'Homepage sections', category: 'Categories', collection: 'Collections', campaign_page: 'Campaign pages', related: 'Related' };
 
@@ -13,7 +14,7 @@ const TYPE_LABEL: Record<string, string> = { homepage_section: 'Homepage section
  * Where this product is showcased. Each placement is its own record: removing one never touches
  * the product or any other placement. The wording below says so on purpose.
  */
-export function PlacementPanel({ product }: { product: Product }) {
+export function PlacementPanel({ product }: { product: AdminProduct }) {
   const [items, setItems] = useState<Placement[]>();
   const [error, setError] = useState<string>();
   const [adding, setAdding] = useState(false);
@@ -80,7 +81,7 @@ function AddPlacement({ open, onClose, onAdd, taken }: { open: boolean; onClose:
 }
 
 /** Shows the product among its real neighbours at its real position. Device toggle resizes the frame. */
-function PlacementPreview({ placement, product, onClose }: { placement: Placement; product: Product; onClose: () => void }) {
+function PlacementPreview({ placement, product, onClose }: { placement: Placement; product: AdminProduct; onClose: () => void }) {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [all, setAll] = useState<Placement[]>();
   const [names, setNames] = useState<Record<string, Doc>>({});

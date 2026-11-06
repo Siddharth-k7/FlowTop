@@ -1,9 +1,8 @@
 import { opts, type Field } from '@/lib/fields';
 
 /**
- * The 12 section types from the PDF (Section 6.2). The first six match docs/03-api-contract.md.
- * The other six, and the extra fields marked (new), are PROPOSED: see admin/SECTION-SHAPES.md.
- * Changing a shape is a conversation with Dev C and Dev B, not a commit.
+ * The six section types in docs/03-api-contract.md (Section config shapes), field for field.
+ * Changing a shape is a contract PR that Dev B, C and D review, not a commit here.
  *
  * Styling is ONLY ever a dropdown of approved presets. There is no colour, CSS or class-name field.
  * Keys with a dot ("layout.width", "cta.label") write into the nested object the contract defines.
@@ -20,7 +19,7 @@ export const DEFAULT_LAYOUT = { background: 'white', spacingTop: 'medium', spaci
 const POS = ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const heading: Field = { key: 'heading', label: 'Heading', type: 'text' };
 
-export interface SectionDef { label: string; hint: string; fields: Field[]; isNew?: boolean }
+export interface SectionDef { label: string; hint: string; fields: Field[] }
 export const SECTIONS: Record<string, SectionDef> = {
   hero: { label: 'Hero banner', hint: 'Large image or video with a headline and buttons.', fields: [
     { key: 'headline', label: 'Headline', type: 'text', required: true }, { key: 'subheading', label: 'Sub-heading', type: 'text' },
@@ -41,25 +40,10 @@ export const SECTIONS: Record<string, SectionDef> = {
     { key: 'productIds', label: 'Featured products', type: 'refList', of: 'products' }, { key: 'variant', label: 'Style', type: 'select', options: opts('split', 'stacked', 'overlay') }] },
   gallery: { label: 'Gallery', hint: 'Grid, masonry or slider of images.', fields: [
     heading, { key: 'imageIds', label: 'Images', type: 'mediaList' }, { key: 'variant', label: 'Style', type: 'select', options: opts('grid', 'masonry', 'slider') },
-    { key: 'columns', label: 'Columns', type: 'select', numeric: true, options: opts('2', '3', '4') }, { key: 'showCaptions', label: 'Show captions', type: 'toggle', hint: 'Show each image caption' },
-    { key: 'hotspots', label: 'Tag products on images (new)', type: 'hotspots' }] },
+    { key: 'columns', label: 'Columns', type: 'select', numeric: true, options: opts('2', '3', '4') }, { key: 'showCaptions', label: 'Show captions', type: 'toggle', hint: 'Show each image caption' }] },
   cta: { label: 'Call to action', hint: 'A prompt with a button, a download or a form.', fields: [
-    heading, { key: 'body', label: 'Text', type: 'textarea' }, { key: 'mode', label: 'Action', type: 'select', options: opts('button', 'download', 'form') },
-    { key: 'cta.label', label: 'Button label', type: 'text' }, { key: 'cta.href', label: 'Button link', type: 'text' }, { key: 'documentId', label: 'File to download', type: 'media' },
-    { key: 'formType', label: 'Form to show (new)', type: 'select', options: opts('consultation', 'purchase_assistance') }] },
-  resource_downloads: { label: 'Resource downloads', isNew: true, hint: 'A list of manuals, brochures and CAD files.', fields: [
-    heading, { key: 'resourceIds', label: 'Downloads', type: 'refList', of: 'resources' }, { key: 'groupByCategory', label: 'Group by category', type: 'toggle', hint: 'Group downloads under their category' }] },
-  inspiration: { label: 'Inspiration', isNew: true, hint: 'Styled rooms with "Shop this look".', fields: [
-    heading, { key: 'lookIds', label: 'Looks', type: 'refList', of: 'inspiration' }, { key: 'showShopThisLook', label: 'Show "Shop this look"', type: 'toggle', hint: 'Let visitors shop the tagged products' }] },
-  support_faq: { label: 'Support FAQ', isNew: true, hint: 'Questions and answers with a WhatsApp button.', fields: [
-    heading, { key: 'faqIds', label: 'Questions', type: 'refList', of: 'faqs' }, { key: 'showWhatsapp', label: 'Show WhatsApp button', type: 'toggle', hint: 'Show the support WhatsApp button' }] },
-  exhibition_feature: { label: 'Exhibition feature', isNew: true, hint: 'Spotlight on an exhibition.', fields: [
-    heading, { key: 'exhibitionId', label: 'Exhibition', type: 'ref', of: 'exhibitions', required: true }, { key: 'showProducts', label: 'Show showcased products', type: 'toggle', hint: 'List the products on show' }] },
-  related_products: { label: 'Related products', isNew: true, hint: 'Style-related items or compatible hardware.', fields: [
-    heading, { key: 'mode', label: 'Show', type: 'select', options: [{ value: 'style_related', label: 'Style-related items' }, { value: 'compatible_accessories', label: 'Compatible installation hardware' }] },
-    { key: 'productId', label: 'For product', type: 'ref', of: 'products', hint: 'Leave empty on product pages to use that product.' }, { key: 'count', label: 'How many', type: 'number' }] },
-  comparison: { label: 'Comparison entry', isNew: true, hint: 'Invites visitors to compare products.', fields: [
-    heading, { key: 'body', label: 'Text', type: 'textarea' }, { key: 'productIds', label: 'Suggested products to compare', type: 'refList', of: 'products' }, { key: 'ctaLabel', label: 'Button label', type: 'text' }] },
+    heading, { key: 'body', label: 'Text', type: 'textarea' }, { key: 'mode', label: 'Action', type: 'select', options: opts('button', 'download') },
+    { key: 'cta.label', label: 'Button label', type: 'text' }, { key: 'cta.href', label: 'Button link', type: 'text' }, { key: 'documentId', label: 'File to download', type: 'media' }] },
 };
 export const SECTION_TYPES = Object.keys(SECTIONS);
 

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Field as UiField } from '@flowtop/ui';
 import { inputCls } from '@/lib/ui-classes';
 import { RefListField, RefSelectField } from './RefFields';
-import { type Cta, CtasField, HotspotsField, MediaField, MediaListField, StringListField } from './MediaFields';
+import { type Cta, CtasField, MediaField, MediaListField, StringListField } from './MediaFields';
 
 import { type Field, type Values } from '@/lib/fields';
 export { opts, type Field, type FieldType, type Values } from '@/lib/fields';
@@ -31,7 +31,7 @@ export function SchemaForm({ fields, value, onChange, errors = {}, idPrefix = 'f
         const id = `${idPrefix}-${f.key}`;
         const error = errors[f.key] || local[f.key] || undefined;
         const v = value[f.key];
-        const wide = ['textarea', 'media', 'mediaList', 'refList', 'stringList', 'hotspots', 'ctas'].includes(f.type);
+        const wide = ['textarea', 'media', 'mediaList', 'refList', 'stringList', 'ctas'].includes(f.type);
                 const body = (a: Record<string, unknown>) => {
           switch (f.type) {
             case 'textarea': return <textarea {...a} rows={4} className={`${inputCls} py-2`} value={String(v ?? '')} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, e.target.value)} />;
@@ -50,7 +50,6 @@ export function SchemaForm({ fields, value, onChange, errors = {}, idPrefix = 'f
             case 'refList': return <RefListField of={f.of ?? ''} value={(v as string[]) ?? []} onChange={(x) => onChange(f.key, x)} label={f.label} />;
             case 'stringList': return <StringListField value={(v as string[]) ?? []} onChange={(x) => onChange(f.key, x)} label={f.label} placeholder={f.placeholder} />;
             case 'ctas': return <CtasField value={(v as Cta[]) ?? []} onChange={(x) => onChange(f.key, x)} />;
-            case 'hotspots': return <HotspotsField value={(v as { productId: string; x: number; y: number }[]) ?? []} onChange={(x) => onChange(f.key, x)} />;
             default: return <input {...a} type="text" className={inputCls} placeholder={f.placeholder} value={String(v ?? '')} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, e.target.value)} />;
           }
         };

@@ -1,7 +1,7 @@
 'use client';
 import { SchemaForm, type Values } from '@/components/ui/SchemaForm';
 import { LAYOUT_FIELDS, SECTIONS, getPath, setPath } from '@/lib/sections';
-import type { Section } from '@/types/cms';
+import type { Section } from '@flowtop/types';
 
 /** Content fields per section type, then layout presets. Every layout option is a dropdown. */
 export function SectionEditor({ section, onChange }: { section: Section; onChange: (config: Record<string, unknown>) => void }) {
