@@ -90,9 +90,9 @@ export const seedPlacements: Placement[] = [
 ];
 
 export const seedNav: NavNode[] = [
-  { id: 'n1', label: 'Products', linkType: 'external', destination: '/products', openInNewTab: false, children: [{ id: 'n2', label: 'Basin Mixers', linkType: 'category', destination: 'c1', openInNewTab: false, children: [] }] },
-  { id: 'n3', label: 'Collections', linkType: 'external', destination: '/collections', openInNewTab: false, children: [] },
-  { id: 'n4', label: 'Journal', linkType: 'external', destination: '/journal', openInNewTab: false, children: [] },
+  { id: 'n1', label: 'Products', linkType: 'external', destination: 'https://flowtop.example/products', openInNewTab: false, children: [] },
+  { id: 'n3', label: 'Collections', linkType: 'external', destination: 'https://flowtop.example/collections', openInNewTab: false, children: [] },
+  { id: 'n4', label: 'Journal', linkType: 'external', destination: 'https://flowtop.example/journal', openInNewTab: false, children: [] },
 ];
 
 /** Same keys, order and descriptions as backend/src/settings/setting-definitions.ts. __tests__/mock-shapes.test.ts fails if they drift. */

@@ -42,8 +42,10 @@ export class NavigationService {
     const add = (menu: NavigationMenu, nodes: NavInput[], parentId: string | null) => {
       nodes.forEach((node, index) => {
         if (!node.label.trim()) throw new ApiException('VALIDATION_FAILED', 'Every menu item needs a label.', { label: 'Every menu item needs a label.' });
-        if (node.linkType !== 'external' && !/^[0-9a-f-]{36}$/i.test(node.destination)) {
-          throw new ApiException('VALIDATION_FAILED', 'Choose a page, category, collection or product.', { destination: 'That destination is not an id.' });
+        const external = /^(https?:\/\/\S+|mailto:\S+|tel:\+?[0-9 ()-]+)$/i.test(node.destination);
+        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(node.destination);
+        if (node.linkType === 'external' ? !external : !uuid) {
+          throw new ApiException('VALIDATION_FAILED', 'Use a page, category, collection or product id, or an https, mailto or tel link.', { destination: 'That destination is not allowed.' });
         }
         const id = node.id && /^[0-9a-f-]{36}$/i.test(node.id) ? node.id : randomUUID();
         data.push({ id, menu, label: node.label.trim(), linkType: node.linkType, destination: node.destination, openInNewTab: node.openInNewTab ?? false, parentId, position: index + 1 });
@@ -52,10 +54,15 @@ export class NavigationService {
     };
     add('header', dto.header ?? [], null);
     add('footer', dto.footer ?? [], null);
-    await this.prisma.$transaction([
-      this.prisma.navigationItem.deleteMany(),
-      ...(data.length ? [this.prisma.navigationItem.createMany({ data })] : []),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.navigationItem.deleteMany(),
+        ...(data.length ? [this.prisma.navigationItem.createMany({ data })] : []),
+      ]);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) throw new ApiException('VALIDATION_FAILED', 'That menu could not be saved.', { destination: 'Check each link.' });
+      throw error;
+    }
     await this.audit.record({ actorId, action: 'update', entityType: 'navigation', entityId: 'navigation', metadata: { items: data.length } });
     return this.get();
   }

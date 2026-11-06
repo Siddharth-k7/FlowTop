@@ -24,7 +24,7 @@ function Level({ nodes, onChange, depth }: { nodes: NavNode[]; onChange: (n: Nav
               <select className={`${inputCls} w-36`} aria-label="Link type" value={node.linkType} onChange={(e) => set(node.id, { linkType: e.target.value as NavigationLinkTypeName })}>
                 {LINKS.map((link) => <option key={link} value={link}>{link}</option>)}
               </select>
-              <input className={`${inputCls} min-w-32 flex-1`} aria-label="Destination" placeholder={node.linkType === 'external' ? '/products or https://…' : 'id of the page, category, collection or product'} value={node.destination} onChange={(e) => set(node.id, { destination: e.target.value })} />
+              <input className={`${inputCls} min-w-32 flex-1`} aria-label="Destination" placeholder={node.linkType === 'external' ? 'https://, mailto: or tel:' : 'id of the page, category, collection or product'} value={node.destination} onChange={(e) => set(node.id, { destination: e.target.value })} />
               <label className="flex min-h-touch items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={node.openInNewTab} onChange={(e) => set(node.id, { openInNewTab: e.target.checked })} />New tab</label>
               <button className="min-h-touch px-2 text-sm text-error" onClick={() => onChange(nodes.filter((item) => item.id !== node.id))}>Remove{node.children.length ? ' with sub-items' : ''}</button>
             </div>

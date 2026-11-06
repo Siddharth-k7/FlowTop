@@ -243,5 +243,21 @@ describe('admin app against the real API (e2e)', () => {
       expect(String(res.text)).toContain(`"'=cmd"`);
       await http().get('/api/v1/admin/orders/export').set('Cookie', productManager).expect(403);
     });
+
+    it('replaces navigation and stores collection rank order', async () => {
+      const nav = await http().put('/api/v1/admin/navigation').set('Cookie', marketingAdmin).send({
+        header: [{ label: 'Shop', linkType: 'external', destination: 'https://flowtop.example/products', openInNewTab: false, children: [] }],
+        footer: [],
+      }).expect(200);
+      expect((nav.body as { data: { header: { label: string }[] } }).data.header[0]?.label).toBe('Shop');
+      const product = await http().post(PRODUCTS).set('Cookie', productManager).send(body()).expect(201);
+      const productId = (product.body as { data: { id: string } }).data.id;
+      const collection = await http().post('/api/v1/admin/collections').set('Cookie', productManager).send({ name: 'Opel', slug: `opel-${randomUUID().slice(0, 6)}` }).expect(201);
+      const id = (collection.body as { data: { id: string } }).data.id;
+      await http().put(`/api/v1/admin/collections/${id}/products`).set('Cookie', productManager).send({ items: [{ productId, position: 1 }] }).expect(200);
+      const again = await http().get(`/api/v1/admin/collections/${id}`).set('Cookie', productManager).expect(200);
+      expect((again.body as { data: { productIds: string[] } }).data.productIds).toEqual([productId]);
+      await http().put('/api/v1/admin/navigation').set('Cookie', productManager).expect(403);
+    });
   });
 });
