@@ -483,15 +483,26 @@ export interface Page {
   seo: Seo;
 }
 
+/** navigation_item.link_type. The href is built from linkType and destination, not stored. */
+export type NavigationLinkTypeName = 'page' | 'category' | 'collection' | 'product' | 'external';
+
 /**
- * One item of the navigation tree, PUT whole to /admin/navigation.
- * TODO: docs/03-api-contract.md gives no JSON for it. This is the admin's proposal; Dev B to confirm.
+ * One item of GET/PUT /admin/navigation. One level of children.
+ * Built from navigation_item: label, link type, destination, not a free href.
  */
 export interface NavNode {
   id: string;
   label: string;
-  href: string;
+  linkType: NavigationLinkTypeName;
+  destination: string;
+  openInNewTab: boolean;
   children: NavNode[];
+}
+
+/** Header and footer are separate menus. PUT replaces both. */
+export interface AdminNavigation {
+  header: NavNode[];
+  footer: NavNode[];
 }
 
 /** GET /admin/categories. A flat row; the public tree is `Category`. */
@@ -515,6 +526,8 @@ export interface AdminCollection {
   story: string;
   heroMediaId: string | null;
   status: PublishStatus;
+  /** Rank order. Changed through PUT /admin/collections/:id/products, not PATCH. */
+  productIds: string[];
 }
 
 /** One ranked product in PUT /admin/collections/:id/products. */

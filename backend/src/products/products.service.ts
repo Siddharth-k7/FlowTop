@@ -9,6 +9,9 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { ProductListQueryDto } from './dto/product-list-query.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductsRepository } from './products.repository';
+import type { AuthUser } from '../auth';
+
+const uniqueTarget = (meta: unknown): string => JSON.stringify(meta ?? '');
 
 @Injectable()
 export class ProductsService {
@@ -36,7 +39,7 @@ export class ProductsService {
       await this.audit.record({ actorId, action: 'create', entityType: 'product', entityId: product.id });
       return { data: product };
     } catch (error: unknown) {
-      this.rethrowDuplicateSku(error);
+      this.rethrowUnique(error);
       throw error;
     }
   }
@@ -50,7 +53,7 @@ export class ProductsService {
       await this.audit.record({ actorId, action: 'update', entityType: 'product', entityId: id });
       return { data: product };
     } catch (error: unknown) {
-      this.rethrowDuplicateSku(error);
+      this.rethrowUnique(error);
       throw error;
     }
   }
@@ -58,15 +61,20 @@ export class ProductsService {
   async transition(id: string, status: 'published' | 'unpublished' | 'archived', actorId: string) {
     const existing = await this.repository.findById(id);
     if (!existing) throw new ApiException('NOT_FOUND', 'Product not found');
+    if (status === 'published') this.assertPublishable(existing);
     const updated = await this.publishState.transition(existing, status, {
       updateStatus: (recordId, nextStatus, publishedAt) => this.repository.update(recordId, { status: nextStatus, publishedAt }),
     }, 'product', actorId, async () => (status === 'archived' ? (await this.repository.orderReferenceCount(id)) > 0 : false));
     return { data: updated };
   }
 
-  async bulk(dto: BulkProductDto, actorId: string) {
+  async bulk(dto: BulkProductDto, user: AuthUser) {
+    const need = dto.action === 'archive' ? 'product:archive' : 'product:publish';
+    if (!user.permissions.includes(need)) throw new ApiException('FORBIDDEN', 'You do not have permission to do this.');
     const results = [];
-    for (const id of dto.ids) results.push(await this.transition(id, dto.action === 'publish' ? 'published' : dto.action === 'unpublish' ? 'unpublished' : 'archived', actorId));
+    for (const id of dto.ids) {
+      results.push(await this.transition(id, dto.action === 'publish' ? 'published' : dto.action === 'unpublish' ? 'unpublished' : 'archived', user.id));
+    }
     return { data: results.map(({ data }) => data) };
   }
 
@@ -85,7 +93,19 @@ export class ProductsService {
     return { ...rest, category: categoryId ? { connect: { id: categoryId } } : undefined };
   }
 
-  private rethrowDuplicateSku(error: unknown): void {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new ApiException('VALIDATION_FAILED', 'This SKU is already in use.', { sku: 'This SKU is already in use.' });
+  /** A price and a category are what the editor also demands before Publish. Bulk uses the same rule. */
+  private assertPublishable(product: { price: number; categoryId: string | null }): void {
+    const fields: Record<string, string> = {};
+    if (!(product.price > 0)) fields.price = 'Set a price before publishing.';
+    if (!product.categoryId) fields.categoryId = 'Choose a category before publishing.';
+    if (Object.keys(fields).length > 0) throw new ApiException('VALIDATION_FAILED', 'This product cannot be published yet.', fields);
+  }
+
+  /** P2002 names the column. A slug collision must not be reported as the SKU. */
+  private rethrowUnique(error: unknown): void {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') return;
+    const target = uniqueTarget(error.meta);
+    if (target.includes('slug')) throw new ApiException('VALIDATION_FAILED', 'This web address is already in use.', { slug: 'This web address is already in use.' });
+    throw new ApiException('VALIDATION_FAILED', 'This SKU is already in use.', { sku: 'This SKU is already in use.' });
   }
 }

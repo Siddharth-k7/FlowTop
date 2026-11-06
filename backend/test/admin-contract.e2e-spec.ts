@@ -95,7 +95,12 @@ describe('admin app against the real API (e2e)', () => {
       expect((res.body as { data: AdminProduct }).data).toMatchObject({ id, category: null, _count: { specifications: 0, media: 0, variants: 0, placements: 0 } });
     });
 
-    it('lists with the pagination envelope; the admin reads `data` and ignores `meta` until it pages', async () => {
+    async function withCategory(over: Record<string, unknown> = {}) {
+      const category = await prisma.category.create({ data: { name: 'Basin Mixers', slug: `basin-${randomUUID().slice(0, 8)}`, status: 'draft' } });
+      return body({ categoryId: category.id, ...over });
+    }
+
+    it('lists with the pagination envelope; the admin reads `data` and asks for the next page', async () => {
       await http().post(PRODUCTS).set('Cookie', superAdmin).send(body()).expect(201);
 
       const res = await http().get(PRODUCTS).set('Cookie', superAdmin).expect(200);
@@ -105,8 +110,20 @@ describe('admin app against the real API (e2e)', () => {
       expect(page.meta).toEqual({ page: 1, perPage: 25, total: 1, totalPages: 1 });
     });
 
-    it('edit, publish, unpublish and archive move status as the editor expects, and say so in the response', async () => {
+    it('creates a category for the product form', async () => {
+      const res = await http().post('/api/v1/admin/categories').set('Cookie', superAdmin).send({ name: 'Basin Mixers', slug: `basin-${randomUUID().slice(0, 8)}` }).expect(201);
+      expect((res.body as { data: { name: string; status: string } }).data).toMatchObject({ name: 'Basin Mixers', status: 'draft' });
+    });
+
+    it('refuses to publish until a category is chosen', async () => {
       const created = await http().post(PRODUCTS).set('Cookie', superAdmin).send(body()).expect(201);
+      const id = (created.body as { data: AdminProduct }).data.id;
+      const res = await http().post(`${PRODUCTS}/${id}/publish`).set('Cookie', superAdmin).expect(422);
+      expect((res.body as { error: { fields: Record<string, string> } }).error.fields.categoryId).toBe('Choose a category before publishing.');
+    });
+
+    it('edit, publish, unpublish and archive move status as the editor expects, and say so in the response', async () => {
+      const created = await http().post(PRODUCTS).set('Cookie', superAdmin).send(await withCategory()).expect(201);
       const id = (created.body as { data: AdminProduct }).data.id;
 
       const edited = await http().patch(`${PRODUCTS}/${id}`).set('Cookie', superAdmin).send(body({ name: 'Opel Basin Mixer II', sku: (created.body as { data: AdminProduct }).data.sku, slug: (created.body as { data: AdminProduct }).data.slug })).expect(200);
@@ -129,8 +146,16 @@ describe('admin app against the real API (e2e)', () => {
       expect((res.body as { error: { fields: Record<string, string> } }).error.fields.sku).toBe('This SKU is already in use.');
     });
 
+    it('a duplicate slug is a 422 with fields.slug, not fields.sku', async () => {
+      const first = body();
+      await http().post(PRODUCTS).set('Cookie', superAdmin).send(first).expect(201);
+      const res = await http().post(PRODUCTS).set('Cookie', superAdmin).send(body({ slug: first.slug })).expect(422);
+      expect((res.body as { error: { fields: Record<string, string> } }).error.fields.slug).toBe('This web address is already in use.');
+      expect((res.body as { error: { fields?: Record<string, string> } }).error.fields?.sku).toBeUndefined();
+    });
+
     it('product_manager creates and publishes; marketing_admin can read but not create, publish or archive', async () => {
-      const created = await http().post(PRODUCTS).set('Cookie', productManager).send(body()).expect(201);
+      const created = await http().post(PRODUCTS).set('Cookie', productManager).send(await withCategory()).expect(201);
       const id = (created.body as { data: AdminProduct }).data.id;
       await http().post(`${PRODUCTS}/${id}/publish`).set('Cookie', productManager).expect(201);
 
@@ -174,6 +199,49 @@ describe('admin app against the real API (e2e)', () => {
         await http().get(SETTINGS).set('Cookie', cookie).expect(403);
         await http().put(SETTINGS).set('Cookie', cookie).send({ key: 'whatsapp.number', value: null }).expect(403);
       }
+    });
+  });
+
+  describe('pages, journal and orders', () => {
+    it('publishes a page without writing the draft status back', async () => {
+      const created = await http().post('/api/v1/admin/pages').set('Cookie', marketingAdmin).send({ title: 'Launch', slug: `launch-${randomUUID().slice(0, 6)}` }).expect(201);
+      const id = (created.body as { data: { id: string } }).data.id;
+      const section = await http().post(`/api/v1/admin/pages/${id}/sections`).set('Cookie', marketingAdmin).send({ type: 'hero', config: { headline: 'Hello', layout: { background: 'white', width: 'contained' } }, visible: true }).expect(201);
+      expect((section.body as { data: { id: string } }).data.id).toEqual(expect.any(String));
+      const published = await http().post(`/api/v1/admin/pages/${id}/publish`).set('Cookie', marketingAdmin).expect(201);
+      expect((published.body as { data: { status: string; sections: unknown[] } }).data.status).toBe('published');
+      expect((published.body as { data: { sections: unknown[] } }).data.sections).toHaveLength(1);
+      const again = await http().get(`/api/v1/admin/pages/${id}`).set('Cookie', marketingAdmin).expect(200);
+      expect((again.body as { data: { status: string } }).data.status).toBe('published');
+    });
+
+    it('rejects a section preset outside the contract', async () => {
+      const created = await http().post('/api/v1/admin/pages').set('Cookie', marketingAdmin).send({ title: 'Bad', slug: `bad-${randomUUID().slice(0, 6)}` }).expect(201);
+      const id = (created.body as { data: { id: string } }).data.id;
+      await http().post(`/api/v1/admin/pages/${id}/sections`).set('Cookie', marketingAdmin).send({ type: 'hero', config: { layout: { background: 'rainbow' } } }).expect(422);
+    });
+
+    it('publishes a journal article through POST /publish', async () => {
+      const created = await http().post('/api/v1/admin/journal').set('Cookie', marketingAdmin).send({ title: 'Finish', slug: `finish-${randomUUID().slice(0, 6)}`, category: 'Guides', body: 'Brass lasts.', excerpt: '' }).expect(201);
+      const id = (created.body as { data: { id: string; status: string } }).data.id;
+      expect((created.body as { data: { status: string } }).data.status).toBe('draft');
+      const published = await http().post(`/api/v1/admin/journal/${id}/publish`).set('Cookie', marketingAdmin).expect(201);
+      expect((published.body as { data: { status: string } }).data.status).toBe('published');
+      await http().post(`/api/v1/admin/journal/${id}/publish`).set('Cookie', productManager).expect(403);
+    });
+
+    it('builds the orders CSV on the server and neutralises formula cells', async () => {
+      const product = await prisma.product.create({ data: { name: 'Tap', sku: `SKU-${randomUUID().slice(0, 6)}`, slug: `tap-${randomUUID().slice(0, 6)}`, price: 100 } });
+      await prisma.order.create({ data: {
+        reference: `FT-${randomUUID().slice(0, 6)}`, customerName: '=cmd', customerEmail: 'a@flowtop.in', customerPhone: '1',
+        deliveryAddressLine1: '1 Road', deliveryCity: 'Pune', deliveryState: 'MH', deliveryPin: '411001',
+        subtotal: 100, shipping: 0, tax: 0, total: 100, paymentStatus: 'paid', orderStatus: 'received',
+        items: { create: { productId: product.id, productName: 'Tap', sku: product.sku, unitPrice: 100, quantity: 1, lineTotal: 100 } },
+      } });
+      const res = await http().get('/api/v1/admin/orders/export').set('Cookie', superAdmin).expect(200);
+      expect(res.headers['content-type']).toContain('text/csv');
+      expect(String(res.text)).toContain(`"'=cmd"`);
+      await http().get('/api/v1/admin/orders/export').set('Cookie', productManager).expect(403);
     });
   });
 });
