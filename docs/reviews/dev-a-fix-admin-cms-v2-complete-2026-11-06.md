@@ -92,7 +92,7 @@ Not verified:
 - The first-save "Saved at" line was read before the editor finished mounting, so that single sample was empty.
 - Recovery-code reuse (the same code a second time) was not tried.
 - Frontend typecheck and tests passed. UI kit tests: 33 passed. Those apps were not edited.
-- CI on the pushed head is not in this file until the push finishes. The user merges only after that CI is green.
+- CI on implementation head `39ab3291485538990ed6b703bb99a126c7d1a3e3` is green: run 42187063558, all seven checks (Backend, Backend image, Frontend, Admin, UI kit, Secret scan, GitGuardian). This paragraph is a documentation commit after that run. The user merges only when the checks are green on the current head.
 - Docker was booted against the local review database, not Render.
 
 Not verified.
