@@ -15,6 +15,9 @@ import type { Page, Section } from '@flowtop/types';
 import { DEVICES, PagePreview, type Device } from './PagePreview';
 import { SectionEditor } from './SectionEditor';
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const pageBody = (p: Page) => ({ title: p.title, slug: p.slug, seoTitle: p.seo.title, seoDescription: p.seo.description, seoCanonical: p.seo.canonical });
+
 const SETTINGS: Field[] = [
   { key: 'title', label: 'Page title', type: 'text', required: true }, { key: 'slug', label: 'Web address', type: 'text', required: true, hint: 'Leave empty only for the homepage.' },
   { key: 'seoTitle', label: 'Search result title', type: 'text' }, { key: 'seoDescription', label: 'Search result description', type: 'textarea' },
@@ -30,7 +33,25 @@ export function PageBuilder({ id }: { id: string }) {
   const can = useCan(); // COSMETIC ONLY: hiding a button is presentation; the server checks each permission.
   const canPage = can('page:write');
   const canSections = can('section:write');
-  const doc = useDocument<Page>('pages', id, blank);
+  const sectionsRef = useRef<Section[]>([]);
+  const syncSections = async (saved: Page) => {
+    const local = sectionsRef.current;
+    const remote = saved.sections ?? [];
+    for (const gone of remote) if (!local.some((section) => section.id === gone.id)) await api(`/admin/sections/${gone.id}`, { method: 'DELETE' });
+    const ids: string[] = [];
+    for (const section of local) {
+      const known = UUID.test(section.id) && remote.some((item) => item.id === section.id);
+      if (known) {
+        await api(`/admin/sections/${section.id}`, { method: 'PATCH', body: { config: section.config, visible: section.visible } });
+        ids.push(section.id);
+      } else {
+        const created = await api<Section>(`/admin/pages/${saved.id}/sections`, { method: 'POST', body: { type: section.type, config: section.config, visible: section.visible } });
+        ids.push(created.id);
+      }
+    }
+    if (ids.length) await api(`/admin/pages/${saved.id}/sections/reorder`, { method: 'POST', body: { ids } });
+  };
+  const doc = useDocument<Page>('pages', id, blank, pageBody, syncSections);
   const [pane, setPane] = useState<'sections' | 'preview' | 'edit'>('sections');
   const [selected, setSelected] = useState<string>();
   const [device, setDevice] = useState<Device>('desktop');
@@ -41,6 +62,7 @@ export function PageBuilder({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const lastEdit = useRef(0);
   const v = doc.value;
+  sectionsRef.current = v?.sections ?? [];
 
   // Server autosave every 30s, drafts only: saving a published page would change the live site.
   const autosave = useRef<() => void>(() => {});
@@ -66,8 +88,12 @@ export function PageBuilder({ id }: { id: string }) {
 
   const publish = async () => {
     setBusy(true);
-    try { const saved = await doc.save(); if (saved) { await api(`/admin/pages/${saved.id}/publish`, { method: 'POST' }); doc.set({ status: 'published' }); await doc.save(); } }
-    catch (e) { doc.setError(e instanceof ApiError ? e.message : 'Could not publish. The page was not changed.'); }
+    try {
+      const saved = await doc.save();
+      if (!saved) return;
+      await api(`/admin/pages/${saved.id}/publish`, { method: 'POST' });
+      doc.reload();
+    } catch (e) { doc.setError(e instanceof ApiError ? e.message : 'Could not publish. The page was not changed.'); }
     finally { setBusy(false); }
   };
 

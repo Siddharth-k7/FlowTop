@@ -41,7 +41,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   gallery: { label: 'Gallery', hint: 'Grid, masonry or slider of images.', fields: [
     heading, { key: 'imageIds', label: 'Images', type: 'mediaList' }, { key: 'variant', label: 'Style', type: 'select', options: opts('grid', 'masonry', 'slider') },
     { key: 'columns', label: 'Columns', type: 'select', numeric: true, options: opts('2', '3', '4') }, { key: 'showCaptions', label: 'Show captions', type: 'toggle', hint: 'Show each image caption' }] },
-  cta: { label: 'Call to action', hint: 'A prompt with a button, a download or a form.', fields: [
+  cta: { label: 'Call to action', hint: 'A prompt with a button or a download.', fields: [
     heading, { key: 'body', label: 'Text', type: 'textarea' }, { key: 'mode', label: 'Action', type: 'select', options: opts('button', 'download') },
     { key: 'cta.label', label: 'Button label', type: 'text' }, { key: 'cta.href', label: 'Button link', type: 'text' }, { key: 'documentId', label: 'File to download', type: 'media' }] },
 };

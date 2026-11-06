@@ -58,16 +58,17 @@ export const seedPages: Page[] = [
 export const seed: Record<string, Doc[]> = {
   categories: seedCategories.map((c) => ({ ...c })),
   collections: [
-    { id: 'col1', name: 'Opel', slug: 'opel', story: '<p>Soft curves, hard-wearing finishes.</p>', heroImageId: 'm1', productIds: ['p1', 'p2'], status: 'published' },
-    { id: 'col2', name: 'Heritage', slug: 'heritage', story: '', heroImageId: '', productIds: ['p6'], status: 'draft' },
+    { id: 'col1', name: 'Opel', slug: 'opel', story: '<p>Soft curves, hard-wearing finishes.</p>', heroMediaId: 'm1', productIds: ['p1', 'p2'], status: 'published' },
+    { id: 'col2', name: 'Heritage', slug: 'heritage', story: '', heroMediaId: null, productIds: ['p6'], status: 'draft' },
   ],
   journal: [
-    { id: 'j1', title: 'Choosing a finish that lasts', slug: 'choosing-a-finish', category: 'Guides', excerpt: 'PVD, chrome or matte: what holds up in Indian water.', body: '<p>…</p>', coverImageId: 'm4', status: 'published' },
-    { id: 'j2', title: 'Inside the Rajkot foundry', slug: 'inside-the-foundry', category: 'Stories', excerpt: '', body: '', coverImageId: '', status: 'draft' },
+    { id: 'j1', title: 'Choosing a finish that lasts', slug: 'choosing-a-finish', category: 'Guides', excerpt: 'PVD, chrome or matte: what holds up in Indian water.', body: '<p>…</p>', heroImageId: 'm4', status: 'published' },
+    { id: 'j2', title: 'Inside the Rajkot foundry', slug: 'inside-the-foundry', category: 'Stories', excerpt: '', body: '', heroImageId: null, status: 'draft' },
   ],
   orders: [
-    { id: 'o1', reference: 'FT-2026-00042', customerName: 'Meera Kulkarni', email: 'meera@example.com', phone: '+919811100001', address: '12 Lake View Road, Pune 411001', paymentStatus: 'paid', status: 'new', total: 399000, createdAt: at(28),
-      items: [{ name: 'Opel Basin Mixer', sku: 'FT-OBM-001-CH', finish: 'Chrome', qty: 1, unitPrice: 399000 }], timeline: [{ at: at(28), status: 'new', note: 'Order placed', by: 'System' }] },
+    { id: 'o1', reference: 'FT-2026-00042', customerName: 'Meera Kulkarni', customerEmail: 'meera@example.com', customerPhone: '+919811100001', paymentStatus: 'paid', status: 'received', total: 399000, createdAt: at(28),
+      delivery: { line1: '12 Lake View Road', line2: null, city: 'Pune', state: 'MH', pin: '411001', landmark: null, notes: null },
+      items: [{ id: 'i1', name: 'Opel Basin Mixer', sku: 'FT-OBM-001-CH', finish: 'Chrome', quantity: 1, unitPrice: 399000, lineTotal: 399000 }], timeline: [{ at: at(28), status: 'received', note: 'Order placed', by: 'System' }] },
     { id: 'o2', reference: 'FT-2026-00041', customerName: 'Arjun Shetty', email: 'arjun@example.com', phone: '+919811100002', address: '8 MG Road, Mangaluru 575001', paymentStatus: 'paid', status: 'shipped', total: 1250000, createdAt: at(26),
       items: [{ name: 'Rain Shower Head 300', sku: 'FT-RSH-300', finish: 'Chrome', qty: 1, unitPrice: 890000 }, { name: 'Opel Wall Mixer', sku: 'FT-OWM-002', finish: 'Chrome', qty: 1, unitPrice: 360000 }],
       timeline: [{ at: at(26), status: 'new', note: 'Order placed', by: 'System' }, { at: at(27), status: 'shipped', note: 'Handed to courier', by: 'Asha Rao' }] },
@@ -76,7 +77,7 @@ export const seed: Record<string, Doc[]> = {
   ],
   submissions: [
     { id: 's2', reference: 'CT-2026-0042', type: 'contact', name: 'Rahul Mehta', email: 'rahul@example.com', phone: '', city: 'Surat', message: 'Do you ship to Surat?', status: 'new', emailSent: false, createdAt: at(27) },
-    { id: 's3', reference: 'DL-2026-0003', type: 'dealer_application', name: 'Kiran Traders', email: 'kiran@example.com', phone: '+919811100005', city: 'Hubballi', message: 'Showroom 1,200 sq ft, interested in franchise.', status: 'handled', emailSent: true, createdAt: at(20) },
+    { id: 's3', reference: 'DL-2026-0003', type: 'dealer', name: 'Kiran Traders', email: 'kiran@example.com', phone: '+919811100005', city: 'Hubballi', firmName: 'Kiran Traders', message: 'Showroom 1,200 sq ft, interested in franchise.', status: 'handled', emailSent: true, createdAt: at(20) },
   ],
 };
 
@@ -89,9 +90,9 @@ export const seedPlacements: Placement[] = [
 ];
 
 export const seedNav: NavNode[] = [
-  { id: 'n1', label: 'Products', href: '/products', children: [{ id: 'n2', label: 'Basin Mixers', href: '/categories/basin-mixers', children: [] }] },
-  { id: 'n3', label: 'Collections', href: '/collections', children: [] },
-  { id: 'n4', label: 'Journal', href: '/journal', children: [] },
+  { id: 'n1', label: 'Products', linkType: 'external', destination: '/products', openInNewTab: false, children: [{ id: 'n2', label: 'Basin Mixers', linkType: 'category', destination: 'c1', openInNewTab: false, children: [] }] },
+  { id: 'n3', label: 'Collections', linkType: 'external', destination: '/collections', openInNewTab: false, children: [] },
+  { id: 'n4', label: 'Journal', linkType: 'external', destination: '/journal', openInNewTab: false, children: [] },
 ];
 
 /** Same keys, order and descriptions as backend/src/settings/setting-definitions.ts. __tests__/mock-shapes.test.ts fails if they drift. */

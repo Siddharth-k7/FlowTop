@@ -10,7 +10,7 @@ import { api, ApiError } from '@/lib/api';
  * - Leaving with unsaved changes asks first.
  */
 /** `toBody` picks what the API accepts. Without it every field except `id` is sent. */
-export function useDocument<T extends { id: string }>(col: string, id: string, blank: () => Omit<T, 'id'>, toBody?: (v: T) => unknown) {
+export function useDocument<T extends { id: string }>(col: string, id: string, blank: () => Omit<T, 'id'>, toBody?: (v: T) => unknown, beforeRedirect?: (saved: T) => Promise<void>) {
   const router = useRouter();
   const isNew = id === 'new';
   const key = `ft:draft:${col}:${id}`;
@@ -24,12 +24,17 @@ export function useDocument<T extends { id: string }>(col: string, id: string, b
   const [draft, setDraft] = useState<T>();
   const blankRef = useRef(blank); blankRef.current = blank;
   const bodyRef = useRef(toBody); bodyRef.current = toBody;
+  const beforeRef = useRef(beforeRedirect); beforeRef.current = beforeRedirect;
 
   const load = useCallback(() => {
     setLoadError(undefined);
     const done = (d: T) => {
       base.current = JSON.stringify(d); setValue(d);
-      try { const s = localStorage.getItem(key); if (s && s !== base.current) setDraft(JSON.parse(s) as T); } catch { /* storage blocked: no draft */ }
+      try {
+        const stamp = sessionStorage.getItem(`ft:saved:${col}:${id}`);
+        if (stamp) { setSavedAt(new Date(Number(stamp))); sessionStorage.removeItem(`ft:saved:${col}:${id}`); }
+        const s = localStorage.getItem(key); if (s && s !== base.current) setDraft(JSON.parse(s) as T);
+      } catch { /* storage blocked: no draft */ }
     };
     if (isNew) done({ id: 'new', ...blankRef.current() } as T);
     else api<T>(`/admin/${col}/${id}`).then(done).catch((e) => setLoadError(e instanceof ApiError ? e.message : 'Could not load this.'));
@@ -61,16 +66,20 @@ export function useDocument<T extends { id: string }>(col: string, id: string, b
     try {
       const body = bodyRef.current ? bodyRef.current(next) : Object.fromEntries(Object.entries(next).filter(([k]) => k !== 'id'));
       const saved = await api<T>(isNew ? `/admin/${col}` : `/admin/${col}/${id}`, { method: isNew ? 'POST' : 'PATCH', body });
+      if (beforeRef.current) await beforeRef.current(saved);
       base.current = JSON.stringify(saved); setValue(saved); setSavedAt(new Date());
       try { localStorage.removeItem(key); } catch { /* ignore */ }
-      if (isNew) router.replace(`/${col}/${saved.id}`);
+      if (isNew) {
+        try { sessionStorage.setItem(`ft:saved:${col}:${saved.id}`, String(Date.now())); } catch { /* ignore */ }
+        router.replace(`/${col}/${saved.id}`);
+      }
       return saved;
     } catch (e) {
       const err = e instanceof ApiError ? e : undefined;
       setError(err ? err.message : 'Could not save. Your work is still here.');
       setErrors(err?.fields ?? {});
     } finally { setSaving(false); }
-  }, [value, isNew, col, id, key, router]);
+  }, [value, isNew, col, id, key, router]); // beforeRedirect is read from a ref so a new callback does not rebuild save
 
   const useDraft = () => { if (draft) { setValue(draft); setDraft(undefined); } };
   const dropDraft = () => { try { localStorage.removeItem(key); } catch { /* ignore */ } setDraft(undefined); };

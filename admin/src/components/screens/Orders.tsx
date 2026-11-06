@@ -10,9 +10,9 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
 import { formatDate } from '@/lib/utils/formatDate';
 import { formatPrice } from '@/lib/utils/formatPrice';
-import type { Doc } from '@/lib/doc';
+import type { AdminOrderDetail } from '@flowtop/types';
 
-const STATUSES = ['new', 'processing', 'shipped', 'delivered', 'cancelled'];
+const STATUSES = ['received', 'confirmed', 'shipped', 'cancelled'];
 const opt = (v: string[]) => v.map((x) => ({ value: x, label: x[0]?.toUpperCase() + x.slice(1) }));
 const cap = (s: unknown) => <span className="capitalize">{String(s)}</span>;
 
@@ -29,32 +29,30 @@ export function OrderList() {
   return (
     <ListScreen title="Orders" endpoint="/admin/orders" rowHref={(d) => `/orders/${d.id}`} emptyText="No orders yet. They appear here as soon as a customer checks out."
       headerExtra={canExport ? <><button className={btnSecondary} onClick={exportCsv}>Export CSV</button>{exportErr && <p role="alert" className="w-full text-sm text-error">{exportErr}</p>}</> : undefined}
-      filters={[{ key: 'status', label: 'Status', options: opt(STATUSES) }, { key: 'paymentStatus', label: 'Payment', options: opt(['pending', 'paid', 'failed']) }]}
+      filters={[{ key: 'status', label: 'Status', options: opt(STATUSES) }, { key: 'paymentStatus', label: 'Payment', options: opt(['pending', 'paid', 'failed', 'refunded']) }]}
       columns={[{ key: 'reference', label: 'Order' }, { key: 'customerName', label: 'Customer' }, { key: 'total', label: 'Total', render: (d) => formatPrice(Number(d.total)) },
         { key: 'status', label: 'Status', render: (d) => cap(d.status) }, { key: 'paymentStatus', label: 'Payment', render: (d) => cap(d.paymentStatus) }, { key: 'createdAt', label: 'Placed', render: (d) => formatDate(String(d.createdAt)) }]} />
   );
 }
 
-interface Item { name: string; sku: string; finish: string; qty: number; unitPrice: number }
-interface Step { at: string; status: string; note: string; by: string }
-
 export function OrderDetail({ id }: { id: string }) {
   const canChange = useCan()('order:status_change'); // COSMETIC ONLY: the server checks order:status_change.
-  const [o, setO] = useState<Doc>();
+  const [o, setO] = useState<AdminOrderDetail>();
   const [err, setErr] = useState<string>();
   const [status, setStatus] = useState('');
   const [note, setNote] = useState('');
   const [fieldErr, setFieldErr] = useState<string>();
   const [ask, setAsk] = useState(false);
   const [busy, setBusy] = useState(false);
-  const load = useCallback(() => { api<Doc>(`/admin/orders/${id}`).then((d) => { setO(d); setStatus(String(d.status)); }).catch((e) => setErr(e instanceof ApiError ? e.message : 'Could not load this order.')); }, [id]);
+  const load = useCallback(() => { api<AdminOrderDetail>(`/admin/orders/${id}`).then((d) => { setO(d); setStatus(d.status); }).catch((e) => setErr(e instanceof ApiError ? e.message : 'Could not load this order.')); }, [id]);
   useEffect(load, [load]);
   if (err && !o) return <PageWrapper title="Order"><LoadError message={err} onRetry={() => { setErr(undefined); load(); }} /></PageWrapper>;
   if (!o) return <PageWrapper title="Order"><Skeleton rows={5} /></PageWrapper>;
-  const items = o.items as Item[]; const steps = o.timeline as Step[];
+  const items = o.items; const steps = o.timeline;
+  const address = [o.delivery.line1, o.delivery.line2, o.delivery.city, o.delivery.state, o.delivery.pin].filter(Boolean).join(', ');
   const change = async () => {
     setBusy(true); setErr(undefined); setFieldErr(undefined);
-    try { setO(await api<Doc>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status, note } })); setNote(''); setAsk(false); }
+    try { setO(await api<AdminOrderDetail>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status, note } })); setNote(''); setAsk(false); }
     catch (e) { setAsk(false); if (e instanceof ApiError) { setErr(e.message); setFieldErr(e.fields.note); } else setErr('Could not change the status. Nothing was changed.'); }
     finally { setBusy(false); }
   };
@@ -63,11 +61,11 @@ export function OrderDetail({ id }: { id: string }) {
       <div className="grid gap-4 lg:grid-cols-3">
         <section className={`${cardCls} lg:col-span-2`} aria-label="Items">
           <table className="w-full text-left text-sm"><thead className="text-grey-700"><tr><th className="py-2">Item</th><th>Qty</th><th className="text-right">Line total</th></tr></thead>
-            <tbody>{items.map((i) => <tr key={i.sku} className="border-t border-grey-100"><td className="py-2">{i.name}<span className="block text-xs text-grey-500">{i.sku} · {i.finish}</span></td><td>{i.qty}</td><td className="text-right">{formatPrice(i.qty * i.unitPrice)}</td></tr>)}</tbody>
+            <tbody>{items.map((i) => <tr key={i.id} className="border-t border-grey-100"><td className="py-2">{i.name}<span className="block text-xs text-grey-500">{i.sku}{i.finish ? ` · ${i.finish}` : ''}</span></td><td>{i.quantity}</td><td className="text-right">{formatPrice(i.lineTotal)}</td></tr>)}</tbody>
             <tfoot><tr className="border-t border-grey-200 font-semibold"><td className="py-2" colSpan={2}>Total (as charged)</td><td className="text-right">{formatPrice(Number(o.total))}</td></tr></tfoot></table>
         </section>
         <section className={cardCls} aria-label="Customer"><h2 className="mb-1 font-medium">{String(o.customerName)}</h2>
-          <p className="text-sm">{String(o.email)}<br />{String(o.phone)}</p><p className="mt-2 text-sm">{String(o.address)}</p>
+          <p className="text-sm">{o.customerEmail}<br />{o.customerPhone}</p><p className="mt-2 text-sm">{address}</p>
           <p className="mt-3 text-sm">Payment: <strong className="capitalize">{String(o.paymentStatus)}</strong></p></section>
         <section className={`${cardCls} lg:col-span-2`} aria-label="Status history"><h2 className="mb-2 font-medium">History</h2>
           <ol className="flex flex-col gap-2 text-sm">{steps.map((s, i) => <li key={i} className="border-l-2 border-purple-light pl-3"><strong className="capitalize">{s.status}</strong> · {formatDate(s.at)} · {s.by}<br />{s.note}</li>)}</ol></section>

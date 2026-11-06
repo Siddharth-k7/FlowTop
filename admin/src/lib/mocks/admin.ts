@@ -6,7 +6,7 @@ import { seed, seedNav, seedPages, seedPlacements, seedProducts, seedSettings, s
 // TODO: swap for real API. This file goes away on swap day, like router.ts.
 const store: Record<string, Doc[]> = { ...structuredClone(seed), products: seedProducts.map((p) => structuredClone({ ...p })), pages: seedPages.map((p) => structuredClone({ ...p })) };
 let placements: Placement[] = structuredClone(seedPlacements);
-let nav: NavNode[] = structuredClone(seedNav);
+const nav: NavNode[] = structuredClone(seedNav);
 const variants: Record<string, Variant[]> = structuredClone(seedVariants);
 const specs: Record<string, Specification[]> = structuredClone(seedSpecs);
 const settings: SettingItem[] = structuredClone(seedSettings);
@@ -73,13 +73,19 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
     if (method === 'DELETE') { placements = placements.filter((x) => x.id !== id); return { status: 204, json: null }; } // one row only
     Object.assign(p, b); return ok(p);
   }
-  if (col === 'navigation') { if (method === 'PUT') nav = b.tree as NavNode[]; return ok(nav); }
+  if (col === 'navigation') {
+    if (method === 'PUT') return ok(b);
+    return ok({ header: nav, footer: [] });
+  }
   if (col === 'settings') {
     if (method !== 'PUT') return ok(settings);
     const item = settings.find((x) => x.key === b.key);
     if (!item) return fail(422, 'VALIDATION_FAILED', INVALID, { key: 'Unknown setting.' });
     // The real rules live in setting-definitions.ts; the mock only keeps the one that shapes the UI: lists stay lists, null needs null-able keys.
-    if (Array.isArray(item.value) !== Array.isArray(b.value) || (typeof item.value === 'string' && typeof b.value !== 'string')) return fail(422, 'VALIDATION_FAILED', INVALID, { value: 'Enter a valid value.' });
+    if (item.key === 'whatsapp.number' && b.value !== null && !/^\+[1-9]\d{7,14}$/.test(String(b.value).replace(/[\s()-]/g, ''))) return fail(422, 'VALIDATION_FAILED', INVALID, { value: 'Enter the number in international format, for example +91 98765 43210.' });
+    if (item.key.startsWith('email.recipients.') && (!Array.isArray(b.value) || b.value.length === 0)) return fail(422, 'VALIDATION_FAILED', INVALID, { value: 'Add at least one email address.' });
+    if (item.key === 'email.senderAddress' && b.value === null && item.value !== null) return fail(422, 'VALIDATION_FAILED', INVALID, { value: 'Enter a valid email address.' });
+    if (Array.isArray(item.value) !== Array.isArray(b.value) && !(item.value === null && !Array.isArray(b.value))) return fail(422, 'VALIDATION_FAILED', INVALID, { value: 'Enter a valid value.' });
     Object.assign(item, { value: b.value, updatedBy: { id: 'mock', name: 'You' }, updatedAt: now() });
     return ok(item);
   }
