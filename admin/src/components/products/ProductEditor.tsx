@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { SchemaForm, missingRequired, type Field } from '@/components/ui/SchemaForm';
 import { useCan } from '@/hooks/useCurrentUser';
 import { useDocument } from '@/hooks/useDocument';
+import { toBody } from '@/lib/product-body';
 import { btnSecondary, cardCls } from '@/lib/ui-classes';
 import { PlacementPanel } from './PlacementPanel';
 import { SpecsTab, VariantsTab } from './VariantsAndSpecs';
@@ -35,12 +36,6 @@ const blank = (): Omit<AdminProduct, 'id'> => ({
   name: '', slug: '', sku: '', categoryId: null, shortDescription: '', fullDescription: '', price: 0, salePrice: null, taxClass: 'standard', isPurchasable: true, isAvailable: true,
   availabilityMessage: null, isFeatured: false, isNewArrival: false, isBestseller: false, status: 'draft', publishedAt: null, seoTitle: '', seoDescription: '', seoCanonical: null,
   seoShareImageId: null, modelUrl: null, videoUrl: null, createdAt: '', updatedAt: '',
-});
-/** Only what CreateProductDto and UpdateProductDto accept. The API refuses unknown fields, so `status`, dates and ids are never sent. */
-const toBody = (p: AdminProduct) => ({
-  name: p.name, sku: p.sku, slug: p.slug, categoryId: p.categoryId || undefined, shortDescription: p.shortDescription, fullDescription: p.fullDescription,
-  price: p.price, salePrice: p.salePrice, isPurchasable: p.isPurchasable, isAvailable: p.isAvailable, availabilityMessage: p.availabilityMessage || null,
-  seoTitle: p.seoTitle, seoDescription: p.seoDescription, seoCanonical: p.seoCanonical || null,
 });
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 

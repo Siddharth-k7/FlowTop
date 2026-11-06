@@ -139,6 +139,11 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
     o.status = b.status; (o.timeline as unknown[]).push({ at: now(), status: b.status, note: b.note, by: 'You' }); return ok(o);
   }
 
+  if (col === 'orders' && id === 'export') {
+    const cols = ['reference', 'customerName', 'email', 'total', 'status', 'paymentStatus', 'createdAt'];
+    const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    return { status: 200, json: { csv: [cols.join(','), ...(store.orders ?? []).map((o) => cols.map((c) => cell(o[c])).join(','))].join('\n') } };
+  }
   const list = store[col];
   if (!list) return null;
   if (!id) {

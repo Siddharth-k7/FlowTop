@@ -1,4 +1,4 @@
-import type { AdminProduct, NavNode, Page, Placement, PublishStatus, SettingItem, Specification, Variant } from '@flowtop/types';
+import type { AdminProduct, Category, NavNode, Page, Placement, PublishStatus, SettingItem, Specification, Variant } from '@flowtop/types';
 import type { Doc } from '@/lib/doc';
 
 // TODO: swap for real API. Realistic Flowtop data so screens do not look like "Test Product 1".
@@ -31,6 +31,12 @@ const prod = (id: string, name: string, sku: string, price: number, cat: string,
   ...extra,
 });
 
+const category = (id: string, position: number): Category => ({
+  id, name: CATEGORIES[id]?.name ?? id, slug: CATEGORIES[id]?.slug ?? id, description: null, parentId: null, image: null, position, status: 'published',
+  seo: { title: '', description: '', canonical: null, shareImage: null }, children: [],
+});
+const seedCategories: Category[] = Object.keys(CATEGORIES).map((id, i) => category(id, i + 1));
+
 export const seedProducts: AdminProduct[] = [
   prod('p1', 'Opel Basin Mixer', 'FT-OBM-001', 450000, 'c1', 'published', { salePrice: 399000 }),
   prod('p2', 'Opel Wall Mixer', 'FT-OWM-002', 620000, 'c2', 'published'),
@@ -50,12 +56,7 @@ export const seedPages: Page[] = [
 ];
 
 export const seed: Record<string, Doc[]> = {
-  categories: [
-    { id: 'c1', name: 'Basin Mixers', slug: 'basin-mixers', description: '' },
-    { id: 'c2', name: 'Wall Mixers', slug: 'wall-mixers', description: '' },
-    { id: 'c3', name: 'Showers', slug: 'showers', description: '' },
-    { id: 'c4', name: 'Bib Cocks', slug: 'bib-cocks', description: '' },
-  ],
+  categories: seedCategories.map((c) => ({ ...c })),
   collections: [
     { id: 'col1', name: 'Opel', slug: 'opel', story: '<p>Soft curves, hard-wearing finishes.</p>', heroImageId: 'm1', productIds: ['p1', 'p2'], status: 'published' },
     { id: 'col2', name: 'Heritage', slug: 'heritage', story: '', heroImageId: '', productIds: ['p6'], status: 'draft' },

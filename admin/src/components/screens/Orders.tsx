@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api, apiDownload, ApiError, saveBlob } from '@/lib/api';
 import { useCan } from '@/hooks/useCurrentUser';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { LoadError, Skeleton } from '@/components/ui/EditorBar';
@@ -16,21 +16,19 @@ const STATUSES = ['new', 'processing', 'shipped', 'delivered', 'cancelled'];
 const opt = (v: string[]) => v.map((x) => ({ value: x, label: x[0]?.toUpperCase() + x.slice(1) }));
 const cap = (s: unknown) => <span className="capitalize">{String(s)}</span>;
 
-export function csvDownload(name: string, rows: Doc[], cols: string[]) {
-  const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""').replace(/^([=+\-@])/, "'$1")}"`; // leading = + - @ are neutralised for spreadsheets
-  const csv = [cols.join(','), ...rows.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
-}
-
 export function OrderList() {
   // COSMETIC ONLY: the export button is hidden without order:export; the server enforces it on GET /admin/orders/export.
   const canExport = useCan()('order:export');
-  // TODO: swap for GET /admin/orders/export (server-side CSV). This builds it from the loaded list.
-  const exportCsv = async () => csvDownload('orders.csv', await api<Doc[]>('/admin/orders'), ['reference', 'customerName', 'email', 'total', 'status', 'paymentStatus', 'createdAt']);
+  const [exportErr, setExportErr] = useState<string>();
+  /** The server builds the CSV (docs/03: GET /admin/orders/export). The browser only saves what it sent. */
+  const exportCsv = async () => {
+    setExportErr(undefined);
+    try { const { blob, filename } = await apiDownload('/admin/orders/export', 'orders.csv'); saveBlob(blob, filename); }
+    catch (e) { setExportErr(e instanceof ApiError ? e.message : 'Could not export. Nothing was downloaded.'); }
+  };
   return (
     <ListScreen title="Orders" endpoint="/admin/orders" rowHref={(d) => `/orders/${d.id}`} emptyText="No orders yet. They appear here as soon as a customer checks out."
-      headerExtra={canExport ? <button className={btnSecondary} onClick={exportCsv}>Export CSV</button> : undefined}
+      headerExtra={canExport ? <><button className={btnSecondary} onClick={exportCsv}>Export CSV</button>{exportErr && <p role="alert" className="w-full text-sm text-error">{exportErr}</p>}</> : undefined}
       filters={[{ key: 'status', label: 'Status', options: opt(STATUSES) }, { key: 'paymentStatus', label: 'Payment', options: opt(['pending', 'paid', 'failed']) }]}
       columns={[{ key: 'reference', label: 'Order' }, { key: 'customerName', label: 'Customer' }, { key: 'total', label: 'Total', render: (d) => formatPrice(Number(d.total)) },
         { key: 'status', label: 'Status', render: (d) => cap(d.status) }, { key: 'paymentStatus', label: 'Payment', render: (d) => cap(d.paymentStatus) }, { key: 'createdAt', label: 'Placed', render: (d) => formatDate(String(d.createdAt)) }]} />

@@ -62,3 +62,37 @@ export async function api<T>(path: string, { method = 'GET', body, redirectOn401
   handleStatus(res.status, error.code, redirectOn401);
   throw error;
 }
+
+/** The file name in a Content-Disposition header, or the fallback. */
+export const fileNameFrom = (header: string | null, fallback: string) => /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(header ?? '')?.[1] ?? fallback;
+
+/**
+ * GET a file the server builds (the orders CSV) and return it as a Blob. The body is the file, not the JSON envelope,
+ * so an error is read from the envelope only when the status says it failed. Throws ApiError, like api().
+ */
+export async function apiDownload(path: string, fallbackName: string): Promise<{ blob: Blob; filename: string }> {
+  let status: number; let blob: Blob; let filename = fallbackName;
+  try {
+    if (USE_MOCKS) {
+      const { mockRequest } = await import('@/lib/mocks/router');
+      const r = await mockRequest(path, 'GET', undefined);
+      status = r.status; blob = new Blob([typeof (r.json as { csv?: unknown })?.csv === 'string' ? (r.json as { csv: string }).csv : JSON.stringify(r.json)], { type: 'text/csv' });
+      if (status >= 400) throw toApiError(status, r.json);
+    } else {
+      const r = await fetch(`${BASE}${path}`, { credentials: 'include' });
+      status = r.status; filename = fileNameFrom(r.headers.get('content-disposition'), fallbackName);
+      if (!r.ok) { const error = toApiError(status, await r.json().catch(() => null)); handleStatus(status, error.code, true); throw error; }
+      blob = await r.blob();
+    }
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    throw new ApiError(0, 'NETWORK', 'Could not reach the server. Nothing was downloaded.');
+  }
+  return { blob, filename };
+}
+
+/** Hands a Blob to the browser as a download. */
+export function saveBlob(blob: Blob, filename: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+}
