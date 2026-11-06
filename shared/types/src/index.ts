@@ -402,3 +402,258 @@ export interface ProductDetail {
   documents: ProductDocument[];
   seo: Seo;
 }
+
+// ─── Admin CMS ─────────────────────────────────────────────────────────────
+// Shapes the admin reads and writes. Each has a drift test:
+// backend/src/common/admin-types.drift.spec.ts.
+
+/**
+ * GET, POST and PATCH /admin/products(/:id). The product row as the API stores
+ * it, so every column is here. Dates are ISO 8601 strings on the wire.
+ * `category` and `_count` come with GET only; POST and PATCH return the bare row.
+ */
+export interface AdminProduct {
+  id: string;
+  name: string;
+  sku: string;
+  slug: string;
+  categoryId: string | null;
+  shortDescription: string;
+  /** Rich text as HTML. */
+  fullDescription: string;
+  /** Paise. */
+  price: number;
+  /** Paise. */
+  salePrice: number | null;
+  taxClass: string;
+  isPurchasable: boolean;
+  isAvailable: boolean;
+  availabilityMessage: string | null;
+  isFeatured: boolean;
+  isNewArrival: boolean;
+  isBestseller: boolean;
+  status: PublishStatus;
+  publishedAt: string | null;
+  seoTitle: string;
+  seoDescription: string;
+  seoCanonical: string | null;
+  seoShareImageId: string | null;
+  modelUrl: string | null;
+  videoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category?: CategoryRef | null;
+  _count?: { specifications: number; media: number; variants: number; placements: number };
+}
+
+/** `homepage_section` ids are keys (`featured`); every other type uses a uuid. */
+export type PlacementLocationType = 'homepage_section' | 'category' | 'collection' | 'campaign_page' | 'related';
+
+/** One row in the placements table: one product in one place. docs/03-api-contract.md, Placements. */
+export interface Placement {
+  id: string;
+  productId: string;
+  locationType: PlacementLocationType;
+  locationId: string;
+  locationName: string;
+  position: number;
+  label: string;
+  enabled: boolean;
+}
+
+/** One entry in GET /admin/placement-locations, the picker's list. */
+export type PlacementLocation = Pick<Placement, 'locationType' | 'locationId' | 'locationName'>;
+
+/** One block on a page. docs/03-api-contract.md, Pages and sections. `config` shapes are listed there. */
+export interface Section {
+  id: string;
+  type: string;
+  position: number;
+  visible: boolean;
+  config: Record<string, unknown>;
+}
+
+/** A page with its sections in position order. */
+export interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  status: PublishStatus;
+  sections: Section[];
+  seo: Seo;
+}
+
+/** navigation_item.link_type. The href is built from linkType and destination, not stored. */
+export type NavigationLinkTypeName = 'page' | 'category' | 'collection' | 'product' | 'external';
+
+/**
+ * One item of GET/PUT /admin/navigation. One level of children.
+ * Built from navigation_item: label, link type, destination, not a free href.
+ */
+export interface NavNode {
+  id: string;
+  label: string;
+  linkType: NavigationLinkTypeName;
+  destination: string;
+  openInNewTab: boolean;
+  children: NavNode[];
+}
+
+/** Header and footer are separate menus. PUT replaces both. */
+export interface AdminNavigation {
+  header: NavNode[];
+  footer: NavNode[];
+}
+
+/** GET /admin/categories. A flat row; the public tree is `Category`. */
+export interface AdminCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+  position: number;
+  status: PublishStatus;
+}
+
+/** Admin collection row. Membership is PUT /admin/collections/:id/products, not a field on this row. */
+export interface AdminCollection {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  /** Rich text as HTML. */
+  story: string;
+  heroMediaId: string | null;
+  status: PublishStatus;
+  /** Rank order. Changed through PUT /admin/collections/:id/products, not PATCH. */
+  productIds: string[];
+}
+
+/** One ranked product in PUT /admin/collections/:id/products. */
+export interface CollectionProductRank {
+  productId: string;
+  position: number;
+}
+
+/** Admin journal article. `heroImageId` is the cover. */
+export interface AdminJournalArticle {
+  id: string;
+  title: string;
+  slug: string;
+  category: string | null;
+  excerpt: string;
+  /** Rich text as HTML. */
+  body: string;
+  heroImageId: string | null;
+  status: PublishStatus;
+  publishedAt: string | null;
+}
+
+/** order.order_status. The admin calls this `status`. */
+export type OrderStatusName = 'received' | 'confirmed' | 'shipped' | 'cancelled';
+
+/** order.payment_status. */
+export type PaymentStatusName = 'pending' | 'paid' | 'failed' | 'refunded';
+
+/** One row of GET /admin/orders. */
+export interface AdminOrderSummary {
+  id: string;
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  /** Paise. */
+  total: number;
+  paymentStatus: PaymentStatusName;
+  status: OrderStatusName;
+  createdAt: string;
+}
+
+/** A snapshot line. `finish` is the variant name, null when the product had no finish. */
+export interface AdminOrderItem {
+  id: string;
+  name: string;
+  sku: string;
+  finish: string | null;
+  quantity: number;
+  /** Paise. */
+  unitPrice: number;
+  /** Paise. */
+  lineTotal: number;
+}
+
+/** One status change, read back from the audit log. */
+export interface AdminOrderEvent {
+  at: string;
+  status: OrderStatusName;
+  note: string;
+  by: string;
+}
+
+/** GET /admin/orders/:id. Delivery is the stored address, not one concatenated string. */
+export interface AdminOrderDetail extends AdminOrderSummary {
+  customerPhone: string;
+  delivery: {
+    line1: string;
+    line2: string | null;
+    city: string;
+    state: string;
+    pin: string;
+    landmark: string | null;
+    notes: string | null;
+  };
+  /** Paise. */
+  subtotal: number;
+  /** Paise. */
+  shipping: number;
+  /** Paise. */
+  tax: number;
+  items: AdminOrderItem[];
+  timeline: AdminOrderEvent[];
+}
+
+/** submission.type. `dealer` is the dealer enquiry, not a separate string. */
+export type SubmissionKind = 'contact' | 'dealer';
+
+/** submission.status. */
+export type SubmissionState = 'new' | 'read' | 'handled';
+
+/**
+ * GET /admin/submissions and PATCH /admin/submissions/:id.
+ * Contact fields are the payload the public form stores. Missing keys are null or ''.
+ */
+export interface AdminSubmission {
+  id: string;
+  type: SubmissionKind;
+  reference: string;
+  status: SubmissionState;
+  emailSent: boolean;
+  emailError: string | null;
+  createdAt: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string | null;
+  firmName: string | null;
+  message: string;
+}
+
+/** GET /admin/dashboard. Orders and submissions are empty unless the caller may read them. */
+export interface DashboardSummary {
+  draftPages: number;
+  productsMissingImages: number;
+  productsMissingSpecs: number;
+  recentOrders: { id: string; reference: string; total: number; status: string }[];
+  recentSubmissions: { id: string; name: string; type: string; read: boolean }[];
+}
+
+/** One entry of GET /admin/settings. `value` depends on the key: text, a list of emails, or null. */
+export interface SettingItem {
+  key: string;
+  value: unknown;
+  description: string;
+  public: boolean;
+  /** Null until someone changes it from its seed value. */
+  updatedBy: { id: string; name: string } | null;
+  updatedAt: string | null;
+}

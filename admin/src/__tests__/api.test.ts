@@ -67,3 +67,38 @@ describe('api() error mapping (real fetch path, mocks off)', () => {
 describe('toApiError', () => {
   it('handles a null body', () => expect(toApiError(500, null)).toMatchObject({ code: 'SERVER_ERROR', message: 'Something went wrong.' }));
 });
+
+describe('apiDownload() (real fetch path, mocks off): the orders CSV comes from the server (S4)', () => {
+  const file = (body: string, headers: Record<string, string> = {}) => vi.fn(async () => new Response(body, { status: 200, headers: { 'content-type': 'text/csv', ...headers } }));
+  it('GETs BASE + path with credentials and returns the server file under the server file name', async () => {
+    const f = file('reference,total\nFT-1,100\n', { 'content-disposition': 'attachment; filename="orders-2026-11-02.csv"' });
+    vi.stubGlobal('fetch', f);
+    const { apiDownload } = await import('@/lib/api');
+    const { blob, filename } = await apiDownload('/admin/orders/export', 'orders.csv');
+    expect(f).toHaveBeenCalledWith('http://localhost:4000/api/v1/admin/orders/export', { credentials: 'include' });
+    expect(filename).toBe('orders-2026-11-02.csv');
+    expect(await blob.text()).toBe('reference,total\nFT-1,100\n');
+  });
+  it('uses the fallback name when the server sends none', async () => {
+    vi.stubGlobal('fetch', file('x'));
+    const { apiDownload } = await import('@/lib/api');
+    expect((await apiDownload('/admin/orders/export', 'orders.csv')).filename).toBe('orders.csv');
+  });
+  it('turns a 403 into an ApiError carrying the server message, and downloads nothing', async () => {
+    vi.stubGlobal('fetch', respond(403, { error: { code: 'FORBIDDEN', message: 'You do not have permission to do that.' } }));
+    const { apiDownload } = await import('@/lib/api');
+    await expect(apiDownload('/admin/orders/export', 'orders.csv')).rejects.toMatchObject({ status: 403, code: 'FORBIDDEN', message: 'You do not have permission to do that.' });
+  });
+  it('maps a dropped connection to NETWORK', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('failed'); }));
+    const { apiDownload } = await import('@/lib/api');
+    await expect(apiDownload('/admin/orders/export', 'orders.csv')).rejects.toMatchObject({ status: 0, code: 'NETWORK' });
+  });
+  it('Orders no longer builds a CSV in the browser', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const source = readFileSync(join(__dirname, '..', 'components', 'screens', 'Orders.tsx'), 'utf8');
+    expect(source).toContain("apiDownload('/admin/orders/export'");
+    expect(source).not.toMatch(/new Blob|csvDownload|\.join\(','\)/);
+  });
+});

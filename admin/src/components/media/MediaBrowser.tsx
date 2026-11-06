@@ -5,6 +5,7 @@ import type { MediaAsset } from '@flowtop/types';
 import { ApiError } from '@/lib/api';
 import { assetName, assetThumb, listMedia, type MediaTypeFilter } from '@/lib/media';
 import { formatBytes, formatDate } from '@/lib/utils/formatDate';
+import { useCan } from '@/hooks/useCurrentUser';
 import { UploadZone } from './UploadZone';
 
 const TYPE_OPTIONS: { label: string; value: MediaTypeFilter }[] = [
@@ -15,6 +16,7 @@ const TYPE_OPTIONS: { label: string; value: MediaTypeFilter }[] = [
 
 /** Search + filter + grid or list. Shared by /media (onSelect opens detail) and MediaPicker (onSelect picks). */
 export function MediaBrowser({ onSelect, selectedId }: { onSelect: (a: MediaAsset) => void; selectedId?: string }) {
+  const canUpload = useCan()('media:write'); // COSMETIC ONLY: the server checks media:write.
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [type, setType] = useState<MediaTypeFilter>('');
@@ -29,11 +31,11 @@ export function MediaBrowser({ onSelect, selectedId }: { onSelect: (a: MediaAsse
   }, [debounced, type]);
   useEffect(load, [load]);
 
-  const empty = debounced || type ? 'No files match. Try a different search.' : 'No files yet. Drag some in above to get started.';
+  const empty = debounced || type ? 'No files match. Try a different search.' : canUpload ? 'No files yet. Drag some in above to get started.' : 'No files yet.';
 
   return (
     <div className="flex flex-col gap-4">
-      <UploadZone onUploaded={(a) => setItems((l) => (l ? [a, ...l] : [a]))} />
+      {canUpload && <UploadZone onUploaded={(a) => setItems((l) => (l ? [a, ...l] : [a]))} />}
       <div className="flex flex-col gap-2 md:flex-row md:items-end">
         <div className="min-w-0 flex-1">
           <Input type="search" aria-label="Search files" placeholder="Search by file name"

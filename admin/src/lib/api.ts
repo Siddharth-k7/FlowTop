@@ -41,7 +41,7 @@ interface Opts { method?: string; body?: unknown; redirectOn401?: boolean }
 export async function api<T>(path: string, { method = 'GET', body, redirectOn401 = true }: Opts = {}): Promise<T> {
   let res: { status: number; json: unknown };
   try {
-    if (USE_MOCKS) {
+    if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
       const { mockRequest } = await import('@/lib/mocks/router');
       res = await mockRequest(path, method, body);
     } else {
@@ -61,4 +61,64 @@ export async function api<T>(path: string, { method = 'GET', body, redirectOn401
   const error = toApiError(res.status, res.json);
   handleStatus(res.status, error.code, redirectOn401);
   throw error;
+}
+
+export interface ListMeta { page: number; perPage: number; total: number; totalPages: number }
+
+/** Like api(), but keeps the pagination meta. A list with no meta is treated as one complete page. */
+export async function apiList<T>(path: string): Promise<{ data: T[]; meta: ListMeta }> {
+  let res: { status: number; json: unknown };
+  try {
+    if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
+      const { mockRequest } = await import('@/lib/mocks/router');
+      res = await mockRequest(path, 'GET', undefined);
+    } else {
+      const r = await fetch(`${BASE}${path}`, { credentials: 'include' });
+      res = { status: r.status, json: await r.json().catch(() => null) };
+    }
+  } catch {
+    throw new ApiError(0, 'NETWORK', 'Could not reach the server. Your work has not been saved.');
+  }
+  if (res.status < 200 || res.status >= 300) {
+    const error = toApiError(res.status, res.json);
+    handleStatus(res.status, error.code, true);
+    throw error;
+  }
+  const body = res.json as { data?: T[]; meta?: ListMeta } | null;
+  const data = body?.data ?? [];
+  return { data, meta: body?.meta ?? { page: 1, perPage: data.length || 25, total: data.length, totalPages: data.length ? 1 : 0 } };
+}
+
+/** The file name in a Content-Disposition header, or the fallback. */
+export const fileNameFrom = (header: string | null, fallback: string) => /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(header ?? '')?.[1] ?? fallback;
+
+/**
+ * GET a file the server builds (the orders CSV) and return it as a Blob. The body is the file, not the JSON envelope,
+ * so an error is read from the envelope only when the status says it failed. Throws ApiError, like api().
+ */
+export async function apiDownload(path: string, fallbackName: string): Promise<{ blob: Blob; filename: string }> {
+  let status: number; let blob: Blob; let filename = fallbackName;
+  try {
+    if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
+      const { mockRequest } = await import('@/lib/mocks/router');
+      const r = await mockRequest(path, 'GET', undefined);
+      status = r.status; blob = new Blob([typeof (r.json as { csv?: unknown })?.csv === 'string' ? (r.json as { csv: string }).csv : JSON.stringify(r.json)], { type: 'text/csv' });
+      if (status >= 400) throw toApiError(status, r.json);
+    } else {
+      const r = await fetch(`${BASE}${path}`, { credentials: 'include' });
+      status = r.status; filename = fileNameFrom(r.headers.get('content-disposition'), fallbackName);
+      if (!r.ok) { const error = toApiError(status, await r.json().catch(() => null)); handleStatus(status, error.code, true); throw error; }
+      blob = await r.blob();
+    }
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    throw new ApiError(0, 'NETWORK', 'Could not reach the server. Nothing was downloaded.');
+  }
+  return { blob, filename };
+}
+
+/** Hands a Blob to the browser as a download. */
+export function saveBlob(blob: Blob, filename: string) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 }
