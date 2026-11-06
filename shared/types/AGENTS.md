@@ -9,6 +9,7 @@ Type-only API shapes for the frontend and the admin. No values, no imports, no d
 | `Permission`, `RoleName`, `ROLE_PERMISSIONS`, `User` | `backend/src/auth/permissions.ts`, `auth-user.ts` | `backend/src/auth/shared-types.drift.spec.ts` |
 | `ProductCard`, `ProductDetail`, `Variant`, `Specification`, `SpecificationGroup`, `Category`, `Collection`, `CollectionDetail`, and their parts | `docs/03-api-contract.md` for names and shapes, `backend/prisma/schema.prisma` for value types, nullability and enums | `backend/src/common/catalog-types.drift.spec.ts` |
 | `AdminProduct`, `Placement`, `PlacementLocation`, `Section`, `Page`, `SettingItem` | `prisma/schema.prisma`, `docs/03-api-contract.md` (Placement, Section and Page JSON), `backend/src/settings/dto/settings.dto.ts` | `backend/src/common/admin-types.drift.spec.ts` |
+| `AdminCategory`, `AdminCollection`, `AdminJournalArticle`, `AdminOrderSummary`, `AdminOrderDetail`, `AdminSubmission`, `DashboardSummary`, and their enums | `prisma/schema.prisma` enums and columns, `docs/03-api-contract.md` for the routes | `backend/src/common/admin-commerce.drift.spec.ts` |
 
 ## Product catalogue
 

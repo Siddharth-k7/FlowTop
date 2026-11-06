@@ -494,6 +494,146 @@ export interface NavNode {
   children: NavNode[];
 }
 
+/** GET /admin/categories. A flat row; the public tree is `Category`. */
+export interface AdminCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+  position: number;
+  status: PublishStatus;
+}
+
+/** Admin collection row. Membership is PUT /admin/collections/:id/products, not a field on this row. */
+export interface AdminCollection {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  /** Rich text as HTML. */
+  story: string;
+  heroMediaId: string | null;
+  status: PublishStatus;
+}
+
+/** One ranked product in PUT /admin/collections/:id/products. */
+export interface CollectionProductRank {
+  productId: string;
+  position: number;
+}
+
+/** Admin journal article. `heroImageId` is the cover. */
+export interface AdminJournalArticle {
+  id: string;
+  title: string;
+  slug: string;
+  category: string | null;
+  excerpt: string;
+  /** Rich text as HTML. */
+  body: string;
+  heroImageId: string | null;
+  status: PublishStatus;
+  publishedAt: string | null;
+}
+
+/** order.order_status. The admin calls this `status`. */
+export type OrderStatusName = 'received' | 'confirmed' | 'shipped' | 'cancelled';
+
+/** order.payment_status. */
+export type PaymentStatusName = 'pending' | 'paid' | 'failed' | 'refunded';
+
+/** One row of GET /admin/orders. */
+export interface AdminOrderSummary {
+  id: string;
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  /** Paise. */
+  total: number;
+  paymentStatus: PaymentStatusName;
+  status: OrderStatusName;
+  createdAt: string;
+}
+
+/** A snapshot line. `finish` is the variant name, null when the product had no finish. */
+export interface AdminOrderItem {
+  id: string;
+  name: string;
+  sku: string;
+  finish: string | null;
+  quantity: number;
+  /** Paise. */
+  unitPrice: number;
+  /** Paise. */
+  lineTotal: number;
+}
+
+/** One status change, read back from the audit log. */
+export interface AdminOrderEvent {
+  at: string;
+  status: OrderStatusName;
+  note: string;
+  by: string;
+}
+
+/** GET /admin/orders/:id. Delivery is the stored address, not one concatenated string. */
+export interface AdminOrderDetail extends AdminOrderSummary {
+  customerPhone: string;
+  delivery: {
+    line1: string;
+    line2: string | null;
+    city: string;
+    state: string;
+    pin: string;
+    landmark: string | null;
+    notes: string | null;
+  };
+  /** Paise. */
+  subtotal: number;
+  /** Paise. */
+  shipping: number;
+  /** Paise. */
+  tax: number;
+  items: AdminOrderItem[];
+  timeline: AdminOrderEvent[];
+}
+
+/** submission.type. `dealer` is the dealer enquiry, not a separate string. */
+export type SubmissionKind = 'contact' | 'dealer';
+
+/** submission.status. */
+export type SubmissionState = 'new' | 'read' | 'handled';
+
+/**
+ * GET /admin/submissions and PATCH /admin/submissions/:id.
+ * Contact fields are the payload the public form stores. Missing keys are null or ''.
+ */
+export interface AdminSubmission {
+  id: string;
+  type: SubmissionKind;
+  reference: string;
+  status: SubmissionState;
+  emailSent: boolean;
+  emailError: string | null;
+  createdAt: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string | null;
+  firmName: string | null;
+  message: string;
+}
+
+/** GET /admin/dashboard. Orders and submissions are empty unless the caller may read them. */
+export interface DashboardSummary {
+  draftPages: number;
+  productsMissingImages: number;
+  productsMissingSpecs: number;
+  recentOrders: { id: string; reference: string; total: number; status: string }[];
+  recentSubmissions: { id: string; name: string; type: string; read: boolean }[];
+}
+
 /** One entry of GET /admin/settings. `value` depends on the key: text, a list of emails, or null. */
 export interface SettingItem {
   key: string;
