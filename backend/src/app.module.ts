@@ -13,6 +13,8 @@ import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
+import { VariantsModule } from './variants/variants.module';
+import { SpecificationsModule } from './specifications/specifications.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { ProductsModule } from './products/products.module';
     SettingsModule,
     UsersModule,
     ProductsModule,
+    VariantsModule,
+    SpecificationsModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },
