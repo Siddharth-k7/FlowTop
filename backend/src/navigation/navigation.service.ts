@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { ApiException } from '../common/errors/api.exception';
-import { EXTERNAL_HREF } from '../common/safe-href';
+import { isSafeLink } from '../common/safe-href';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { NavigationLinkType, NavigationMenu, Prisma } from '../generated/prisma/client';
 
@@ -74,7 +74,7 @@ export class NavigationService {
     }
     for (const node of nodes) {
       if (!node.label?.trim()) throw new ApiException('VALIDATION_FAILED', 'Every menu item needs a label.', { label: 'Every menu item needs a label.' });
-      const external = EXTERNAL_HREF.test(node.destination);
+      const external = isSafeLink(node.destination, false);
       const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(node.destination);
       if (node.linkType === 'external' ? !external : !uuid) {
         throw new ApiException('VALIDATION_FAILED', 'Use a page, category, collection or product id, or an https, mailto or tel link.', { destination: 'That destination is not allowed.' });

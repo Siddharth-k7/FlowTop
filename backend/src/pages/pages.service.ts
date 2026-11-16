@@ -75,7 +75,7 @@ export class PagesService {
 
   async addSection(pageId: string, dto: CreateSectionDto, actorId: string) {
     if (!(await this.prisma.page.findUnique({ where: { id: pageId }, select: { id: true } }))) throw new ApiException('NOT_FOUND', 'Page not found');
-    assertSectionConfig(dto.config);
+    assertSectionConfig(dto.type, dto.config);
     const position = (await this.prisma.section.count({ where: { pageId } })) + 1;
     const row = await this.prisma.section.create({ data: { pageId, type: dto.type, position, visible: dto.visible ?? true, config: dto.config as Prisma.InputJsonValue } });
     await this.audit.record({ actorId, action: 'create', entityType: 'section', entityId: row.id });
@@ -85,7 +85,7 @@ export class PagesService {
   async updateSection(id: string, dto: UpdateSectionDto, actorId: string) {
     const existing = await this.prisma.section.findUnique({ where: { id } });
     if (!existing) throw new ApiException('NOT_FOUND', 'Section not found');
-    if (dto.config) assertSectionConfig(dto.config);
+    if (dto.config) assertSectionConfig(existing.type, dto.config);
     const row = await this.prisma.section.update({ where: { id }, data: { visible: dto.visible, ...(dto.config ? { config: dto.config as Prisma.InputJsonValue } : {}) } });
     await this.audit.record({ actorId, action: 'update', entityType: 'section', entityId: id });
     return { data: { id: row.id, type: row.type, position: row.position, visible: row.visible, config: row.config } };

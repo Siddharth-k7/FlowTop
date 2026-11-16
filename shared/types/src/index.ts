@@ -464,6 +464,102 @@ export interface Placement {
 /** One entry in GET /admin/placement-locations, the picker's list. */
 export type PlacementLocation = Pick<Placement, 'locationType' | 'locationId' | 'locationName'>;
 
+/** The six section types in docs/03-api-contract.md. */
+export type SectionTypeName = 'hero' | 'product_carousel' | 'collection_showcase' | 'image_text' | 'gallery' | 'cta';
+
+export type LayoutBackground = 'white' | 'pale' | 'deep' | 'black' | 'image';
+export type LayoutSpacing = 'none' | 'small' | 'medium' | 'large';
+export type LayoutWidth = 'contained' | 'wide' | 'full';
+export type LayoutAlign = 'left' | 'center' | 'right';
+
+/** Shared by every section. Values outside these unions are rejected. */
+export interface SectionLayoutConfig {
+  background?: LayoutBackground;
+  spacingTop?: LayoutSpacing;
+  spacingBottom?: LayoutSpacing;
+  width?: LayoutWidth;
+  align?: LayoutAlign;
+}
+
+/** A button inside a hero, image-text, or call-to-action section. `href` is a site path or an absolute https, mailto, or tel link. */
+export interface SectionButtonConfig {
+  label?: string;
+  href?: string;
+  style?: 'primary' | 'secondary';
+}
+
+/** URL-bearing fields. Anything else that carries a link is not part of the contract. */
+export type SectionUrlField = 'href' | 'videoUrl' | 'viewAllHref';
+
+export interface HeroSectionConfig {
+  headline?: string;
+  subheading?: string;
+  mediaType?: 'image' | 'video';
+  desktopImageId?: string | null;
+  mobileImageId?: string | null;
+  videoUrl?: string | null;
+  overlay?: 'none' | 'light' | 'medium' | 'strong';
+  textPosition?: 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+  ctas?: SectionButtonConfig[];
+  layout?: SectionLayoutConfig;
+}
+
+export interface ProductCarouselRuleConfig {
+  type?: 'newest';
+  categoryId?: string | null;
+}
+
+export interface ProductCarouselSectionConfig {
+  heading?: string;
+  source?: 'placement' | 'manual' | 'rule';
+  placementLocation?: string;
+  productIds?: string[];
+  rule?: ProductCarouselRuleConfig | null;
+  count?: number;
+  cardStyle?: 'standard' | 'compact' | 'editorial';
+  viewAllHref?: string | null;
+  layout?: SectionLayoutConfig;
+}
+
+export interface CollectionShowcaseSectionConfig {
+  collectionId?: string | null;
+  coverImageId?: string | null;
+  description?: string;
+  productIds?: string[];
+  variant?: 'split' | 'stacked' | 'overlay';
+  layout?: SectionLayoutConfig;
+}
+
+export interface ImageTextSectionConfig {
+  heading?: string;
+  body?: string;
+  imageId?: string | null;
+  mobileImageId?: string | null;
+  imageSide?: 'left' | 'right';
+  ratio?: '50-50' | '60-40' | '40-60';
+  mobileOrder?: 'image-first' | 'text-first';
+  cta?: SectionButtonConfig | null;
+  layout?: SectionLayoutConfig;
+}
+
+export interface GallerySectionConfig {
+  heading?: string;
+  imageIds?: string[];
+  variant?: 'grid' | 'masonry' | 'slider';
+  columns?: 2 | 3 | 4;
+  showCaptions?: boolean;
+  layout?: SectionLayoutConfig;
+}
+
+export interface CtaSectionConfig {
+  heading?: string;
+  body?: string;
+  mode?: 'button' | 'download';
+  cta?: SectionButtonConfig | null;
+  documentId?: string | null;
+  layout?: SectionLayoutConfig;
+}
+
 /** One block on a page. docs/03-api-contract.md, Pages and sections. `config` shapes are listed there. */
 export interface Section {
   id: string;
