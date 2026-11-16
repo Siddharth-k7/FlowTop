@@ -6,6 +6,7 @@ import {
 } from '../generated/prisma/client';
 import type { JournalListQuery } from '../journal/journal.service';
 import type { OrderListQuery } from '../orders/orders.service';
+import { NAVIGATION_MAX_CHILD_DEPTH } from '../navigation/navigation.service';
 import type { PublishStatus as ServicePublishStatus } from '../_base/publish-state.service';
 import type {
   AdminCategory,
@@ -19,6 +20,7 @@ import type {
   DashboardSummary,
   OrderStatusName,
   PaymentStatusName,
+  NavigationMaxChildDepth,
   PublishStatus,
   SubmissionKind,
   SubmissionState,
@@ -55,8 +57,9 @@ type _dashboardKeys = Expect<Equal<keyof DashboardSummary, (typeof DASHBOARD)[nu
 type _journalQuery = Expect<Equal<Pick<JournalListQuery, 'search' | 'status'>, Pick<AdminJournalListQuery, 'search' | 'status'>>>;
 type _orderQuery = Expect<Equal<Pick<OrderListQuery, 'status' | 'paymentStatus' | 'search' | 'from' | 'to'>, Pick<AdminOrderListQuery, 'status' | 'paymentStatus' | 'search' | 'from' | 'to'>>>;
 type _publishStatus = Expect<Equal<ServicePublishStatus, PublishStatus>>;
+type _navDepth = Expect<Equal<typeof NAVIGATION_MAX_CHILD_DEPTH, NavigationMaxChildDepth>>;
 
-const typeChecks: [_orderStatus, _paymentStatus, _submissionKind, _submissionState, _categoryKeys, _orderKeys, _orderDetailKeys, _collectionKeys, _articleKeys, _submissionKeys, _dashboardKeys, _journalQuery, _orderQuery, _publishStatus] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true];
+const typeChecks: [_orderStatus, _paymentStatus, _submissionKind, _submissionState, _categoryKeys, _orderKeys, _orderDetailKeys, _collectionKeys, _articleKeys, _submissionKeys, _dashboardKeys, _journalQuery, _orderQuery, _publishStatus, _navDepth] = [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true];
 
 describe('shared/types admin commerce drift', () => {
   it('typechecks order, payment and submission enums against Prisma', () => {

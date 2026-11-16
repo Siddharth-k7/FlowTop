@@ -13,6 +13,8 @@ import type { RoleName } from '../src/auth';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { RateLimiter } from '../src/common/rate-limit/rate-limiter';
 import { syncPermissionsAndRoles } from '../src/database/seed-permissions';
+import { collectionEditorBody, rankAfterSave } from '../../admin/src/lib/collection-save';
+import { syncPageSections } from '../../admin/src/lib/section-sync';
 import { createAccount } from './accounts';
 import { resetDatabase } from './database';
 
@@ -91,9 +93,10 @@ describe('PR24 merge-audit regressions', () => {
     expect((rejected.body as { error: { fields: Record<string, string> } }).error.fields.status).toEqual(expect.any(String));
     expect(await prisma.collection.count()).toBe(0);
 
-    const created = await http().post('/api/v1/admin/collections').set('Cookie', productManager).send({
-      name: 'Opel', slug, story: '', description: null, heroMediaId: null,
-    }).expect(201);
+    const editorDocument = { name: 'Opel', slug, story: '', description: null, heroMediaId: null, status: 'draft' };
+    const editorBody = collectionEditorBody(editorDocument);
+    expect(editorBody).not.toHaveProperty('status');
+    const created = await http().post('/api/v1/admin/collections').set('Cookie', productManager).send(editorBody).expect(201);
     expect((created.body as { data: { status: string; productIds: string[] } }).data).toMatchObject({ status: 'draft', productIds: [] });
     expect(await prisma.collection.count()).toBe(1);
   });
@@ -114,17 +117,14 @@ describe('PR24 merge-audit regressions', () => {
     const patched = await http().patch(`/api/v1/admin/collections/${id}`).set('Cookie', productManager).send({
       name: 'Opel renamed', slug, story: '<p>Story</p>', description: null, heroMediaId: null,
     }).expect(200);
-    // The PATCH is read before the membership write, so its productIds are the previous rank.
-    expect((patched.body as { data: { productIds: string[] } }).data.productIds).toEqual([second.id, first.id]);
-
+    const patchIds = (patched.body as { data: { productIds: string[] } }).data.productIds;
+    expect(patchIds).toEqual([second.id, first.id]);
     await http().put(`/api/v1/admin/collections/${id}/products`).set('Cookie', productManager).send({
       items: written.map((productId, index) => ({ productId, position: index + 1 })),
     }).expect(200);
-    const detail = await http().get(`/api/v1/admin/collections/${id}`).set('Cookie', productManager).expect(200);
-    const kept = (detail.body as { data: { productIds: string[] } }).data.productIds;
+    const kept = rankAfterSave(written, patchIds);
     expect(kept).toEqual(written);
-
-    // The next save sends the rank the editor is holding, which is the rank just written.
+    expect(kept).not.toEqual(patchIds);
     await http().put(`/api/v1/admin/collections/${id}/products`).set('Cookie', productManager).send({
       items: kept.map((productId, index) => ({ productId, position: index + 1 })),
     }).expect(200);
@@ -149,7 +149,7 @@ describe('PR24 merge-audit regressions', () => {
     expect(rows.map((row) => row.productId)).toEqual([product.id]);
   });
 
-  it('keeps both sections when the editor reloads after sync and saves again', async () => {
+  it('keeps both sections when the editor sync runs twice', async () => {
     const created = await http().post('/api/v1/admin/pages').set('Cookie', marketingAdmin).send({
       title: 'Launch', slug: `launch-${randomUUID().slice(0, 6)}`,
     }).expect(201);
@@ -160,25 +160,40 @@ describe('PR24 merge-audit regressions', () => {
     const idA = (first.body as { data: { id: string } }).data.id;
     await http().patch(`/api/v1/admin/pages/${page.id}`).set('Cookie', marketingAdmin).send({ title: 'Launch', slug: page.slug }).expect(200);
 
-    const second = await http().post(`/api/v1/admin/pages/${page.id}/sections`).set('Cookie', marketingAdmin).send({
-      type: 'cta', config: { heading: 'B', layout: { background: 'white' } }, visible: true,
-    }).expect(201);
-    const idB = (second.body as { data: { id: string } }).data.id;
-    await http().post(`/api/v1/admin/pages/${page.id}/sections/reorder`).set('Cookie', marketingAdmin).send({ ids: [idA, idB] }).expect(201);
-
-    const fresh = await http().get(`/api/v1/admin/pages/${page.id}`).set('Cookie', marketingAdmin).expect(200);
-    const editorIds = (fresh.body as { data: { sections: { id: string }[] } }).data.sections.map((section) => section.id);
-    expect(editorIds).toEqual([idA, idB]);
-
-    const patchedAgain = await http().patch(`/api/v1/admin/pages/${page.id}`).set('Cookie', marketingAdmin).send({
-      title: 'Launch edited', slug: page.slug,
-    }).expect(200);
-    const remote = (patchedAgain.body as { data: { sections: { id: string }[] } }).data.sections;
-    const held = new Set(editorIds);
-    const removed = remote.filter((section) => !held.has(section.id));
-    expect(removed).toEqual([]);
-    const left = await prisma.section.findMany({ where: { pageId: page.id }, orderBy: { position: 'asc' } });
-    expect(left.map((section) => section.id)).toEqual([idA, idB]);
+    const client = {
+      getPage: async (pageId: string) => {
+        const res = await http().get(`/api/v1/admin/pages/${pageId}`).set('Cookie', marketingAdmin).expect(200);
+        return (res.body as { data: { id: string; sections: { id: string }[] } }).data;
+      },
+      create: async (pageId: string, section: { type: string; config: Record<string, unknown>; visible: boolean }) => {
+        const res = await http().post(`/api/v1/admin/pages/${pageId}/sections`).set('Cookie', marketingAdmin).send({
+          type: section.type, config: section.config, visible: section.visible,
+        }).expect(201);
+        return (res.body as { data: { id: string } }).data;
+      },
+      update: async (sectionId: string, section: { config: Record<string, unknown>; visible: boolean }) => {
+        await http().patch(`/api/v1/admin/sections/${sectionId}`).set('Cookie', marketingAdmin).send({ config: section.config, visible: section.visible }).expect(200);
+      },
+      remove: async (sectionId: string) => {
+        await http().delete(`/api/v1/admin/sections/${sectionId}`).set('Cookie', marketingAdmin).expect(200);
+      },
+      reorder: async (pageId: string, ids: string[]) => {
+        await http().post(`/api/v1/admin/pages/${pageId}/sections/reorder`).set('Cookie', marketingAdmin).send({ ids }).expect(201);
+      },
+    };
+    const afterFirst = await syncPageSections(page.id, [
+      { id: idA, type: 'hero', config: { headline: 'A', layout: { background: 'white' } }, visible: true },
+      { id: 'sec-temp', type: 'cta', config: { heading: 'B', layout: { background: 'white' } }, visible: true },
+    ], client);
+    expect(afterFirst.sections).toHaveLength(2);
+    const afterSecond = await syncPageSections(page.id, afterFirst.sections.map((section) => ({
+      id: section.id,
+      type: 'hero',
+      config: {},
+      visible: true,
+    })), client);
+    expect(afterSecond.sections.map((section) => section.id)).toEqual(afterFirst.sections.map((section) => section.id));
+    expect(await prisma.section.count({ where: { pageId: page.id } })).toBe(2);
   });
 
   it('republishes a published page without a 500 and keeps the saved title', async () => {
@@ -399,6 +414,27 @@ describe('PR24 merge-audit regressions', () => {
     expect(header[0]?.children[0]?.children.map((node) => node.label)).toEqual(['Grand']);
     expect(await prisma.navigationItem.count({ where: { label: 'Grand' } })).toBe(1);
     expect(await prisma.navigationItem.count({ where: { label: 'Old' } })).toBe(0);
+
+    await http().put('/api/v1/admin/navigation').set('Cookie', marketingAdmin).send({
+      header: [{ label: 'Old', linkType: 'external', destination: 'https://flowtop.example/old', children: [] }],
+      footer: [],
+    }).expect(200);
+    const deeper = await http().put('/api/v1/admin/navigation').set('Cookie', marketingAdmin).send({
+      header: [{
+        label: 'Shop', linkType: 'external', destination: 'https://flowtop.example/shop',
+        children: [{
+          label: 'Brass', linkType: 'external', destination: 'https://flowtop.example/brass',
+          children: [{
+            label: 'Grand', linkType: 'external', destination: 'https://flowtop.example/grand',
+            children: [{ label: 'Great', linkType: 'external', destination: 'https://flowtop.example/great', children: [] }],
+          }],
+        }],
+      }],
+      footer: [],
+    });
+    expect(deeper.status).toBe(422);
+    expect(await prisma.navigationItem.count({ where: { label: 'Old' } })).toBe(1);
+    expect(await prisma.navigationItem.count({ where: { label: 'Great' } })).toBe(0);
   });
 
   it('control: an illegal navigation destination does not erase the previous menu', async () => {

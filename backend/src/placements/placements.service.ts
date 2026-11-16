@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { ApiException } from '../common/errors/api.exception';
+import { assertExactReorder } from '../common/reorder';
 import { PlacementLocationType, Prisma } from '../generated/prisma/client';
 import { PlacementsRepository } from './placements.repository';
 
@@ -92,13 +93,14 @@ export class PlacementsService {
     if (new Set(ids).size !== ids.length) throw new ApiException('VALIDATION_FAILED', 'Each placement can appear only once.', { ids: 'Each placement can appear only once.' });
     const rows = await this.repository.findByIds(ids);
     if (rows.length !== ids.length) throw new ApiException('NOT_FOUND', 'The requested record was not found.');
+    const own = await this.repository.idsIn(locationType, locationId);
     const foreign = rows.filter((row) => row.locationType !== locationType || row.locationId !== locationId);
     if (foreign.length > 0) {
-      const occupied = new Set(await this.repository.productIdsIn(locationType, locationId));
-      for (const row of rows) if (row.locationType === locationType && row.locationId === locationId) occupied.add(row.productId);
+      const occupied = new Set(own.map((row) => row.productId));
       if (foreign.some((row) => occupied.has(row.productId))) throw new ApiException('CONFLICT', 'This product is already placed there.');
       throw new ApiException('VALIDATION_FAILED', 'That placement belongs to another location.', { ids: 'That placement belongs to another location.' });
     }
+    assertExactReorder(own.map((row) => row.id), ids, foreign.map((row) => row.id));
     await this.repository.reorderPositions(ids);
     await this.audit.record({ actorId, action: 'reorder', entityType: 'placement', entityId: locationId });
     return { data: { reordered: true } };

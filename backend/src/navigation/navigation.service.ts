@@ -4,10 +4,14 @@ import { Type } from 'class-transformer';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { ApiException } from '../common/errors/api.exception';
+import { EXTERNAL_HREF } from '../common/safe-href';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { NavigationLinkType, NavigationMenu, Prisma } from '../generated/prisma/client';
 
 const LINK_TYPES = ['page', 'category', 'collection', 'product', 'external'] as const;
+
+/** Root, then two levels of children. Matches NavigationMaxChildDepth in @flowtop/types. */
+export const NAVIGATION_MAX_CHILD_DEPTH = 2 as const;
 
 export class NavInput {
   @IsOptional() @IsString() id?: string;
@@ -62,11 +66,15 @@ export class NavigationService {
     return this.get();
   }
 
-  /** Validates the whole tree, including grandchildren, before the previous menu is deleted. */
-  private async assertTree(nodes: NavInput[]): Promise<void> {
+  /** Validates the whole tree before the previous menu is deleted. Depth 2 is a grandchild. */
+  private async assertTree(nodes: NavInput[], depth = 0): Promise<void> {
+    if (depth > NAVIGATION_MAX_CHILD_DEPTH) {
+      if (nodes.length > 0) throw new ApiException('VALIDATION_FAILED', 'A menu only goes three levels deep.', { children: 'Remove items nested under a grandchild.' });
+      return;
+    }
     for (const node of nodes) {
       if (!node.label?.trim()) throw new ApiException('VALIDATION_FAILED', 'Every menu item needs a label.', { label: 'Every menu item needs a label.' });
-      const external = /^(https?:\/\/\S+|mailto:\S+|tel:\+?[0-9 ()-]+)$/i.test(node.destination);
+      const external = EXTERNAL_HREF.test(node.destination);
       const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(node.destination);
       if (node.linkType === 'external' ? !external : !uuid) {
         throw new ApiException('VALIDATION_FAILED', 'Use a page, category, collection or product id, or an https, mailto or tel link.', { destination: 'That destination is not allowed.' });
@@ -74,7 +82,7 @@ export class NavigationService {
       if (node.linkType !== 'external' && !(await this.destinationExists(node.linkType, node.destination))) {
         throw new ApiException('VALIDATION_FAILED', 'That page, category, collection or product does not exist.', { destination: 'That destination does not exist.' });
       }
-      await this.assertTree(node.children ?? []);
+      await this.assertTree(node.children ?? [], depth + 1);
     }
   }
 

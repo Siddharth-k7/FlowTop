@@ -487,8 +487,14 @@ export interface Page {
 export type NavigationLinkTypeName = 'page' | 'category' | 'collection' | 'product' | 'external';
 
 /**
+ * How many levels of `children` a menu item may contain.
+ * 2 is a child and a grandchild: three levels in total. A fourth level is rejected.
+ */
+export type NavigationMaxChildDepth = 2;
+
+/**
  * One item of GET/PUT /admin/navigation.
- * `children` nests: a root, its children, and their children (grandchildren).
+ * `children` nests only as far as NavigationMaxChildDepth: root, child, grandchild.
  * Built from navigation_item: label, link type, destination, not a free href.
  */
 export interface NavNode {

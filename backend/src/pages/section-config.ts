@@ -1,4 +1,5 @@
 import { ApiException } from '../common/errors/api.exception';
+import { isSafeSectionHref } from '../common/safe-href';
 
 const ONE_OF: Record<string, readonly string[]> = {
   'layout.background': ['white', 'pale', 'deep', 'black', 'image'],
@@ -18,8 +19,14 @@ const ONE_OF: Record<string, readonly string[]> = {
   mode: ['button', 'download'],
 };
 
+const isHrefKey = (key: string) => key === 'href' || key.toLowerCase().endsWith('href');
+
 const walk = (value: unknown, path: string, fields: Record<string, string>) => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walk(item, `${path}[${index}]`, fields));
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
   for (const [key, inner] of Object.entries(value as Record<string, unknown>)) {
     const here = path ? `${path}.${key}` : key;
     const allowed = ONE_OF[here] ?? ONE_OF[key];
@@ -32,7 +39,10 @@ const walk = (value: unknown, path: string, fields: Record<string, string>) => {
     if (key === 'style' && (typeof inner !== 'string' || !['primary', 'secondary'].includes(inner))) {
       fields[here] = 'Choose primary or secondary.';
     }
-    if (inner && typeof inner === 'object') walk(inner, here, fields);
+    if (isHrefKey(key) && !isSafeSectionHref(inner)) {
+      fields[here] = 'Use a site path or an https, mailto or tel link.';
+    }
+    if (Array.isArray(inner) || (inner && typeof inner === 'object')) walk(inner, here, fields);
   }
 };
 

@@ -25,8 +25,8 @@ export class PlacementsRepository {
 
   findByIds(ids: string[]) { return this.prisma.placement.findMany({ where: { id: { in: ids } } }); }
 
-  productIdsIn(locationType: PlacementLocationType, locationId: string) {
-    return this.prisma.placement.findMany({ where: { locationType, locationId }, select: { productId: true } }).then((rows) => rows.map((row) => row.productId));
+  idsIn(locationType: PlacementLocationType, locationId: string) {
+    return this.prisma.placement.findMany({ where: { locationType, locationId }, select: { id: true, productId: true }, orderBy: { position: 'asc' } });
   }
 
   /** Positions only. The caller has already rejected ids from another location. */

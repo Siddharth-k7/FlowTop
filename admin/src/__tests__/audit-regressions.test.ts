@@ -7,7 +7,12 @@ import { syncPageSections, type SectionDraft, type SectionSyncApi } from '@/lib/
 
 describe('audit regressions in the admin editors', () => {
   it('keeps the rank that was written instead of the PATCH body from before that write', () => {
-    expect(rankAfterSave(['first', 'second'], ['second', 'first'])).toEqual(['first', 'second']);
+    const written = ['first', 'second'];
+    const patchIds = ['second', 'first'];
+    const next = rankAfterSave(written, patchIds);
+    expect(next).toEqual(written);
+    expect(next).not.toEqual(patchIds);
+    expect(rankAfterSave(written, written)).toEqual(written);
   });
 
   it('reloads sections after sync, so a section created on the first save is still there for the second', async () => {
