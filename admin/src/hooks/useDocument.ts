@@ -10,7 +10,7 @@ import { api, ApiError } from '@/lib/api';
  * - Leaving with unsaved changes asks first.
  */
 /** `toBody` picks what the API accepts. Without it every field except `id` is sent. */
-export function useDocument<T extends { id: string }>(col: string, id: string, blank: () => Omit<T, 'id'>, toBody?: (v: T) => unknown, beforeRedirect?: (saved: T) => Promise<void>) {
+export function useDocument<T extends { id: string }>(col: string, id: string, blank: () => Omit<T, 'id'>, toBody?: (v: T) => unknown, beforeRedirect?: (saved: T) => Promise<T | void>) {
   const router = useRouter();
   const isNew = id === 'new';
   const key = `ft:draft:${col}:${id}`;
@@ -36,10 +36,10 @@ export function useDocument<T extends { id: string }>(col: string, id: string, b
         const s = localStorage.getItem(key); if (s && s !== base.current) setDraft(JSON.parse(s) as T);
       } catch { /* storage blocked: no draft */ }
     };
-    if (isNew) done({ id: 'new', ...blankRef.current() } as T);
-    else api<T>(`/admin/${col}/${id}`).then(done).catch((e) => setLoadError(e instanceof ApiError ? e.message : 'Could not load this.'));
+    if (isNew) { done({ id: 'new', ...blankRef.current() } as T); return Promise.resolve(); }
+    return api<T>(`/admin/${col}/${id}`).then(done).catch((e) => { setLoadError(e instanceof ApiError ? e.message : 'Could not load this.'); });
   }, [col, id, isNew, key]);
-  useEffect(load, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   const dirty = !!value && JSON.stringify(value) !== base.current;
   const latest = useRef(value); latest.current = value;
@@ -66,14 +66,15 @@ export function useDocument<T extends { id: string }>(col: string, id: string, b
     try {
       const body = bodyRef.current ? bodyRef.current(next) : Object.fromEntries(Object.entries(next).filter(([k]) => k !== 'id'));
       const saved = await api<T>(isNew ? `/admin/${col}` : `/admin/${col}/${id}`, { method: isNew ? 'POST' : 'PATCH', body });
-      if (beforeRef.current) await beforeRef.current(saved);
-      base.current = JSON.stringify(saved); setValue(saved); setSavedAt(new Date());
+      const refreshed = beforeRef.current ? await beforeRef.current(saved) : undefined;
+      const stored = refreshed ?? saved;
+      base.current = JSON.stringify(stored); setValue(stored); setSavedAt(new Date());
       try { localStorage.removeItem(key); } catch { /* ignore */ }
       if (isNew) {
-        try { sessionStorage.setItem(`ft:saved:${col}:${saved.id}`, String(Date.now())); } catch { /* ignore */ }
-        router.replace(`/${col}/${saved.id}`);
+        try { sessionStorage.setItem(`ft:saved:${col}:${stored.id}`, String(Date.now())); } catch { /* ignore */ }
+        router.replace(`/${col}/${stored.id}`);
       }
-      return saved;
+      return stored;
     } catch (e) {
       const err = e instanceof ApiError ? e : undefined;
       setError(err ? err.message : 'Could not save. Your work is still here.');

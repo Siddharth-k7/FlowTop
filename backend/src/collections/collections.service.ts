@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { paginate } from '../common/dto/pagination';
 import { ApiException } from '../common/errors/api.exception';
+import { PublishStateService } from '../_base/publish-state.service';
 import { SlugService } from '../_base/slug.service';
 import { CollectionsRepository } from './collections.repository';
 import { CollectionProductsDto, CreateCollectionDto, WriteCollectionDto, CollectionListQuery } from './dto/collection.dto';
@@ -12,11 +13,11 @@ const toAdmin = (row: { id: string; name: string; slug: string; description: str
 
 @Injectable()
 export class CollectionsService {
-  constructor(private readonly repository: CollectionsRepository, private readonly audit: AuditService, private readonly slugs: SlugService) {}
+  constructor(private readonly repository: CollectionsRepository, private readonly audit: AuditService, private readonly slugs: SlugService, private readonly publishState: PublishStateService) {}
 
   async list(query: CollectionListQuery) {
     const [rows, total] = await this.repository.list(query);
-    return paginate(rows.map((row) => toAdmin(row)), total, query);
+    return paginate(rows.map((row) => toAdmin(row, row.products.map((item) => item.productId))), total, query);
   }
 
   async find(id: string) {
@@ -42,10 +43,17 @@ export class CollectionsService {
     const slug = dto.slug ? await this.slugs.unique(dto.name ?? existing.name, { exists: (s, exclude) => this.repository.slugTaken(s, exclude) }, dto.slug, id) : undefined;
     const heroId = dto.heroMediaId ? dto.heroMediaId : dto.heroMediaId === undefined ? undefined : null;
     const hero = heroId === undefined ? undefined : heroId ? { connect: { id: heroId } } : { disconnect: true };
+    if (dto.status && dto.status !== existing.status && !this.publishState.canTransition(existing.status, dto.status)) {
+      throw new ApiException('VALIDATION_FAILED', `A ${existing.status} collection cannot move to ${dto.status}.`, { status: `A ${existing.status} collection cannot move to ${dto.status}.` });
+    }
     await this.repository.update(id, { name: dto.name, slug, description: dto.description, story: dto.story, ...(hero ? { heroMedia: hero } : {}) });
     if (dto.status && dto.status !== existing.status) {
-      await this.repository.update(id, { status: dto.status });
-      if (dto.status === 'published') await this.audit.record({ actorId, action: 'publish', entityType: 'collection', entityId: id });
+      await this.publishState.transition({ id: existing.id, status: existing.status, publishedAt: null }, dto.status, {
+        updateStatus: async (recordId, status) => {
+          const row = await this.repository.update(recordId, { status });
+          return { id: row.id, status: row.status, publishedAt: null };
+        },
+      }, 'collection', actorId);
     }
     await this.audit.record({ actorId, action: 'update', entityType: 'collection', entityId: id });
     return this.find(id);

@@ -71,11 +71,29 @@ export class ProductsService {
   async bulk(dto: BulkProductDto, user: AuthUser) {
     const need = dto.action === 'archive' ? 'product:archive' : 'product:publish';
     if (!user.permissions.includes(need)) throw new ApiException('FORBIDDEN', 'You do not have permission to do this.');
-    const results = [];
-    for (const id of dto.ids) {
-      results.push(await this.transition(id, dto.action === 'publish' ? 'published' : dto.action === 'unpublish' ? 'unpublished' : 'archived', user.id));
-    }
-    return { data: results.map(({ data }) => data) };
+    const to = dto.action === 'publish' ? 'published' : dto.action === 'unpublish' ? 'unpublished' : 'archived';
+    const data = await this.repository.transaction(async (tx) => {
+      const results = [];
+      for (const id of dto.ids) {
+        const existing = await tx.product.findUnique({ where: { id } });
+        if (!existing) throw new ApiException('NOT_FOUND', 'Product not found');
+        if (existing.status === to) { results.push(existing); continue; }
+        if (to === 'published') this.assertPublishable(existing);
+        if (!this.publishState.canTransition(existing.status, to)) {
+          throw new ApiException('VALIDATION_FAILED', `A ${existing.status} product cannot move to ${to}.`, { status: `A ${existing.status} product cannot move to ${to}.` });
+        }
+        if (to === 'archived' && (await tx.orderItem.count({ where: { productId: id } })) > 0) {
+          throw new ApiException('CONFLICT', 'This record cannot be archived because it is referenced');
+        }
+        const publishedAt = to === 'published' ? existing.publishedAt ?? new Date() : null;
+        const updated = await tx.product.update({ where: { id }, data: { status: to, publishedAt } });
+        const action = to === 'published' ? 'publish' : to === 'unpublished' ? 'unpublish' : 'archive';
+        await this.audit.record({ actorId: user.id, action, entityType: 'product', entityId: id }, tx);
+        results.push(updated);
+      }
+      return results;
+    });
+    return { data };
   }
 
   private async ensureSkuAvailable(sku: string, excludeId?: string): Promise<void> {

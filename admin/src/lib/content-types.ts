@@ -22,7 +22,7 @@ export const CONTENT_TYPES: ContentType[] = [
     columns: [{ key: 'name', label: 'Name' }, { key: 'status', label: 'Status' }],
     deleteNote: 'The collection page disappears from the site. The products in it are not deleted and keep their other placements.',
     publishVia: 'status',
-    toBody: (d) => ({ name: d.name, slug: d.slug, story: d.story ?? '', description: d.description ?? null, heroMediaId: d.heroMediaId || null, ...(d.status ? { status: d.status } : {}) }),
+    toBody: (d) => ({ name: d.name, slug: d.slug, story: d.story ?? '', description: d.description ?? null, heroMediaId: d.heroMediaId || null }),
     fields: [{ key: 'name', label: 'Name', type: 'text', required: true }, slug, { key: 'heroMediaId', label: 'Hero image', type: 'media' },
       { key: 'story', label: 'Story', type: 'textarea', hint: 'Shown on the collection page.' },
       { key: 'productIds', label: 'Products (order = ranking)', type: 'refList', of: 'products' }] },

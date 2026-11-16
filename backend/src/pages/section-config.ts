@@ -23,15 +23,20 @@ const walk = (value: unknown, path: string, fields: Record<string, string>) => {
   for (const [key, inner] of Object.entries(value as Record<string, unknown>)) {
     const here = path ? `${path}.${key}` : key;
     const allowed = ONE_OF[here] ?? ONE_OF[key];
-    const text = typeof inner === 'string' || typeof inner === 'number' ? String(inner) : '';
-    if (allowed && text && !allowed.includes(text)) fields[here] = `Choose one of: ${allowed.join(', ')}.`;
-    if (key === 'columns' && text && ![2, 3, 4].includes(Number(text))) fields[here] = 'Columns are 2, 3 or 4.';
-    if (key === 'style' && text && !['primary', 'secondary'].includes(text)) fields[here] = 'Choose primary or secondary.';
+    if (allowed && (typeof inner !== 'string' || inner.length === 0 || !allowed.includes(inner))) {
+      fields[here] = `Choose one of: ${allowed.join(', ')}.`;
+    }
+    if (key === 'columns' && (typeof inner !== 'number' || !Number.isInteger(inner) || ![2, 3, 4].includes(inner))) {
+      fields[here] = 'Columns are 2, 3 or 4.';
+    }
+    if (key === 'style' && (typeof inner !== 'string' || !['primary', 'secondary'].includes(inner))) {
+      fields[here] = 'Choose primary or secondary.';
+    }
     if (inner && typeof inner === 'object') walk(inner, here, fields);
   }
 };
 
-/** Rejects preset values outside the contract. Unknown keys are kept; enums are not. */
+/** Every preset key must be a string from its list. Booleans, objects, arrays and empty strings are rejected. `columns` is the number 2, 3 or 4. Unknown keys are kept. */
 export function assertSectionConfig(config: unknown): void {
   const fields: Record<string, string> = {};
   walk(config, '', fields);

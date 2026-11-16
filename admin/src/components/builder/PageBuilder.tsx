@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
+import { capturePublish } from '@/lib/capture-publish';
+import { syncPageSections } from '@/lib/section-sync';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { DraftBanner, EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { ConfirmDialog } from '@/components/ui/Modal';
@@ -15,7 +17,6 @@ import type { Page, Section } from '@flowtop/types';
 import { DEVICES, PagePreview, type Device } from './PagePreview';
 import { SectionEditor } from './SectionEditor';
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const pageBody = (p: Page) => ({ title: p.title, slug: p.slug, seoTitle: p.seo.title, seoDescription: p.seo.description, seoCanonical: p.seo.canonical });
 
 const SETTINGS: Field[] = [
@@ -34,22 +35,18 @@ export function PageBuilder({ id }: { id: string }) {
   const canPage = can('page:write');
   const canSections = can('section:write');
   const sectionsRef = useRef<Section[]>([]);
-  const syncSections = async (saved: Page) => {
-    const local = sectionsRef.current;
-    const remote = saved.sections ?? [];
-    for (const gone of remote) if (!local.some((section) => section.id === gone.id)) await api(`/admin/sections/${gone.id}`, { method: 'DELETE' });
-    const ids: string[] = [];
-    for (const section of local) {
-      const known = UUID.test(section.id) && remote.some((item) => item.id === section.id);
-      if (known) {
-        await api(`/admin/sections/${section.id}`, { method: 'PATCH', body: { config: section.config, visible: section.visible } });
-        ids.push(section.id);
-      } else {
-        const created = await api<Section>(`/admin/pages/${saved.id}/sections`, { method: 'POST', body: { type: section.type, config: section.config, visible: section.visible } });
-        ids.push(created.id);
-      }
-    }
-    if (ids.length) await api(`/admin/pages/${saved.id}/sections/reorder`, { method: 'POST', body: { ids } });
+  const publishing = useRef(false);
+  const publishError = useRef<string | undefined>(undefined);
+  const syncSections = async (saved: Page): Promise<Page> => {
+    await syncPageSections(saved.id, sectionsRef.current, {
+      getPage: (pageId) => api<Page>(`/admin/pages/${pageId}`),
+      create: (pageId, section) => api<Section>(`/admin/pages/${pageId}/sections`, { method: 'POST', body: { type: section.type, config: section.config, visible: section.visible } }),
+      update: async (sectionId, section) => { await api(`/admin/sections/${sectionId}`, { method: 'PATCH', body: { config: section.config, visible: section.visible } }); },
+      remove: async (sectionId) => { await api(`/admin/sections/${sectionId}`, { method: 'DELETE' }); },
+      reorder: async (pageId, ids) => { await api(`/admin/pages/${pageId}/sections/reorder`, { method: 'POST', body: { ids } }); },
+    });
+    if (publishing.current) publishError.current = await capturePublish(() => api(`/admin/pages/${saved.id}/publish`, { method: 'POST' }).then(() => undefined));
+    return api<Page>(`/admin/pages/${saved.id}`);
   };
   const doc = useDocument<Page>('pages', id, blank, pageBody, syncSections);
   const [pane, setPane] = useState<'sections' | 'preview' | 'edit'>('sections');
@@ -87,14 +84,13 @@ export function PageBuilder({ id }: { id: string }) {
   const duplicate = (s: Section) => { const copy: Section = { ...structuredClone(s), id: sid() }; apply([...secs.slice(0, secs.indexOf(s) + 1), copy, ...secs.slice(secs.indexOf(s) + 1)]); setSelected(copy.id); };
 
   const publish = async () => {
+    publishError.current = undefined;
+    publishing.current = true;
     setBusy(true);
     try {
       const saved = await doc.save();
-      if (!saved) return;
-      await api(`/admin/pages/${saved.id}/publish`, { method: 'POST' });
-      doc.reload();
-    } catch (e) { doc.setError(e instanceof ApiError ? e.message : 'Could not publish. The page was not changed.'); }
-    finally { setBusy(false); }
+      if (saved && publishError.current) doc.setError(publishError.current);
+    } finally { publishing.current = false; setBusy(false); }
   };
 
   return (

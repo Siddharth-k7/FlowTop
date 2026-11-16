@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import type { AuditAction } from '../audit/audit-entry';
+import { ApiException } from '../common/errors/api.exception';
 
 export type PublishStatus = 'draft' | 'published' | 'unpublished' | 'archived';
 
@@ -37,11 +38,12 @@ export class PublishStateService {
     actorId: string,
     hasBlockingReferences?: (record: T) => Promise<boolean>,
   ): Promise<T> {
+    if (record.status === to) return record;
     if (!this.canTransition(record.status, to)) {
-      throw new Error(`Illegal publish transition: ${record.status} to ${to}`);
+      throw new ApiException('VALIDATION_FAILED', `A ${record.status} record cannot move to ${to}.`, { status: `A ${record.status} record cannot move to ${to}.` });
     }
     if (to === 'archived' && hasBlockingReferences && (await hasBlockingReferences(record))) {
-      throw new Error('This record cannot be archived because it is referenced');
+      throw new ApiException('CONFLICT', 'This record cannot be archived because it is referenced');
     }
 
     const publishedAt = to === 'published' ? record.publishedAt ?? new Date() : null;

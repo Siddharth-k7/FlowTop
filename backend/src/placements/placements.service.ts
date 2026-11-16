@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { ApiException } from '../common/errors/api.exception';
-import { PlacementLocationType } from '../generated/prisma/client';
+import { PlacementLocationType, Prisma } from '../generated/prisma/client';
 import { PlacementsRepository } from './placements.repository';
 
 const HOME: Record<string, string> = {
@@ -52,18 +52,24 @@ export class PlacementsService {
   }
 
   async create(productId: string, locationType: PlacementLocationType, locationId: string, actorId: string) {
-    const map = await this.names();
-    if (!map.has(locationId) && locationType !== 'homepage_section') throw new ApiException('VALIDATION_FAILED', 'That place does not exist.', { locationId: 'That place does not exist.' });
-    if (locationType === 'homepage_section' && !HOME[locationId]) throw new ApiException('VALIDATION_FAILED', 'That place does not exist.', { locationId: 'That place does not exist.' });
+    if (!(await this.repository.productExists(productId))) throw new ApiException('NOT_FOUND', 'Product not found');
+    await this.assertLocation(locationType, locationId);
     const position = (await this.repository.countIn(locationType, locationId)) + 1;
     try {
       const row = await this.repository.create({ product: { connect: { id: productId } }, locationType, locationId, position, label: '', enabled: true });
       await this.audit.record({ actorId, action: 'create', entityType: 'placement', entityId: row.id });
       return this.list(productId);
     } catch (error: unknown) {
-      if (error instanceof ApiException) throw error;
-      throw new ApiException('CONFLICT', 'This product is already placed there.');
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ApiException('CONFLICT', 'This product is already placed there.');
+      }
+      throw error;
     }
+  }
+
+  private async assertLocation(locationType: PlacementLocationType, locationId: string): Promise<void> {
+    const ok = locationType === 'homepage_section' ? Boolean(HOME[locationId]) : await this.repository.locationExists(locationType, locationId);
+    if (!ok) throw new ApiException('VALIDATION_FAILED', 'That place does not exist.', { locationId: 'That place does not exist.' });
   }
 
   async update(id: string, enabled: boolean | undefined, actorId: string) {
@@ -83,7 +89,17 @@ export class PlacementsService {
   }
 
   async reorder(locationType: PlacementLocationType, locationId: string, ids: string[], actorId: string) {
-    await this.repository.reorder(locationType, locationId, ids);
+    if (new Set(ids).size !== ids.length) throw new ApiException('VALIDATION_FAILED', 'Each placement can appear only once.', { ids: 'Each placement can appear only once.' });
+    const rows = await this.repository.findByIds(ids);
+    if (rows.length !== ids.length) throw new ApiException('NOT_FOUND', 'The requested record was not found.');
+    const foreign = rows.filter((row) => row.locationType !== locationType || row.locationId !== locationId);
+    if (foreign.length > 0) {
+      const occupied = new Set(await this.repository.productIdsIn(locationType, locationId));
+      for (const row of rows) if (row.locationType === locationType && row.locationId === locationId) occupied.add(row.productId);
+      if (foreign.some((row) => occupied.has(row.productId))) throw new ApiException('CONFLICT', 'This product is already placed there.');
+      throw new ApiException('VALIDATION_FAILED', 'That placement belongs to another location.', { ids: 'That placement belongs to another location.' });
+    }
+    await this.repository.reorderPositions(ids);
     await this.audit.record({ actorId, action: 'reorder', entityType: 'placement', entityId: locationId });
     return { data: { reordered: true } };
   }

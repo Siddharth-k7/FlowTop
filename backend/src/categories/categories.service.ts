@@ -45,6 +45,9 @@ export class CategoriesService {
     if ((await this.repository.productCount(id)) > 0) {
       throw new ApiException('CONFLICT', 'This category still has products. Move them to another category first.');
     }
+    if ((await this.repository.childCount(id)) > 0) {
+      throw new ApiException('CONFLICT', 'This category still has subcategories. Move them first.');
+    }
     await this.repository.remove(id);
     await this.audit.record({ actorId, action: 'delete', entityType: 'category', entityId: id });
     return { data: null };

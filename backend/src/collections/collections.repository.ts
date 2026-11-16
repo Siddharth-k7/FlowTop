@@ -13,7 +13,12 @@ export class CollectionsRepository {
     if (query.search) where.name = { contains: query.search, mode: 'insensitive' };
     if (query.status) where.status = query.status;
     return this.prisma.$transaction([
-      this.prisma.collection.findMany({ where, orderBy: { position: 'asc' }, ...pageToSkipTake(query) }),
+      this.prisma.collection.findMany({
+        where,
+        orderBy: { position: 'asc' },
+        include: { products: { orderBy: { position: 'asc' }, select: { productId: true } } },
+        ...pageToSkipTake(query),
+      }),
       this.prisma.collection.count({ where }),
     ]);
   }

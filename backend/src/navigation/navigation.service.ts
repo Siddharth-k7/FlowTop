@@ -38,18 +38,13 @@ export class NavigationService {
   }
 
   async replace(dto: ReplaceNavigationDto, actorId: string) {
+    await this.assertTree([...(dto.header ?? []), ...(dto.footer ?? [])]);
     const data: Prisma.NavigationItemCreateManyInput[] = [];
     const add = (menu: NavigationMenu, nodes: NavInput[], parentId: string | null) => {
       nodes.forEach((node, index) => {
-        if (!node.label.trim()) throw new ApiException('VALIDATION_FAILED', 'Every menu item needs a label.', { label: 'Every menu item needs a label.' });
-        const external = /^(https?:\/\/\S+|mailto:\S+|tel:\+?[0-9 ()-]+)$/i.test(node.destination);
-        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(node.destination);
-        if (node.linkType === 'external' ? !external : !uuid) {
-          throw new ApiException('VALIDATION_FAILED', 'Use a page, category, collection or product id, or an https, mailto or tel link.', { destination: 'That destination is not allowed.' });
-        }
         const id = node.id && /^[0-9a-f-]{36}$/i.test(node.id) ? node.id : randomUUID();
         data.push({ id, menu, label: node.label.trim(), linkType: node.linkType, destination: node.destination, openInNewTab: node.openInNewTab ?? false, parentId, position: index + 1 });
-        if (parentId === null) add(menu, node.children ?? [], id);
+        add(menu, node.children ?? [], id);
       });
     };
     add('header', dto.header ?? [], null);
@@ -65,5 +60,30 @@ export class NavigationService {
     }
     await this.audit.record({ actorId, action: 'update', entityType: 'navigation', entityId: 'navigation', metadata: { items: data.length } });
     return this.get();
+  }
+
+  /** Validates the whole tree, including grandchildren, before the previous menu is deleted. */
+  private async assertTree(nodes: NavInput[]): Promise<void> {
+    for (const node of nodes) {
+      if (!node.label?.trim()) throw new ApiException('VALIDATION_FAILED', 'Every menu item needs a label.', { label: 'Every menu item needs a label.' });
+      const external = /^(https?:\/\/\S+|mailto:\S+|tel:\+?[0-9 ()-]+)$/i.test(node.destination);
+      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(node.destination);
+      if (node.linkType === 'external' ? !external : !uuid) {
+        throw new ApiException('VALIDATION_FAILED', 'Use a page, category, collection or product id, or an https, mailto or tel link.', { destination: 'That destination is not allowed.' });
+      }
+      if (node.linkType !== 'external' && !(await this.destinationExists(node.linkType, node.destination))) {
+        throw new ApiException('VALIDATION_FAILED', 'That page, category, collection or product does not exist.', { destination: 'That destination does not exist.' });
+      }
+      await this.assertTree(node.children ?? []);
+    }
+  }
+
+  private async destinationExists(linkType: NavInput['linkType'], id: string): Promise<boolean> {
+    const where = { where: { id }, select: { id: true } };
+    if (linkType === 'page') return (await this.prisma.page.findUnique(where)) !== null;
+    if (linkType === 'category') return (await this.prisma.category.findUnique(where)) !== null;
+    if (linkType === 'collection') return (await this.prisma.collection.findUnique(where)) !== null;
+    if (linkType === 'product') return (await this.prisma.product.findUnique(where)) !== null;
+    return false;
   }
 }

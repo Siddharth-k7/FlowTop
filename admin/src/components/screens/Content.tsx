@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { capturePublish } from '@/lib/capture-publish';
+import { rankAfterSave } from '@/lib/collection-save';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { DraftBanner, EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { ListScreen } from '@/components/ui/ListScreen';
@@ -27,7 +29,29 @@ export function ContentEditor({ ct, id }: { ct: ContentType; id: string }) {
   const router = useRouter();
   const can = useCan(); // COSMETIC ONLY: hiding a button is presentation; the server checks the permission.
   const canWrite = can(ct.write);
-  const doc = useDocument<Doc>(ct.section, id, () => (ct.hasStatus ? { status: 'draft' } : {}), ct.toBody);
+  const idsRef = useRef<unknown>(undefined);
+  const publishing = useRef(false);
+  const publishError = useRef<string | undefined>(undefined);
+  const doc = useDocument<Doc>(ct.section, id, () => (ct.hasStatus ? { status: 'draft' } : {}), ct.toBody, async (saved) => {
+    if (ct.section === 'collections') {
+      const productIds = idsRef.current;
+      if (Array.isArray(productIds)) {
+        await api(`/admin/collections/${saved.id}/products`, { method: 'PUT', body: { items: productIds.map((productId, index) => ({ productId: String(productId), position: index + 1 })) } });
+      }
+      if (publishing.current) {
+        publishError.current = await capturePublish(() => api(`/admin/collections/${saved.id}`, { method: 'PATCH', body: { status: 'published' } }).then(() => undefined));
+      }
+      const fresh = await api<Doc>(`/admin/collections/${saved.id}`);
+      if (!Array.isArray(productIds)) return fresh;
+      const patchIds = Array.isArray(saved.productIds) ? saved.productIds.map(String) : [];
+      return { ...fresh, productIds: rankAfterSave(productIds.map(String), patchIds) };
+    }
+    if (ct.section === 'journal' && publishing.current) {
+      publishError.current = await capturePublish(() => api(`/admin/journal/${saved.id}/publish`, { method: 'POST' }).then(() => undefined));
+      return api<Doc>(`/admin/journal/${saved.id}`);
+    }
+  });
+  idsRef.current = doc.value?.productIds;
   const [del, setDel] = useState(false);
   const [delErr, setDelErr] = useState<string>();
   const v = doc.value;
@@ -35,20 +59,14 @@ export function ContentEditor({ ct, id }: { ct: ContentType; id: string }) {
   if (!v) return <PageWrapper title={ct.title}><Skeleton /></PageWrapper>;
   const missing = missingRequired(ct.fields, v);
   const missingList = Object.values(missing);
-  const putProducts = async (collectionId: string, productIds: unknown) => {
-    if (!Array.isArray(productIds)) return;
-    await api(`/admin/collections/${collectionId}/products`, { method: 'PUT', body: { items: productIds.map((productId, index) => ({ productId: String(productId), position: index + 1 })) } });
-  };
-  const save = async () => {
-    const saved = await doc.save();
-    if (saved && ct.section === 'collections') await putProducts(saved.id, v.productIds);
-    return saved;
-  };
+  const save = () => doc.save();
   const publish = async () => {
-    const saved = ct.publishVia === 'post' ? await save() : await doc.save({ status: 'published' });
-    if (!saved) return;
-    if (ct.section === 'collections') await putProducts(saved.id, v.productIds);
-    if (ct.publishVia === 'post') { await api(`/admin/${ct.section}/${saved.id}/publish`, { method: 'POST' }); doc.reload(); }
+    publishError.current = undefined;
+    publishing.current = true;
+    try {
+      const saved = await doc.save();
+      if (saved && publishError.current) doc.setError(publishError.current);
+    } finally { publishing.current = false; }
   };
   const remove = async () => {
     try { await api(`/admin/${ct.section}/${id}`, { method: 'DELETE' }); router.replace(`/${ct.section}`); }

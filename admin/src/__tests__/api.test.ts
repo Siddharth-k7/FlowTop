@@ -98,7 +98,8 @@ describe('apiDownload() (real fetch path, mocks off): the orders CSV comes from 
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const source = readFileSync(join(__dirname, '..', 'components', 'screens', 'Orders.tsx'), 'utf8');
-    expect(source).toContain("apiDownload('/admin/orders/export'");
+    expect(source).toContain('apiDownload(path,');
+    expect(source).toContain('orderExportPath');
     expect(source).not.toMatch(/new Blob|csvDownload|\.join\(','\)/);
   });
 });

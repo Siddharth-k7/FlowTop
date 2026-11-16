@@ -28,7 +28,7 @@ function Level({ nodes, onChange, depth }: { nodes: NavNode[]; onChange: (n: Nav
               <label className="flex min-h-touch items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={node.openInNewTab} onChange={(e) => set(node.id, { openInNewTab: e.target.checked })} />New tab</label>
               <button className="min-h-touch px-2 text-sm text-error" onClick={() => onChange(nodes.filter((item) => item.id !== node.id))}>Remove{node.children.length ? ' with sub-items' : ''}</button>
             </div>
-            {depth < 1 && (
+            {depth < 2 && (
               <div className="ml-4 border-l-2 border-purple-pale pl-3">
                 <Level nodes={node.children} depth={depth + 1} onChange={(children) => set(node.id, { children })} />
               </div>)}
@@ -38,7 +38,7 @@ function Level({ nodes, onChange, depth }: { nodes: NavNode[]; onChange: (n: Nav
   );
 }
 
-/** Header and footer, one level of sub-items. PUT replaces both menus. */
+/** Header and footer. A root, its children, and their children. PUT replaces both menus. */
 export function NavigationEditor() {
   const canWrite = useCan()('navigation:write'); // COSMETIC ONLY: the server checks navigation:write.
   const [tree, setTree] = useState<AdminNavigation>();

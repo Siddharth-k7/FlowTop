@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginationQueryDto } from '../common/dto/pagination';
 import { ApiException } from '../common/errors/api.exception';
@@ -9,6 +9,9 @@ import { toCsv } from './csv';
 
 const STATUSES = ['received', 'confirmed', 'shipped', 'cancelled'] as const;
 const PAYMENTS = ['pending', 'paid', 'failed', 'refunded'] as const;
+/** A full timestamp with its offset. A bare date is 422: midnight is a different instant in India and in UTC. */
+const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?(Z|[+-]\d{2}:\d{2})$/;
+const INSTANT_MESSAGE = 'Use a full timestamp with its time zone, for example 2026-01-01T00:00:00Z';
 const NEXT: Record<OrderStatus, readonly OrderStatus[]> = {
   received: ['confirmed', 'cancelled'],
   confirmed: ['shipped', 'cancelled'],
@@ -20,6 +23,8 @@ export class OrderListQuery extends PaginationQueryDto {
   @IsOptional() @IsIn(STATUSES) status?: (typeof STATUSES)[number];
   @IsOptional() @IsIn(PAYMENTS) paymentStatus?: (typeof PAYMENTS)[number];
   @IsOptional() @IsString() @MaxLength(200) search?: string;
+  @IsOptional() @Matches(INSTANT, { message: INSTANT_MESSAGE }) from?: string;
+  @IsOptional() @Matches(INSTANT, { message: INSTANT_MESSAGE }) to?: string;
 }
 
 export class OrderStatusDto {
@@ -40,6 +45,15 @@ export class OrdersService {
       { customerName: { contains: query.search, mode: 'insensitive' } },
       { customerEmail: { contains: query.search, mode: 'insensitive' } },
     ];
+    if (query.from || query.to) {
+      const from = query.from ? new Date(query.from) : undefined;
+      const to = query.to ? new Date(query.to) : undefined;
+      if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
+        throw new ApiException('VALIDATION_FAILED', 'That date does not exist.', { from: 'That date does not exist.' });
+      }
+      if (from && to && from >= to) throw new ApiException('VALIDATION_FAILED', 'The end of the range must be after its start.', { to: 'Must be after from.' });
+      where.createdAt = { ...(from ? { gte: from } : {}), ...(to ? { lt: to } : {}) };
+    }
     return where;
   }
 
@@ -80,8 +94,8 @@ export class OrdersService {
     return this.find(id);
   }
 
-  async export(actorId: string) {
-    const rows = await this.prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
+  async export(actorId: string, query: OrderListQuery) {
+    const rows = await this.prisma.order.findMany({ where: this.where(query), orderBy: { createdAt: 'desc' } });
     await this.audit.record({ actorId, action: 'export', entityType: 'order', entityId: 'orders', metadata: { rows: rows.length } });
     const header = ['reference', 'customerName', 'customerEmail', 'total', 'status', 'paymentStatus', 'createdAt'];
     const csv = toCsv(header, rows.map((row) => [row.reference, row.customerName, row.customerEmail, row.total, row.orderStatus, row.paymentStatus, row.createdAt.toISOString()]));

@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { apiList, ApiError } from '@/lib/api';
+import { settleListRequest } from '@/lib/list-state';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
 import type { Doc } from '@/lib/doc';
@@ -25,7 +26,7 @@ export const listUrl = (endpoint: string, page: number, search: string, filters:
 /** Table on desktop; on a phone it scrolls inside its own container so the page never scrolls sideways. */
 export function ListScreen({ title, endpoint, columns, rowHref, newHref, newLabel = 'Add new', filters = [], emptyText, bulk, headerExtra, initialFilters }: {
   title: string; endpoint: string; columns: Column[]; rowHref: (d: Doc) => string; newHref?: string; newLabel?: string;
-  filters?: ListFilter[]; emptyText: string; headerExtra?: ReactNode; initialFilters?: Record<string, string>;
+  filters?: ListFilter[]; emptyText: string; headerExtra?: ReactNode | ((filters: Record<string, string>, search: string) => ReactNode); initialFilters?: Record<string, string>;
   bulk?: { label: string; run: (ids: string[]) => Promise<unknown> }[];
 }) {
   const [rows, setRows] = useState<Doc[]>();
@@ -38,16 +39,20 @@ export function ListScreen({ title, endpoint, columns, rowHref, newHref, newLabe
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>();
   const [picked, setPicked] = useState<string[]>([]);
   const [msg, setMsg] = useState<string>();
+  const generation = useRef(0);
 
   useEffect(() => { const t = setTimeout(() => setDebounced(q), 300); return () => clearTimeout(t); }, [q]);
 
   const query = listUrl(endpoint, page, debounced, fv);
   const load = useCallback(() => {
+    const mine = ++generation.current;
+    const pageForThis = page;
     setError(undefined);
     apiList<Doc>(query).then((res) => {
+      if (mine !== generation.current) return;
       setTotal(res.meta.total);
-      setRows((prev) => (page === 1 ? res.data : [...(prev ?? []).filter((row) => !res.data.some((next) => next.id === row.id)), ...res.data]));
-    }).catch((e) => setError(e instanceof ApiError ? e.message : 'Could not load this list.'));
+      setRows((prev) => settleListRequest(generation.current, mine, prev, res.data, pageForThis));
+    }).catch((e) => { if (mine === generation.current) setError(e instanceof ApiError ? e.message : 'Could not load this list.'); });
   }, [query, page]);
   useEffect(load, [load]);
 
@@ -64,11 +69,11 @@ export function ListScreen({ title, endpoint, columns, rowHref, newHref, newLabe
   };
 
   return (
-    <PageWrapper title={title} actions={<>{headerExtra}{newHref && <Link href={newHref} className={btnPrimary}>{newLabel}</Link>}</>}>
+    <PageWrapper title={title} actions={<>{typeof headerExtra === 'function' ? headerExtra(fv, debounced) : headerExtra}{newHref && <Link href={newHref} className={btnPrimary}>{newLabel}</Link>}</>}>
       <div className="mb-4 flex flex-col gap-2 md:flex-row">
-        <input type="search" className={`${inputCls} md:max-w-sm`} placeholder="Search" aria-label={`Search ${title}`} value={q} onChange={(e) => { setQ(e.target.value); setPage(1); setRows(undefined); }} />
+        <input type="search" className={`${inputCls} md:max-w-sm`} placeholder="Search" aria-label={`Search ${title}`} value={q} onChange={(e) => { setQ(e.target.value); setPage(1); setRows(undefined); setPicked([]); }} />
         {filters.map((f) => (
-          <select key={f.key} aria-label={f.label} className={`${inputCls} md:w-48`} value={fv[f.key] ?? ''} onChange={(e) => { setFv({ ...fv, [f.key]: e.target.value }); setPage(1); setRows(undefined); }}>
+          <select key={f.key} aria-label={f.label} className={`${inputCls} md:w-48`} value={fv[f.key] ?? ''} onChange={(e) => { setFv({ ...fv, [f.key]: e.target.value }); setPage(1); setRows(undefined); setPicked([]); }}>
             <option value="">{f.label}: all</option>{f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>))}
       </div>

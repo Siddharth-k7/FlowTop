@@ -7,6 +7,7 @@ import { Prisma } from '../generated/prisma/client';
 import { PublishStateService } from '../_base/publish-state.service';
 import { SlugService } from '../_base/slug.service';
 import { CreatePageDto, CreateSectionDto, PageListQuery, UpdateSectionDto, WritePageDto } from './dto/page.dto';
+import { assertExactReorder } from '../common/reorder';
 import { assertSectionConfig } from './section-config';
 
 const seoOf = (row: { seoTitle: string; seoDescription: string; seoCanonical: string | null }) => ({ title: row.seoTitle, description: row.seoDescription, canonical: row.seoCanonical, shareImage: null });
@@ -107,7 +108,15 @@ export class PagesService {
   }
 
   async reorder(pageId: string, ids: string[], actorId: string) {
-    await this.prisma.$transaction(ids.map((id, index) => this.prisma.section.update({ where: { id }, data: { position: index + 1, pageId } })));
+    if (!(await this.prisma.page.findUnique({ where: { id: pageId }, select: { id: true } }))) throw new ApiException('NOT_FOUND', 'Page not found');
+    await this.prisma.$transaction(async (tx) => {
+      const own = await tx.section.findMany({ where: { pageId }, select: { id: true } });
+      const ownIds = own.map((row) => row.id);
+      const missing = [...new Set(ids.filter((id) => !ownIds.includes(id)))];
+      const elsewhere = missing.length ? await tx.section.findMany({ where: { id: { in: missing } }, select: { id: true } }) : [];
+      assertExactReorder(ownIds, ids, elsewhere.map((row) => row.id));
+      for (const [index, id] of ids.entries()) await tx.section.update({ where: { id }, data: { position: index + 1 } });
+    });
     await this.audit.record({ actorId, action: 'reorder', entityType: 'section', entityId: pageId });
     return { data: { reordered: true } };
   }

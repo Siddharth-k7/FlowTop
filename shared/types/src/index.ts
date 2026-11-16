@@ -487,7 +487,8 @@ export interface Page {
 export type NavigationLinkTypeName = 'page' | 'category' | 'collection' | 'product' | 'external';
 
 /**
- * One item of GET/PUT /admin/navigation. One level of children.
+ * One item of GET/PUT /admin/navigation.
+ * `children` nests: a root, its children, and their children (grandchildren).
  * Built from navigation_item: label, link type, destination, not a free href.
  */
 export interface NavNode {
@@ -536,6 +537,14 @@ export interface CollectionProductRank {
   position: number;
 }
 
+/** Filters for GET /admin/journal. An unknown `status` is 422. */
+export interface AdminJournalListQuery {
+  search?: string;
+  status?: PublishStatus;
+  page?: number;
+  perPage?: number;
+}
+
 /** Admin journal article. `heroImageId` is the cover. */
 export interface AdminJournalArticle {
   id: string;
@@ -555,6 +564,20 @@ export type OrderStatusName = 'received' | 'confirmed' | 'shipped' | 'cancelled'
 
 /** order.payment_status. */
 export type PaymentStatusName = 'pending' | 'paid' | 'failed' | 'refunded';
+
+/**
+ * Filters shared by GET /admin/orders and GET /admin/orders/export.
+ * `from` is inclusive and `to` is exclusive. Both are full timestamps with a time zone.
+ */
+export interface AdminOrderListQuery {
+  status?: OrderStatusName;
+  paymentStatus?: PaymentStatusName;
+  search?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  perPage?: number;
+}
 
 /** One row of GET /admin/orders. */
 export interface AdminOrderSummary {

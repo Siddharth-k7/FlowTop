@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { AuditService } from '../audit/audit.service';
 import { paginate, PaginationQueryDto } from '../common/dto/pagination';
 import { ApiException } from '../common/errors/api.exception';
@@ -8,9 +8,11 @@ import { Prisma } from '../generated/prisma/client';
 import { PublishStateService } from '../_base/publish-state.service';
 import { SlugService } from '../_base/slug.service';
 
+const PUBLISH_STATUSES = ['draft', 'published', 'unpublished', 'archived'] as const;
+
 export class JournalListQuery extends PaginationQueryDto {
   @IsOptional() @IsString() @MaxLength(200) search?: string;
-  @IsOptional() @IsString() status?: string;
+  @IsOptional() @IsIn(PUBLISH_STATUSES) status?: (typeof PUBLISH_STATUSES)[number];
 }
 
 export class WriteJournalDto {
@@ -33,7 +35,7 @@ export class JournalService {
   async list(query: JournalListQuery) {
     const where: Prisma.JournalArticleWhereInput = {};
     if (query.search) where.title = { contains: query.search, mode: 'insensitive' };
-    if (query.status === 'draft' || query.status === 'published' || query.status === 'unpublished' || query.status === 'archived') where.status = query.status;
+    if (query.status) where.status = query.status;
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.journalArticle.findMany({ where, orderBy: { updatedAt: 'desc' }, skip: (query.page - 1) * query.perPage, take: query.perPage }),
       this.prisma.journalArticle.count({ where }),

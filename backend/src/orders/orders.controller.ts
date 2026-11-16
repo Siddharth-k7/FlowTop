@@ -15,8 +15,8 @@ export class OrdersController {
 
   @Get('export')
   @RequirePermission('order:export')
-  async export(@CurrentUser() user: AuthUser, @Res({ passthrough: true }) res: Response) {
-    const { csv, filename } = await this.orders.export(user.id);
+  async export(@Query() query: OrderListQuery, @CurrentUser() user: AuthUser, @Res({ passthrough: true }) res: Response) {
+    const { csv, filename } = await this.orders.export(user.id, query);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return csv;

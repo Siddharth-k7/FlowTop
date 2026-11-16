@@ -26,6 +26,10 @@ export class CategoriesRepository {
     return this.prisma.product.count({ where: { categoryId: id } });
   }
 
+  childCount(id: string) {
+    return this.prisma.category.count({ where: { parentId: id } });
+  }
+
   create(data: Prisma.CategoryCreateInput) {
     return this.prisma.category.create({ data });
   }

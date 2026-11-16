@@ -8,6 +8,7 @@ import { LoadError, Skeleton } from '@/components/ui/EditorBar';
 import { ListScreen } from '@/components/ui/ListScreen';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
+import { orderExportPath } from '@/lib/order-export';
 import { formatDate } from '@/lib/utils/formatDate';
 import { formatPrice } from '@/lib/utils/formatPrice';
 import type { AdminOrderDetail } from '@flowtop/types';
@@ -21,14 +22,14 @@ export function OrderList() {
   const canExport = useCan()('order:export');
   const [exportErr, setExportErr] = useState<string>();
   /** The server builds the CSV (docs/03: GET /admin/orders/export). The browser only saves what it sent. */
-  const exportCsv = async () => {
+  const exportCsv = async (path: string) => {
     setExportErr(undefined);
-    try { const { blob, filename } = await apiDownload('/admin/orders/export', 'orders.csv'); saveBlob(blob, filename); }
+    try { const { blob, filename } = await apiDownload(path, 'orders.csv'); saveBlob(blob, filename); }
     catch (e) { setExportErr(e instanceof ApiError ? e.message : 'Could not export. Nothing was downloaded.'); }
   };
   return (
     <ListScreen title="Orders" endpoint="/admin/orders" rowHref={(d) => `/orders/${d.id}`} emptyText="No orders yet. They appear here as soon as a customer checks out."
-      headerExtra={canExport ? <><button className={btnSecondary} onClick={exportCsv}>Export CSV</button>{exportErr && <p role="alert" className="w-full text-sm text-error">{exportErr}</p>}</> : undefined}
+      headerExtra={canExport ? (filters, search) => <><button className={btnSecondary} onClick={() => exportCsv(orderExportPath(filters, search))}>Export CSV</button>{exportErr && <p role="alert" className="w-full text-sm text-error">{exportErr}</p>}</> : undefined}
       filters={[{ key: 'status', label: 'Status', options: opt(STATUSES) }, { key: 'paymentStatus', label: 'Payment', options: opt(['pending', 'paid', 'failed', 'refunded']) }]}
       columns={[{ key: 'reference', label: 'Order' }, { key: 'customerName', label: 'Customer' }, { key: 'total', label: 'Total', render: (d) => formatPrice(Number(d.total)) },
         { key: 'status', label: 'Status', render: (d) => cap(d.status) }, { key: 'paymentStatus', label: 'Payment', render: (d) => cap(d.paymentStatus) }, { key: 'createdAt', label: 'Placed', render: (d) => formatDate(String(d.createdAt)) }]} />
