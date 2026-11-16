@@ -49,22 +49,29 @@ export class VariantsService {
   async update(id: string, dto: WriteVariantDto, actorId: string) {
     const existing = await this.prisma.variant.findUnique({ where: { id }, include: { product: { select: { price: true } } } });
     if (!existing) throw new ApiException('NOT_FOUND', 'That finish no longer exists.');
-    try {
-      const row = await this.prisma.$transaction(async (tx) => {
-        if (!dto.isDefault) {
-          const otherDefault = await tx.variant.count({ where: { productId: existing.productId, isDefault: true, NOT: { id } } });
-          if (otherDefault === 0) throw new ApiException('VALIDATION_FAILED', 'Keep one default finish.', { isDefault: 'Keep one default finish.' });
-        } else {
-          await tx.variant.updateMany({ where: { productId: existing.productId, NOT: { id } }, data: { isDefault: false } });
-        }
-        return tx.variant.update({ where: { id }, data: { name: dto.name, skuSuffix: dto.skuSuffix, priceOverride: dto.price, swatchHex: dto.swatchHex ?? null, isAvailable: dto.isAvailable, isDefault: dto.isDefault } });
-      });
-      await this.audit.record({ actorId, action: 'update', entityType: 'variant', entityId: id });
-      return { data: toVariant(row, existing.product.price) };
-    } catch (error: unknown) {
-      this.rethrow(error);
-      throw error;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const row = await this.prisma.$transaction(async (tx) => {
+          if (!dto.isDefault) {
+            const otherDefault = await tx.variant.count({ where: { productId: existing.productId, isDefault: true, NOT: { id } } });
+            if (otherDefault === 0) throw new ApiException('VALIDATION_FAILED', 'Keep one default finish.', { isDefault: 'Keep one default finish.' });
+          } else {
+            await tx.variant.updateMany({ where: { productId: existing.productId, NOT: { id } }, data: { isDefault: false } });
+          }
+          return tx.variant.update({ where: { id }, data: { name: dto.name, skuSuffix: dto.skuSuffix, priceOverride: dto.price, swatchHex: dto.swatchHex ?? null, isAvailable: dto.isAvailable, isDefault: dto.isDefault } });
+        });
+        await this.audit.record({ actorId, action: 'update', entityType: 'variant', entityId: id });
+        return { data: toVariant(row, existing.product.price) };
+      } catch (error: unknown) {
+        this.rethrow(error);
+        if (error instanceof ApiException) throw error;
+        const retry = error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034';
+        if (retry && attempt < 2) continue;
+        if (retry) throw new ApiException('CONFLICT', 'Another save updated this finish at the same time. Try again.');
+        throw error;
+      }
     }
+    throw new ApiException('CONFLICT', 'Another save updated this finish at the same time. Try again.');
   }
 
   async remove(id: string, actorId: string) {
