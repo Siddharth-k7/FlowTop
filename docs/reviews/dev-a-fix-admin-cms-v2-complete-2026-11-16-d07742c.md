@@ -2,7 +2,7 @@
 
 ### Verdict
 
-The three HOLD findings are fixed in the working tree. Local suites, the Docker `/health` check, and a browser pass against the new image all passed. CI on this commit is not in this file yet.
+The three HOLD findings are fixed on `da2af97`. Local suites, the Docker `/health` check, a browser pass against the new image, and CI run `43982374741` (7/7) all passed.
 
 ### Checks
 
@@ -43,4 +43,4 @@ Backend: lint clean, unit `29` suites / `240` tests, `nest build`, e2e `14` suit
 
 ### Honesty line
 
-Not verified: a second fresh clone with `node_modules` deleted; every code sample in `docs/03-api-contract.md` pasted into a typecheck; a live Postgres P2034 (the retry is the mocked unit test, and the e2e race completed without a 500); public pages rendering the saved hero; the empty first page `browser-href-mwjwxrof` (the editor created `browser-href-mwjwxrof-2` after the 422 and left the first page with no sections); CI on this commit.
+Not verified: a second fresh clone with `node_modules` deleted; every code sample in `docs/03-api-contract.md` pasted into a typecheck; a live Postgres P2034 (the retry is the mocked unit test, and the e2e race completed without a 500); public pages rendering the saved hero; the empty first page `browser-href-mwjwxrof` (the editor created `browser-href-mwjwxrof-2` after the 422 and left the first page with no sections). CI on `da2af97` is run `43982374741`: Backend, Backend image, Frontend, Admin, UI kit, Secret scan (gitleaks), and GitGuardian Security Checks all passed.
