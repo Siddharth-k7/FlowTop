@@ -42,5 +42,5 @@ export class ProductsController {
 
   @Post('bulk')
   @RequirePermission('product:update')
-  bulk(@Body() dto: BulkProductDto, @CurrentUser() user: AuthUser) { return this.products.bulk(dto, user.id); }
+  bulk(@Body() dto: BulkProductDto, @CurrentUser() user: AuthUser) { return this.products.bulk(dto, user); }
 }

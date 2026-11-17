@@ -16,3 +16,4 @@
 body { background: var(--color-grey-100); color: var(--color-ink); font-family: system-ui, sans-serif; }
 :focus-visible { outline: 3px solid var(--color-purple-deep); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media print { aside, header, nav, dialog { display: none !important; } body { background: #fff; } }

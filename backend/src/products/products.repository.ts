@@ -43,6 +43,10 @@ export class ProductsRepository {
     return this.prisma.orderItem.count({ where: { productId: id } });
   }
 
+  transaction<T>(work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+    return this.prisma.$transaction(work);
+  }
+
   private whereFor(query: ProductListQueryDto): Prisma.ProductWhereInput {
     const where: Prisma.ProductWhereInput = {};
     if (query.search) where.OR = [{ name: { contains: query.search, mode: 'insensitive' } }, { sku: { contains: query.search, mode: 'insensitive' } }];

@@ -1,4 +1,5 @@
 import type { AuditService } from '../audit/audit.service';
+import { Prisma } from '../generated/prisma/client.js';
 import { PublishStateService } from '../_base/publish-state.service';
 import { ProductsService } from './products.service';
 import type { ProductsRepository } from './products.repository';
@@ -33,9 +34,23 @@ describe('ProductsService', () => {
     await expect(products.transition('1', 'archived', 'actor')).rejects.toThrow('referenced');
   });
 
+  it('refuses to publish without a category, naming the category field', async () => {
+    const { products, findById } = service();
+    findById.mockResolvedValue({ id: '1', status: 'draft', publishedAt: null, price: 450000, categoryId: null });
+    await expect(products.transition('1', 'published', 'actor')).rejects.toMatchObject({ code: 'VALIDATION_FAILED', fields: { categoryId: 'Choose a category before publishing.' } });
+  });
+
+  it('reports a slug unique violation on the slug field', async () => {
+    const { products } = service();
+    const error = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', { code: 'P2002', clientVersion: 'test', meta: { target: ['slug'] } });
+    const repository = (products as unknown as { repository: { create: jest.Mock } }).repository;
+    repository.create = jest.fn().mockRejectedValue(error);
+    await expect(products.create({ name: 'Opel', sku: 'FT-NEW', slug: 'opel', price: 100 }, 'actor')).rejects.toMatchObject({ fields: { slug: 'This web address is already in use.' } });
+  });
+
   it('publishes through the shared state service', async () => {
     const { products, findById, record } = service();
-    findById.mockResolvedValue({ id: '1', status: 'draft', publishedAt: null });
+    findById.mockResolvedValue({ id: '1', status: 'draft', publishedAt: null, price: 450000, categoryId: 'cat' });
     await products.transition('1', 'published', 'actor');
     expect(record).toHaveBeenCalledWith({ actorId: 'actor', action: 'publish', entityType: 'product', entityId: '1' });
   });

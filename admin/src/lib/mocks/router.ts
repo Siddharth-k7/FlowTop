@@ -1,6 +1,7 @@
 import { MOCK_MFA_CODE, MOCK_PASSWORD, MOCK_RECOVERY_CODE, SESSION_COOKIE, mockUsers } from './auth';
 import { mockMedia, mockUsage } from './media';
 import { mockDashboard } from './dashboard';
+import { adminRoutes } from './admin';
 import type { MediaAsset } from '@flowtop/types';
 
 // Mock mode only. lib/api.ts imports this file dynamically, and only when NEXT_PUBLIC_USE_MOCKS=true.
@@ -100,7 +101,7 @@ export async function mockRequest(path: string, method: string, body: unknown): 
     }
     return ok(item);
   }
-  return fail(404, 'NOT_FOUND', 'Not found.');
+  return adminRoutes(route, method, body, params, me.permissions) ?? fail(404, 'NOT_FOUND', 'Not found.');
 }
 
 /** Mock upload target: adds the file to the in-memory library. */

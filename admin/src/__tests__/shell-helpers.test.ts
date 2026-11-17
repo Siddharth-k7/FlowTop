@@ -70,9 +70,10 @@ describe('safeNext (LoginFlow redirect)', () => {
 
 describe('cosmetic permission filters', () => {
   const pm = permissionsFor('product_manager');
-  it('product_manager menu matches its read perms (no journal, orders, submissions, navigation, settings, users) (plus always-on Dashboard)', () => {
-    expect(NAV.filter((n) => canSee(pm, n.permission)).map((n) => n.label)).toEqual(
-      ['Dashboard', 'Products', 'Categories', 'Collections', 'Pages', 'Media']);
+  it('product_manager menu matches its read perms (no journal, orders, submissions, navigation, settings, users)', () => {
+    const labels = NAV.filter((n) => canSee(pm, n.permission)).map((n) => n.label);
+    expect(labels).toEqual(['Dashboard', 'Products', 'Categories', 'Collections', 'Pages', 'Media', 'Admin guide']);
+    for (const hidden of ['Journal', 'Orders', 'Submissions', 'Navigation', 'Settings', 'Users']) expect(labels).not.toContain(hidden);
   });
   it('product_manager tiles hide pages, journal, orders, submissions, navigation', () => {
     expect(visibleTiles(pm).map((t) => t.label)).toEqual(['Add Product', 'Add Collection', 'Upload Media']);

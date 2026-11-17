@@ -12,7 +12,16 @@ import { HealthModule } from './health/health.module';
 import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
+import { CategoriesModule } from './categories/categories.module';
+import { CollectionsModule } from './collections/collections.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { JournalModule } from './journal/journal.module';
+import { NavigationModule } from './navigation/navigation.module';
+import { OrdersModule } from './orders/orders.module';
+import { PagesModule } from './pages/pages.module';
+import { PlacementsModule } from './placements/placements.module';
 import { ProductsModule } from './products/products.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 @Module({
   imports: [
@@ -26,6 +35,15 @@ import { ProductsModule } from './products/products.module';
     SettingsModule,
     UsersModule,
     ProductsModule,
+    CategoriesModule,
+    CollectionsModule,
+    PlacementsModule,
+    PagesModule,
+    JournalModule,
+    NavigationModule,
+    OrdersModule,
+    SubmissionsModule,
+    DashboardModule,
   ],
   providers: [
     { provide: APP_PIPE, useFactory: createValidationPipe },

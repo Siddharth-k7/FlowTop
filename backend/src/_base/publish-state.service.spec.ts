@@ -16,7 +16,17 @@ describe('PublishStateService', () => {
   });
 
   it('rejects illegal transitions and blocking archives', async () => {
-    await expect(new PublishStateService(audit).transition({ id: '1', status: 'draft', publishedAt: null }, 'archived', repository, 'product', 'u')).rejects.toThrow('Illegal');
+    await expect(new PublishStateService(audit).transition({ id: '1', status: 'draft', publishedAt: null }, 'archived', repository, 'product', 'u')).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
     await expect(new PublishStateService(audit).transition({ id: '1', status: 'published', publishedAt: new Date() }, 'archived', repository, 'product', 'u', () => Promise.resolve(true))).rejects.toThrow('referenced');
+  });
+
+  it('leaves an already published record as it is', async () => {
+    const publishedAt = new Date('2026-01-01T00:00:00.000Z');
+    const updateStatus = jest.fn((id: string, status: 'draft' | 'published' | 'unpublished' | 'archived', at: Date | null) => Promise.resolve({ id, status, publishedAt: at }));
+    const quiet: PublishStateRepository = { updateStatus };
+    const result = await new PublishStateService(audit).transition({ id: '1', status: 'published', publishedAt }, 'published', quiet, 'page', 'u');
+    expect(result).toMatchObject({ id: '1', status: 'published', publishedAt });
+    expect(updateStatus).not.toHaveBeenCalled();
+    expect(recordMock).not.toHaveBeenCalled();
   });
 });

@@ -6,6 +6,8 @@ This is the product. The public site is what customers see, but this is what Flo
 
 **The test that matters:** a marketing person adds a product and puts it on the homepage, unaided, after one training session. If they need help, the CMS has failed regardless of what the test report says.
 
+Section config shapes, endpoints and permissions come from [docs/03-api-contract.md](../docs/03-api-contract.md). Do not keep a second copy in `admin/`; a shape the contract lacks starts as a contract PR.
+
 ## Who you are building for
 
 Not developers. Marketing and product staff who know bathroom fittings and do not know HTML. Every screen should be obvious without documentation, forgiving of mistakes, and clear about what will happen when they press publish.
