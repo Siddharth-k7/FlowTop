@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/api';
+import { saveTarget } from '@/lib/save-target';
 
 /**
  * Load / edit / save one document. Rules from admin/AGENTS.md live here so every form gets them:
@@ -25,6 +26,8 @@ export function useDocument<T extends { id: string }>(col: string, id: string, b
   const blankRef = useRef(blank); blankRef.current = blank;
   const bodyRef = useRef(toBody); bodyRef.current = toBody;
   const beforeRef = useRef(beforeRedirect); beforeRef.current = beforeRedirect;
+  /** Set after the first POST returns, so a later failure on /new patches this row instead of creating another. */
+  const persistedId = useRef<string | undefined>(undefined);
 
   const load = useCallback(() => {
     setLoadError(undefined);
@@ -63,11 +66,21 @@ export function useDocument<T extends { id: string }>(col: string, id: string, b
     if (!value) return;
     const next = patch ? { ...value, ...patch } : value;
     setSaving(true); setError(undefined); setErrors({});
+    const creating = isNew && !persistedId.current;
+    const target = saveTarget(isNew, persistedId.current, id);
     try {
       const body = bodyRef.current ? bodyRef.current(next) : Object.fromEntries(Object.entries(next).filter(([k]) => k !== 'id'));
-      const saved = await api<T>(isNew ? `/admin/${col}` : `/admin/${col}/${id}`, { method: isNew ? 'POST' : 'PATCH', body });
-      const refreshed = beforeRef.current ? await beforeRef.current(saved) : undefined;
-      const stored = refreshed ?? saved;
+      const saved = await api<T>(creating ? `/admin/${col}` : `/admin/${col}/${target.pathId}`, { method: target.method, body });
+      if (creating) persistedId.current = saved.id;
+      let stored = saved;
+      try {
+        const refreshed = beforeRef.current ? await beforeRef.current(saved) : undefined;
+        if (refreshed) stored = refreshed;
+      } catch (followUp) {
+        // The row exists. Keep its id and the server copy so the next save updates it.
+        if (creating) { setValue(saved); base.current = JSON.stringify(saved); }
+        throw followUp;
+      }
       base.current = JSON.stringify(stored); setValue(stored); setSavedAt(new Date());
       try { localStorage.removeItem(key); } catch { /* ignore */ }
       if (isNew) {

@@ -1,4 +1,5 @@
-import { IsBoolean, IsIn, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsIn, IsObject, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination';
 import { ReorderIdsDto } from '../../products/dto/variant.dto';
 
@@ -17,12 +18,20 @@ export class WritePageDto {
   @IsOptional() @IsString() seoCanonical?: string | null;
 }
 
+export class PageSectionInputDto {
+  @IsIn(SECTION_TYPES) type!: (typeof SECTION_TYPES)[number];
+  @IsObject() config!: Record<string, unknown>;
+  @IsOptional() @IsBoolean() visible?: boolean;
+}
+
 export class CreatePageDto {
   @IsString() @MaxLength(200) title!: string;
   @IsString() @MaxLength(200) slug!: string;
   @IsOptional() @IsString() @MaxLength(70) seoTitle?: string;
   @IsOptional() @IsString() @MaxLength(160) seoDescription?: string;
   @IsOptional() @IsString() seoCanonical?: string | null;
+  /** Created with the page, in one transaction. Omit to create the page alone. */
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => PageSectionInputDto) sections?: PageSectionInputDto[];
 }
 
 export class CreateSectionDto {

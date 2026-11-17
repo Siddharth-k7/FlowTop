@@ -9,7 +9,9 @@ import type { Placement as PrismaPlacement, Product as PrismaProduct, Section as
 import type { SettingItem as BackendSettingItem } from '../settings/dto/settings.dto';
 import type {
   AdminProduct,
+  CreatePageBody,
   Page,
+  PageSectionWrite,
   Placement,
   PlacementLocationType,
   SettingItem,
@@ -59,6 +61,9 @@ const PRODUCT: Shape<Omit<AdminProduct, 'category' | '_count'>> = {
 const PLACEMENT: Shape<Placement> = { id: true, productId: true, locationType: true, locationId: true, locationName: true, position: true, label: true, enabled: true };
 const SECTION: Shape<Section> = { id: true, type: true, position: true, visible: true, config: {} };
 const PAGE: Shape<Page> = { id: true, title: true, slug: true, status: true, sections: [SECTION], seo: { title: true, description: true, canonical: true, shareImage: { url: true } } };
+type _createPageKeys = Expect<Equal<keyof CreatePageBody, 'title' | 'slug' | 'seoTitle' | 'seoDescription' | 'seoCanonical' | 'sections'>>;
+type _sectionWriteKeys = Expect<Equal<keyof PageSectionWrite, 'type' | 'visible' | 'config'>>;
+const CREATE_PAGE_TYPES: [_createPageKeys, _sectionWriteKeys] = [true, true];
 
 const contractDoc = readFileSync(join(__dirname, '..', '..', '..', 'docs', '03-api-contract.md'), 'utf8').replace(/\r\n/g, '\n');
 
@@ -105,6 +110,13 @@ describe('shared/types admin drift', () => {
   it('gives Page the keys the contract example has', () => {
     // The contract leaves `seo` as `{ ... }`; its keys are the shared Seo type, pinned in catalog-types.drift.spec.ts.
     expect(Object.keys(PAGE).sort()).toEqual(Object.keys(contractExample('Page:') as object).sort());
+  });
+
+  it('gives CreatePageBody the keys the contract example has', () => {
+    expect(CREATE_PAGE_TYPES.every(Boolean)).toBe(true);
+    const example = contractExample('Create page:') as { sections: Record<string, unknown>[] };
+    expect(Object.keys(example).sort()).toEqual(['sections', 'seoCanonical', 'seoDescription', 'seoTitle', 'slug', 'title']);
+    expect(Object.keys(example.sections[0] ?? {}).sort()).toEqual(['config', 'type', 'visible']);
   });
 
   it('lists the placement location types the contract lists', () => {

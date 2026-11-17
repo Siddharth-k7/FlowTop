@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { capturePublish } from '@/lib/capture-publish';
+import { pageBody } from '@/lib/page-body';
+import { errorsForSection } from '@/lib/section-errors';
 import { syncPageSections } from '@/lib/section-sync';
 import { PageWrapper } from '@/components/shell/PageWrapper';
 import { DraftBanner, EditorBar, LoadError, Skeleton } from '@/components/ui/EditorBar';
@@ -16,8 +18,6 @@ import { btnPrimary, btnSecondary, cardCls, inputCls } from '@/lib/ui-classes';
 import type { Page, Section } from '@flowtop/types';
 import { DEVICES, PagePreview, type Device } from './PagePreview';
 import { SectionEditor } from './SectionEditor';
-
-const pageBody = (p: Page) => ({ title: p.title, slug: p.slug, seoTitle: p.seo.title, seoDescription: p.seo.description, seoCanonical: p.seo.canonical });
 
 const SETTINGS: Field[] = [
   { key: 'title', label: 'Page title', type: 'text', required: true }, { key: 'slug', label: 'Web address', type: 'text', required: true, hint: 'Leave empty only for the homepage.' },
@@ -37,8 +37,16 @@ export function PageBuilder({ id }: { id: string }) {
   const sectionsRef = useRef<Section[]>([]);
   const publishing = useRef(false);
   const publishError = useRef<string | undefined>(undefined);
+  /** True only for the save that just posted the sections with the new page. */
+  const sectionsIncluded = useRef(false);
+  const toBody = (page: Page) => {
+    sectionsIncluded.current = page.id === 'new';
+    return pageBody(page);
+  };
   const syncSections = async (saved: Page): Promise<Page> => {
-    await syncPageSections(saved.id, sectionsRef.current, {
+    const skip = sectionsIncluded.current;
+    sectionsIncluded.current = false;
+    if (!skip) await syncPageSections(saved.id, sectionsRef.current, {
       getPage: (pageId) => api<Page>(`/admin/pages/${pageId}`),
       create: (pageId, section) => api<Section>(`/admin/pages/${pageId}/sections`, { method: 'POST', body: { type: section.type, config: section.config, visible: section.visible } }),
       update: async (sectionId, section) => { await api(`/admin/sections/${sectionId}`, { method: 'PATCH', body: { config: section.config, visible: section.visible } }); },
@@ -46,9 +54,10 @@ export function PageBuilder({ id }: { id: string }) {
       reorder: async (pageId, ids) => { await api(`/admin/pages/${pageId}/sections/reorder`, { method: 'POST', body: { ids } }); },
     });
     if (publishing.current) publishError.current = await capturePublish(() => api(`/admin/pages/${saved.id}/publish`, { method: 'POST' }).then(() => undefined));
-    return api<Page>(`/admin/pages/${saved.id}`);
+    if (publishing.current || !skip) return api<Page>(`/admin/pages/${saved.id}`);
+    return saved;
   };
-  const doc = useDocument<Page>('pages', id, blank, pageBody, syncSections);
+  const doc = useDocument<Page>('pages', id, blank, toBody, syncSections);
   const [pane, setPane] = useState<'sections' | 'preview' | 'edit'>('sections');
   const [selected, setSelected] = useState<string>();
   const [device, setDevice] = useState<Device>('desktop');
@@ -65,6 +74,14 @@ export function PageBuilder({ id }: { id: string }) {
   const autosave = useRef<() => void>(() => {});
   autosave.current = () => { if (v && doc.dirty && !doc.isNew && v.status === 'draft' && !doc.saving) doc.save(); };
   useEffect(() => { const t = setInterval(() => autosave.current(), 30_000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    const index = Object.keys(doc.errors).map((key) => /^sections\[(\d+)\]/.exec(key)?.[1]).find((value) => value !== undefined);
+    if (index === undefined) return;
+    const section = sectionsRef.current[Number(index)];
+    if (!section) return;
+    setSelected(section.id);
+    setPane('edit');
+  }, [doc.errors]);
 
   if (doc.loadError) return <PageWrapper title="Page"><LoadError message={doc.loadError} onRetry={doc.reload} /></PageWrapper>;
   if (!v) return <PageWrapper title="Page"><Skeleton rows={6} /></PageWrapper>;
@@ -144,7 +161,7 @@ export function PageBuilder({ id }: { id: string }) {
         </section>
         <section aria-label="Section editor" className={`${pane === 'edit' ? '' : 'hidden'} lg:block`}>
           <div className={cardCls}>
-            {sel ? <fieldset disabled={!canSections} className="contents"><SectionEditor section={sel} onChange={(config) => patch(sel.id, { config }, true)} /></fieldset> : <p className="text-sm">Pick a section on the left to edit its content and layout.</p>}
+            {sel ? <fieldset disabled={!canSections} className="contents"><SectionEditor section={sel} errors={errorsForSection(doc.errors, secs.indexOf(sel))} onChange={(config) => patch(sel.id, { config }, true)} /></fieldset> : <p className="text-sm">Pick a section on the left to edit its content and layout.</p>}
           </div>
         </section>
       </div>

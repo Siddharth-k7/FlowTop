@@ -15,7 +15,7 @@ export class PagesController {
 
   @Post('admin/pages')
   @RequirePermission('page:write')
-  create(@Body() dto: CreatePageDto, @CurrentUser() user: AuthUser) { return this.pages.create(dto, user.id); }
+  create(@Body() dto: CreatePageDto, @CurrentUser() user: AuthUser) { return this.pages.create(dto, user); }
 
   @Get('admin/pages/:id')
   @RequirePermission('page:read')

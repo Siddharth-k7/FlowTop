@@ -388,6 +388,25 @@ POST   /admin/sections/:id/duplicate
 POST   /admin/pages/:id/sections/reorder   { ids: [] }
 ```
 
+`POST /admin/pages` accepts the page fields and an optional `sections` array. The page and those sections are inserted in one transaction. If any section config is rejected, the response is 422 and no page row is written. Omitting `sections` creates the page alone. `position` is the array order, starting at 1. Sending `sections` needs `section:write` as well as `page:write`.
+
+A rejected section config is 422 `VALIDATION_FAILED`. `message` names the failing field, for example `videoUrl: Use a site path or an https, mailto or tel link.` On `POST` or `PATCH` of one section, `fields` uses the config path (`fields.videoUrl`). On `POST /admin/pages`, the same failure is `fields["sections[0].videoUrl"]`. An empty preset (`""`) names the allowed values (`Choose one of: image, video.`). `count: null` is 422 `Enter a whole number of 0 or more.` Omit `count` to leave it unset. `videoUrl: null` and an empty text field stay allowed.
+
+**Create page:**
+
+```json
+{
+  "title": "Opel Launch",
+  "slug": "opel-launch",
+  "seoTitle": "Opel",
+  "seoDescription": "The Opel collection",
+  "seoCanonical": null,
+  "sections": [
+    { "type": "hero", "visible": true, "config": { "headline": "The Opel Collection" } }
+  ]
+}
+```
+
 **Page:**
 
 ```json
