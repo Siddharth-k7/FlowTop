@@ -579,6 +579,29 @@ export interface Page {
   seo: Seo;
 }
 
+/**
+ * One section on POST /admin/pages. The server assigns `id` and `position`
+ * (array order, starting at 1). `config` is the section-type shape in the contract.
+ */
+export interface PageSectionWrite {
+  type: SectionTypeName;
+  visible?: boolean;
+  config: Record<string, unknown>;
+}
+
+/**
+ * POST /admin/pages. `sections`, when present, are inserted in the same transaction
+ * as the page. A rejected section saves nothing. Omitting `sections` creates the page alone.
+ */
+export interface CreatePageBody {
+  title: string;
+  slug: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoCanonical?: string | null;
+  sections?: PageSectionWrite[];
+}
+
 /** navigation_item.link_type. The href is built from linkType and destination, not stored. */
 export type NavigationLinkTypeName = 'page' | 'category' | 'collection' | 'product' | 'external';
 

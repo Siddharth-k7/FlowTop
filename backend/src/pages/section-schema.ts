@@ -82,6 +82,14 @@ function check(node: Node, value: unknown, path: string, fields: Record<string, 
   if (value === undefined) return;
   if (value === null || value === '') {
     if (node.t === 'url' || node.t === 'text' || node.t === 'object') return;
+    if (node.t === 'enum') {
+      fields[path || 'config'] = `Choose one of: ${node.values.join(', ')}.`;
+      return;
+    }
+    if (node.t === 'count') {
+      fields[path || 'config'] = 'Enter a whole number of 0 or more.';
+      return;
+    }
     fields[path || 'config'] = 'That value is not allowed.';
     return;
   }

@@ -152,6 +152,13 @@ export function adminRoutes(route: string, method: string, raw: unknown, params:
   }
   const list = store[col];
   if (!list) return null;
+  if (!id && method === 'POST' && col === 'pages') {
+    const incoming = Array.isArray(b.sections) ? b.sections as { type?: string; visible?: boolean; config?: Record<string, unknown> }[] : [];
+    const sections = incoming.map((section, index) => ({ id: uid('sec'), type: section.type ?? 'hero', position: index + 1, visible: section.visible ?? true, config: section.config ?? {} }));
+    const d: Doc = { id: uid('pg'), title: String(b.title ?? ''), slug: String(b.slug ?? ''), status: 'draft', seo: { title: String(b.seoTitle ?? ''), description: String(b.seoDescription ?? ''), canonical: (b.seoCanonical as string | null) ?? null, shareImage: null }, sections, createdAt: now(), updatedAt: now() };
+    list.push(d);
+    return ok(d);
+  }
   if (!id) {
     if (method === 'POST') {
       if (col === 'products') { const f = validateProduct(b as Doc, false); if (Object.keys(f).length) return fail(422, 'VALIDATION_FAILED', INVALID, f); }

@@ -9,6 +9,26 @@ import { type Field, type Values } from '@/lib/fields';
 export { opts, type Field, type FieldType, type Values } from '@/lib/fields';
 
 const empty = (v: unknown) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
+
+/** A cleared number is omitted. `null` is not a count, and the API rejects it. */
+export function numberInputValue(raw: string): number | undefined {
+  if (raw === '') return undefined;
+  return Number(raw);
+}
+
+/** "Choose…" is an empty selection, not a preset. An empty string is rejected. */
+export function selectInputValue(raw: string, numeric: boolean | undefined): string | number | undefined {
+  if (raw === '') return undefined;
+  return numeric ? Number(raw) : raw;
+}
+
+/** The field's own message, or the first nested one (`ctas[0].href` on the Buttons field). */
+export function messageFor(errors: Record<string, string>, key: string): string | undefined {
+  if (errors[key]) return errors[key];
+  const nested = Object.entries(errors).filter(([path]) => path.startsWith(`${key}.`) || path.startsWith(`${key}[`));
+  if (!nested.length) return undefined;
+  return nested.map(([, message]) => message).join(' ');
+}
 /** Fields that block publishing until filled. */
 export function missingRequired(fields: Field[], v: Values): Record<string, string> {
   const e: Record<string, string> = {};
@@ -29,18 +49,18 @@ export function SchemaForm({ fields, value, onChange, errors = {}, idPrefix = 'f
     <div className={`grid gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
       {fields.map((f) => {
         const id = `${idPrefix}-${f.key}`;
-        const error = errors[f.key] || local[f.key] || undefined;
+        const error = messageFor(errors, f.key) || local[f.key] || undefined;
         const v = value[f.key];
         const wide = ['textarea', 'media', 'mediaList', 'refList', 'stringList', 'ctas'].includes(f.type);
                 const body = (a: Record<string, unknown>) => {
           switch (f.type) {
             case 'textarea': return <textarea {...a} rows={4} className={`${inputCls} py-2`} value={String(v ?? '')} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, e.target.value)} />;
-            case 'number': return <input {...a} type="number" className={inputCls} value={v === null || v === undefined ? '' : String(v)} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, e.target.value === '' ? null : Number(e.target.value))} />;
+            case 'number': return <input {...a} type="number" className={inputCls} value={v === null || v === undefined ? '' : String(v)} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, numberInputValue(e.target.value))} />;
             case 'price': // staff type rupees; the API only ever sees integer paise
               return <input {...a} type="number" min={0} step="0.01" inputMode="decimal" className={inputCls} value={typeof v === 'number' ? v / 100 : ''} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, e.target.value === '' ? null : Math.round(Number(e.target.value) * 100))} />;
             case 'date': return <input {...a} type="date" className={inputCls} value={String(v ?? '')} onChange={(e) => onChange(f.key, e.target.value)} />;
             case 'select': return (
-              <select {...a} className={inputCls} value={String(v ?? '')} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, f.numeric && e.target.value ? Number(e.target.value) : e.target.value)}>
+              <select {...a} className={inputCls} value={String(v ?? '')} onBlur={() => blur(f)} onChange={(e) => onChange(f.key, selectInputValue(e.target.value, f.numeric))}>
                 <option value="">Choose…</option>{f.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>);
             case 'toggle': return <label className="flex min-h-touch items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={!!v} onChange={(e) => onChange(f.key, e.target.checked)} />{f.hint ?? 'On'}</label>;

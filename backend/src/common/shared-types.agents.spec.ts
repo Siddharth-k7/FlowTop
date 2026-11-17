@@ -54,8 +54,10 @@ function diagnosticsFor(source: string): string[] {
 }
 
 describe('shared/types/AGENTS.md example', () => {
-  it('typechecks exactly as written', () => {
-    expect(diagnosticsFor(documentedExample('catalog'))).toEqual([]);
+  it('typechecks every example exactly as written', () => {
+    const names = [...agents.matchAll(/<!-- example: ([a-z0-9-]+) -->/g)].map((match) => match[1] ?? '');
+    expect(names).toEqual(['catalog', 'create-page']);
+    for (const name of names) expect(diagnosticsFor(documentedExample(name))).toEqual([]);
   });
 
   it('is not vacuous: a field that does not exist is reported', () => {

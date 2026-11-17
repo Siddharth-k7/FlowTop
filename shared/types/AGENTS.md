@@ -8,7 +8,7 @@ Type-only API shapes for the frontend and the admin. No values, no imports, no d
 |---|---|---|
 | `Permission`, `RoleName`, `ROLE_PERMISSIONS`, `User` | `backend/src/auth/permissions.ts`, `auth-user.ts` | `backend/src/auth/shared-types.drift.spec.ts` |
 | `ProductCard`, `ProductDetail`, `Variant`, `Specification`, `SpecificationGroup`, `Category`, `Collection`, `CollectionDetail`, and their parts | `docs/03-api-contract.md` for names and shapes, `backend/prisma/schema.prisma` for value types, nullability and enums | `backend/src/common/catalog-types.drift.spec.ts` |
-| `AdminProduct`, `Placement`, `PlacementLocation`, `Section`, `Page`, `SettingItem` | `prisma/schema.prisma`, `docs/03-api-contract.md` (Placement, Section and Page JSON), `backend/src/settings/dto/settings.dto.ts` | `backend/src/common/admin-types.drift.spec.ts` |
+| `AdminProduct`, `Placement`, `PlacementLocation`, `Section`, `Page`, `CreatePageBody`, `PageSectionWrite`, `SettingItem` | `prisma/schema.prisma`, `docs/03-api-contract.md` (Placement, Section, Page and Create page JSON), `backend/src/settings/dto/settings.dto.ts` | `backend/src/common/admin-types.drift.spec.ts` |
 | `AdminCategory`, `AdminCollection`, `AdminJournalArticle`, `AdminOrderSummary`, `AdminOrderDetail`, `AdminSubmission`, `DashboardSummary`, and their enums | `prisma/schema.prisma` enums and columns, `docs/03-api-contract.md` for the routes | `backend/src/common/admin-commerce.drift.spec.ts` |
 
 ## Product catalogue
@@ -52,5 +52,27 @@ export function defaultFinish(product: ProductDetail): string | null {
 
 export function specificationGroups(product: ProductDetail): SpecificationGroup[] {
   return product.specifications;
+}
+```
+
+## Create page
+
+`POST /admin/pages` takes `CreatePageBody`. Sections in that body are saved with the page. This example is typechecked as written by `backend/src/common/shared-types.agents.spec.ts`:
+
+<!-- example: create-page -->
+```ts
+import type { CreatePageBody, Page } from '@flowtop/types';
+
+export function createBody(title: string, slug: string): CreatePageBody {
+  const body: CreatePageBody = {
+    title,
+    slug,
+    sections: [{ type: 'hero', visible: true, config: { headline: title } }],
+  };
+  return body;
+}
+
+export function sectionCount(page: Page): number {
+  return page.sections.length;
 }
 ```

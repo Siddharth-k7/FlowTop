@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import type { AuthUser } from '../auth';
 import { AuditService } from '../audit/audit.service';
 import { paginate } from '../common/dto/pagination';
 import { ApiException } from '../common/errors/api.exception';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { assertExactReorder } from '../common/reorder';
 import { Prisma } from '../generated/prisma/client';
 import { PublishStateService } from '../_base/publish-state.service';
 import { SlugService } from '../_base/slug.service';
 import { CreatePageDto, CreateSectionDto, PageListQuery, UpdateSectionDto, WritePageDto } from './dto/page.dto';
-import { assertExactReorder } from '../common/reorder';
-import { assertSectionConfig } from './section-config';
+import { assertCanAttachSections, assertPageSections, assertSectionConfig } from './section-config';
 
 const seoOf = (row: { seoTitle: string; seoDescription: string; seoCanonical: string | null }) => ({ title: row.seoTitle, description: row.seoDescription, canonical: row.seoCanonical, shareImage: null });
 
@@ -47,10 +48,22 @@ export class PagesService {
     return this.slugs.unique(title, { exists: (slug, exclude) => this.taken(slug, exclude) }, requested, excludeId);
   }
 
-  async create(dto: CreatePageDto, actorId: string) {
+  async create(dto: CreatePageDto, user: AuthUser) {
+    const sections = dto.sections ?? [];
+    assertCanAttachSections(user.permissions, sections.length);
+    assertPageSections(sections);
     const slug = await this.resolveSlug(dto.title, dto.slug);
-    const row = await this.prisma.page.create({ data: { title: dto.title, slug, seoTitle: dto.seoTitle ?? '', seoDescription: dto.seoDescription ?? '', seoCanonical: dto.seoCanonical ?? null, status: 'draft' } });
-    await this.audit.record({ actorId, action: 'create', entityType: 'page', entityId: row.id });
+    const row = await this.prisma.$transaction(async (tx) => {
+      const page = await tx.page.create({ data: { title: dto.title, slug, seoTitle: dto.seoTitle ?? '', seoDescription: dto.seoDescription ?? '', seoCanonical: dto.seoCanonical ?? null, status: 'draft' } });
+      for (const [index, section] of sections.entries()) {
+        const created = await tx.section.create({
+          data: { pageId: page.id, type: section.type, position: index + 1, visible: section.visible ?? true, config: section.config as Prisma.InputJsonValue },
+        });
+        await this.audit.record({ actorId: user.id, action: 'create', entityType: 'section', entityId: created.id }, tx);
+      }
+      await this.audit.record({ actorId: user.id, action: 'create', entityType: 'page', entityId: page.id, ...(sections.length ? { metadata: { sections: sections.length } } : {}) }, tx);
+      return page;
+    });
     return this.find(row.id);
   }
 
